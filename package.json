@@ -1,34 +1,28 @@
 {
-  "name": "retreever-who-what",
+  "name": "@ground-truth/retreever-who-what",
   "version": "0.0.0",
-  "description": "The ReTreever search pages — organisation and project lookup. Takes its entire host surface as props, so it stands alone with none wired in.",
-  "license": "AGPL-3.0-only",
+  "private": true,
   "type": "module",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Ground-Truth-Data/ReTreever_who_what.git"
-  },
-  "files": ["lib", "index.ts"],
+  "description": "Who / What directory pages. A CHILD: it takes its parent as props and stands alone without one.",
   "exports": {
-    ".": {
-      "types": "./index.ts",
-      "svelte": "./index.ts",
-      "default": "./index.ts"
-    },
-    "./package.json": "./package.json"
-  },
-  "peerDependencies": {
-    "@sveltejs/kit": "^2.16.0",
-    "svelte": "^5.19.0"
+    "./lib/*": "./lib/*",
+    "./routes/*": "./routes/*",
+    "./deps.json": "./deps.json"
   },
   "dependencies": {
     "clsx": "^2.1.1",
     "tailwind-merge": "^3.4.0"
   },
+  "peerDependencies": {
+    "@sveltejs/kit": "^2.16.0",
+    "svelte": "^5.19.0"
+  },
   "devDependencies": {
-    "vitest": "^2.1.9"
+    "vitest": "*"
   },
   "scripts": {
     "test": "vitest run"
-  }
+  },
+  "_no_build_on_purpose": "A child ships no vite.config.ts. It is not an app; it is a folder a parent builds. That is why the escape/case guard is a VITE PLUGIN in each parent (unskippable: no build, no deploy) and a VITEST TEST here (portable: runs in a bare clone with no app around it). Same rule, two shapes, because a plugin needs a build to hook into and a child has none.",
+  "_why_pinned": "Versions match what ReTreever runs, because that is the version the code was written and tested against. They were all \"*\" until 25 Aug 2026, which is not a constraint but a wish: the workspace install resolved pbf to 5.1.2, which dropped the default export, and the build died on `import Pbf from \"pbf\"`. Nested inside a parent the child silently borrowed the parent's version and the hole never showed. A child that is genuinely portable has to state what it needs."
 }

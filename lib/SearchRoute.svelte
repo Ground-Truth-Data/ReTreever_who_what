@@ -46,8 +46,9 @@ let {
 	routes?: WhoWhatRoutes;
 	/**
 	 * The host's API surface. ReTreever passes its `endpoints`; the harness
-	 * passes nothing, and the dropdown lists come back empty rather than
-	 * fetching a path that does not exist here.
+	 * passes nothing and every list fetch is skipped rather than aimed at a
+	 * 404. Without this prop the list loaders got `undefined` and threw on
+	 * their own no-endpoint guard.
 	 */
 	endpoints?: WhoWhatEndpoints;
 } = $props();

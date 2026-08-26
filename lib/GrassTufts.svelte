@@ -110,9 +110,34 @@ const CLUMPS: { n: number; h: number }[] = [
 	{ n: 9, h: 253 },
 ];
 
+/**
+ * WHY glob AND NOT A TEMPLATE-STRING URL.
+ *
+ * These 20 URLs used to be built as `/pub-Rtvr/home/tufts/tuft-N.webp` — a
+ * path handed to the browser, which only ReTreever's server can answer. It
+ * 404s in any other host, and because the strings are ASSEMBLED here rather
+ * than written out, no grep and no build step could see them coming.
+ *
+ * `import.meta.glob(..., { eager: true })` is resolved by Vite at BUILD time:
+ * it turns the whole folder into real imports, so the bytes travel with this
+ * child and the loop below still gets to compute which one it wants.
+ */
+const TUFT_URLS = import.meta.glob<string>(
+	"./assets/pub-Rtvr/home/tufts/*.webp",
+	{ eager: true, query: "?url", import: "default" },
+);
+
+/** `tuft-4-flipped` -> its built URL. Keyed by name, not by path. */
+function tuft(name: string): string {
+	const hit = Object.entries(TUFT_URLS).find(([p]) =>
+		p.endsWith(`/${name}.webp`),
+	);
+	return hit ? hit[1] : "";
+}
+
 const ART = CLUMPS.flatMap((c) =>
 	["", "-flipped"].map((v) => ({
-		src: `/pub-Rtvr/home/tufts/tuft-${c.n}${v}.webp`,
+		src: tuft(`tuft-${c.n}${v}`),
 		ratio: 320 / c.h,
 	})),
 );

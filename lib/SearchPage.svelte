@@ -21,6 +21,27 @@ import poly9Raw from "./homeAssets/poly/Search_page_SP_poly_9.svg?raw";
 import poly10Raw from "./homeAssets/poly/Search_page_SP_poly_10.svg?raw";
 import poly11Raw from "./homeAssets/poly/Search_page_SP_poly_11.svg?raw";
 import MiddleDividerRaw from "./homeAssets/poly/Search_page_Middle_Divider.svg?raw";
+
+// ---- BACKDROP ART -------------------------------------------------
+// Imported, never requested from the host at "/pub-Rtvr/...". An import
+// is resolved by the bundler at build time and the bytes are copied into
+// whatever app builds this child; a leading-slash URL is resolved by the
+// BROWSER against whatever server answers, which is ReTreever alone.
+// They are handed to CSS as custom properties on the root element so the
+// stylesheet below never names a path.
+import skyUrl from "./assets/golden_sky_background.webp";
+import hillPatternWebp from "./assets/hill_pattern.webp";
+import hillPatternAvif from "./assets/hill_pattern.avif";
+import hillFillWebp from "./assets/pub-Rtvr/home/hill_fill.webp";
+import hillFillAvif from "./assets/pub-Rtvr/home/hill_fill.avif";
+import upperGrassFrontWebp from "./assets/pub-Rtvr/home/uppergrass_front.webp";
+import upperGrassFrontAvif from "./assets/pub-Rtvr/home/uppergrass_front.avif";
+import upperGrassBackWebp from "./assets/pub-Rtvr/home/uppergrass_back.webp";
+import upperGrassBackAvif from "./assets/pub-Rtvr/home/uppergrass_back.avif";
+import lowerGrassFrontWebp from "./assets/pub-Rtvr/home/lowergrass_front.webp";
+import lowerGrassFrontAvif from "./assets/pub-Rtvr/home/lowergrass_front.avif";
+import lowerGrassBackWebp from "./assets/pub-Rtvr/home/lowergrass_back.webp";
+import lowerGrassBackAvif from "./assets/pub-Rtvr/home/lowergrass_back.avif";
 import {
 	HEADLINE,
 	HOME,
@@ -182,18 +203,49 @@ function dismissOnEscape(e: KeyboardEvent) {
 // shardLayout.ts — one config file, one entry per shard, no shard aware of any
 // other. See that file for why the collision solver that used to place them is
 // gone.
+/**
+ * THE PHOTO URLS LIVE INSIDE THE SVG TEXT, so an import cannot reach them.
+ *
+ * Each shard is an <svg> with `<image href="/pub-Rtvr/home/poly/sp-poly-N.webp">`
+ * inside it. `?raw` hands us that markup as a STRING — by then the bundler is
+ * finished, so the href is never resolved and the browser is left asking the
+ * host for a path only ReTreever serves.
+ *
+ * `import.meta.glob` imports the photos properly (build time, bytes travel
+ * with the child), and `withLocalPhotos` swaps the built URL into the markup
+ * before it renders. A photo with no match is left pointing at nothing and the
+ * shard paints violet via .bg-poly's --rtvr-missing-art fallback — visible,
+ * not silent.
+ */
+const SHARD_PHOTOS = import.meta.glob<string>(
+	"./assets/pub-Rtvr/home/poly/*.webp",
+	{ eager: true, query: "?url", import: "default" },
+);
+
+function withLocalPhotos(svg: string): string {
+	return svg.replace(
+		/href="[^"]*\/pub-Rtvr\/home\/poly\/([^"]+)"/g,
+		(whole, file: string) => {
+			const hit = Object.entries(SHARD_PHOTOS).find(([path]) =>
+				path.endsWith(`/${file}`),
+			);
+			return hit ? `href="${hit[1]}"` : whole;
+		},
+	);
+}
+
 const shardArt: Record<number, string> = {
-	1: poly1Raw,
-	2: poly2Raw,
-	3: poly3Raw,
-	4: poly4Raw,
-	5: poly5Raw,
-	6: poly6Raw,
-	7: poly7Raw,
-	8: poly8Raw,
-	9: poly9Raw,
-	10: poly10Raw,
-	11: poly11Raw,
+	1: withLocalPhotos(poly1Raw),
+	2: withLocalPhotos(poly2Raw),
+	3: withLocalPhotos(poly3Raw),
+	4: withLocalPhotos(poly4Raw),
+	5: withLocalPhotos(poly5Raw),
+	6: withLocalPhotos(poly6Raw),
+	7: withLocalPhotos(poly7Raw),
+	8: withLocalPhotos(poly8Raw),
+	9: withLocalPhotos(poly9Raw),
+	10: withLocalPhotos(poly10Raw),
+	11: withLocalPhotos(poly11Raw),
 };
 
 /**
@@ -409,7 +461,11 @@ $effect(() => {
 
 <svelte:window onpointerdown={dismissOnOutside} onkeydown={dismissOnEscape} />
 
-<div class="home-search-page">
+<!-- Every imported art file is bound here, ONCE, as a custom property.
+     The stylesheet below then names only variables, never paths — so a
+     missing asset falls through to --rtvr-missing-art (violet) instead of
+     silently 404ing. -->
+<div class="home-search-page" style="--art-sky: url({skyUrl}); --art-hill-pattern-webp: url({hillPatternWebp}); --art-hill-pattern-avif: url({hillPatternAvif}); --art-hill-fill-webp: url({hillFillWebp}); --art-hill-fill-avif: url({hillFillAvif}); --art-uppergrass-front-webp: url({upperGrassFrontWebp}); --art-uppergrass-front-avif: url({upperGrassFrontAvif}); --art-uppergrass-back-webp: url({upperGrassBackWebp}); --art-uppergrass-back-avif: url({upperGrassBackAvif}); --art-lowergrass-front-webp: url({lowerGrassFrontWebp}); --art-lowergrass-front-avif: url({lowerGrassFrontAvif}); --art-lowergrass-back-webp: url({lowerGrassBackWebp}); --art-lowergrass-back-avif: url({lowerGrassBackAvif})">
 	<!-- ---- Hero: golden sky over greenery, wildflower band at its foot ---- -->
 	<section class="hero-section" class:has-results={results} bind:this={heroEl}>
 		{#each shards as shard (shard.id)}
@@ -547,7 +603,7 @@ $effect(() => {
 	<div class="middle-divider" id={dividerId}>
 		<div class="middle-divider-photo" aria-hidden="true">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-			{@html MiddleDividerRaw}
+			{@html withLocalPhotos(MiddleDividerRaw)}
 		</div>
 	</div>
 
@@ -704,7 +760,7 @@ $effect(() => {
 		   any aspect. The flat colour underneath matches the paint, so even a
 		   viewport taller than the crop never reveals a hard cut. */
 		background-color: #cc9f47;
-		background-image: url("/golden_sky_background.webp");
+		background-image: var(--art-sky, var(--rtvr-missing-art));
 		background-size: cover;
 		background-position: center top;
 		background-repeat: no-repeat;
@@ -769,10 +825,10 @@ $effect(() => {
 	.hero-greenery {
 		top: auto;
 		height: var(--greenery-h);
-		background-image: url("/hill_pattern.webp");
+		background-image: var(--art-hill-pattern-webp, var(--rtvr-missing-art));
 		background-image: image-set(
-			url("/hill_pattern.avif") type("image/avif"),
-			url("/hill_pattern.webp") type("image/webp")
+			var(--art-hill-pattern-avif, var(--rtvr-missing-art)) type("image/avif"),
+			var(--art-hill-pattern-webp, var(--rtvr-missing-art)) type("image/webp")
 		);
 		background-size: 100% auto;
 		background-position: top center;
@@ -787,10 +843,10 @@ $effect(() => {
 	   scallops get enlarged on a phone-shaped box. */
 	.headline-greenery {
 		top: 0;
-		background-image: url("/pub-Rtvr/home/hill_fill.webp");
+		background-image: var(--art-hill-fill-webp, var(--rtvr-missing-art));
 		background-image: image-set(
-			url("/pub-Rtvr/home/hill_fill.avif") type("image/avif"),
-			url("/pub-Rtvr/home/hill_fill.webp") type("image/webp")
+			var(--art-hill-fill-avif, var(--rtvr-missing-art)) type("image/avif"),
+			var(--art-hill-fill-webp, var(--rtvr-missing-art)) type("image/webp")
 		);
 		background-size: cover;
 		background-position: top center;
@@ -863,18 +919,18 @@ $effect(() => {
 	   behind the green grass — which is the "in front of most grass, behind
 	   some of it" effect the two-file design was reaching for. */
 	.wildflower-band::before {
-		background-image: url("/pub-Rtvr/home/uppergrass_front.webp");
+		background-image: var(--art-uppergrass-front-webp, var(--rtvr-missing-art));
 		background-image: image-set(
-			url("/pub-Rtvr/home/uppergrass_front.avif") type("image/avif"),
-			url("/pub-Rtvr/home/uppergrass_front.webp") type("image/webp")
+			var(--art-uppergrass-front-avif, var(--rtvr-missing-art)) type("image/avif"),
+			var(--art-uppergrass-front-webp, var(--rtvr-missing-art)) type("image/webp")
 		);
 	}
 
 	.wildflower-band::after {
-		background-image: url("/pub-Rtvr/home/uppergrass_back.webp");
+		background-image: var(--art-uppergrass-back-webp, var(--rtvr-missing-art));
 		background-image: image-set(
-			url("/pub-Rtvr/home/uppergrass_back.avif") type("image/avif"),
-			url("/pub-Rtvr/home/uppergrass_back.webp") type("image/webp")
+			var(--art-uppergrass-back-avif, var(--rtvr-missing-art)) type("image/avif"),
+			var(--art-uppergrass-back-webp, var(--rtvr-missing-art)) type("image/webp")
 		);
 	}
 
@@ -886,18 +942,18 @@ $effect(() => {
 
 	/* Same black-behind-green swap as the hero band above. */
 	.wildflower-band--lower::before {
-		background-image: url("/pub-Rtvr/home/lowergrass_front.webp");
+		background-image: var(--art-lowergrass-front-webp, var(--rtvr-missing-art));
 		background-image: image-set(
-			url("/pub-Rtvr/home/lowergrass_front.avif") type("image/avif"),
-			url("/pub-Rtvr/home/lowergrass_front.webp") type("image/webp")
+			var(--art-lowergrass-front-avif, var(--rtvr-missing-art)) type("image/avif"),
+			var(--art-lowergrass-front-webp, var(--rtvr-missing-art)) type("image/webp")
 		);
 	}
 
 	.wildflower-band--lower::after {
-		background-image: url("/pub-Rtvr/home/lowergrass_back.webp");
+		background-image: var(--art-lowergrass-back-webp, var(--rtvr-missing-art));
 		background-image: image-set(
-			url("/pub-Rtvr/home/lowergrass_back.avif") type("image/avif"),
-			url("/pub-Rtvr/home/lowergrass_back.webp") type("image/webp")
+			var(--art-lowergrass-back-avif, var(--rtvr-missing-art)) type("image/avif"),
+			var(--art-lowergrass-back-webp, var(--rtvr-missing-art)) type("image/webp")
 		);
 	}
 
@@ -1162,7 +1218,7 @@ $effect(() => {
 	}
 
 	.row-name {
-		color: #fff;
+		color: var(--rtvr-on-dark);
 		font-size: 14px;
 		line-height: 1.3;
 	}

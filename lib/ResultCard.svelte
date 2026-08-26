@@ -59,7 +59,7 @@ let {
 	   that must sit level with it has to track that scale. */
 	.result-name {
 		margin: 0;
-		color: #fff;
+		color: var(--rtvr-on-dark);
 		font-size: calc(17 * var(--bar-scale, 1));
 		line-height: 1.25;
 		font-weight: 600;

@@ -1,5 +1,12 @@
 <script lang="ts">
 import { cn } from "./cn";
+// The sprite is IMPORTED, not requested from the host at "/pub-Rtvr/...".
+// An import is resolved by the bundler at build time and the bytes are
+// copied into whatever app builds this child, so the globe travels with
+// the component. A leading-slash URL is resolved by the BROWSER against
+// whatever server is answering, which is only ReTreever — everywhere else
+// it is a 404.
+import globeSprite from "./assets/pub-Rtvr/animations/globe-spin-sprite.webp";
 
 let {
 	class: className = "",
@@ -17,7 +24,7 @@ let {
 <!-- 3fps rotating-globe sprite (6-frame, 3x2 grid), spinning continuously —
      "Maps_page_redirect_animation" in Desktop layout. -->
 <a {href} aria-label="Explore the map" class={cn("globe-spin-link", className)}>
-	<div class="globe-spin"></div>
+	<div class="globe-spin" style="--globe-sprite: url({globeSprite})"></div>
 </a>
 
 <style>
@@ -39,7 +46,7 @@ let {
 	.globe-spin {
 		width: 100%;
 		aspect-ratio: 213 / 160;
-		background-image: url("/pub-Rtvr/animations/globe-spin-sprite.webp");
+		background-image: var(--globe-sprite, var(--rtvr-missing-art));
 		background-repeat: no-repeat;
 		background-size: 300% 200%;
 		animation: globeRotate 2s step-end infinite;

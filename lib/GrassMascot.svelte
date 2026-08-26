@@ -1,5 +1,7 @@
 <script lang="ts">
 import { cn } from "./cn";
+// Imported, not a host URL — see the note in GlobeSpinIcon.svelte.
+import mascotSprite from "./assets/pub-Rtvr/animations/mascot-run-sprite.webp";
 
 let {
 	class: className = "",
@@ -101,7 +103,11 @@ $effect(() => {
 <!-- 24fps run-cycle sprite (12-frame, 4x3 grid) crossing right-to-left on a
      loop, independent of the leg-cycle timing — see
      agents/skills/frame-sequence-sprite-animation for how the sheet was built. -->
-<div class={cn("mascot-track", className)} aria-hidden="true">
+<div
+	class={cn("mascot-track", className)}
+	aria-hidden="true"
+	style="--mascot-sprite: url({mascotSprite})"
+>
 	{#key lap}
 		{#if run}
 			<div class="mascot-run" class:on-grass={ground === "grass"}></div>
@@ -147,7 +153,7 @@ $effect(() => {
 		width: var(--dog-w);
 		aspect-ratio: 438 / 280;
 		rotate: 0.65deg;
-		background-image: url("/pub-Rtvr/animations/mascot-run-sprite.webp");
+		background-image: var(--mascot-sprite, var(--rtvr-missing-art));
 		background-repeat: no-repeat;
 		background-size: 400% 300%;
 		/* GAIT — why this is derived and NOT a breakpoint.

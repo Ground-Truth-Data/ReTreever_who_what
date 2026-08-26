@@ -95,20 +95,20 @@ function handleSubmit(event: SubmitEvent) {
 			<path
 				class="glyph glyph-conifer"
 				d="m 601.15926,701.13475 -6.74173,10.91518 5.13655,-2.88931 -6.74173,8.50742 5.13656,-3.21035 -6.09966,8.34691 8.02586,-4.81552 -0.64206,8.98898 h 3.53138 v -7.70485 l 5.77863,3.21035 -3.85242,-8.3469 4.81552,1.92621 -5.77863,-6.74173 5.4576,1.60517 z"
-				fill="#ffffff"
+				fill="var(--rtvr-on-dark)"
 			/>
 			<!-- magnifier glyph -->
 			<path
 				class="glyph glyph-magnifier"
 				d="m 581.88475,700.49754 c -2.72423,-0.0819 -5.33111,1.26812 -7.06397,4.09602 -4.14618,6.76624 1.40955,10.67195 0.8297,11.45174 l -6.97062,9.46013 2.48951,2.82151 7.46852,-10.29003 c 0,0 6.3265,3.10153 10.29004,-1.65961 3.77015,-4.52883 2.55525,-9.95714 -0.8299,-13.11135 -1.90466,-1.77471 -4.09442,-2.70472 -6.21328,-2.76841 z m 0.6535,3.76422 a 6.3897379,5.476919 0 0 1 6.38968,5.47691 6.3897379,5.476919 0 0 1 -6.38968,5.47692 6.3897379,5.476919 0 0 1 -6.38986,-5.47692 6.3897379,5.476919 0 0 1 6.38986,-5.47691 z"
-				fill="#ffffff"
+				fill="var(--rtvr-on-dark)"
 			/>
 			<!-- dropdown caret -->
 			<path
 				class="glyph caret"
 				class:caret-open={dropdownOpen}
 				d="m 374.23363,707.44914 7.0626,19.92288 4.57452,-19.92288 z"
-				fill="#ffffff"
+				fill="var(--rtvr-on-dark)"
 			/>
 			<!-- gold rule between the caret and the query field -->
 			<path
@@ -273,7 +273,7 @@ function handleSubmit(event: SubmitEvent) {
 		outline: none;
 		padding: 0;
 		margin: 0;
-		color: #fff;
+		color: var(--rtvr-on-dark);
 		font-family: inherit;
 		font-size: 15px;
 		line-height: 1.1;
