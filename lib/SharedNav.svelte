@@ -24,10 +24,10 @@
  */
 /**
  * THE SHARED PILL — one file, above both repos, rendered by both parents.
- * See $devPill/HostPill.svelte. The child's own copy was deleted: it had
+ * See $parent/retreeved/sharedComponents/sharedNav/ParentPill/ParentPill.svelte. The child's own copy was deleted: it had
  * already drifted from ReTreever's in padding, font-size and half-order.
  */
-import HostPill from "$devPill/HostPill.svelte";
+import HostPill from "$parent/retreeved/sharedComponents/sharedNav/ParentPill/ParentPill.svelte";
 
 type View = { href: string; label: string; missing?: boolean };
 

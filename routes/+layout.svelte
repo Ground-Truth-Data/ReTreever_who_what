@@ -22,9 +22,9 @@
  * at install time, so there is nothing to switch BETWEEN. The installer writes
  * CHILD below; a second child means a second install, in a second folder.
  *
- * WHY THIS FILE OWNS THE BRANDING AND DevBar DOES NOT. A child never knows
+ * WHY THIS FILE OWNS THE BRANDING AND SharedNav DOES NOT. A child never knows
  * whose it is. CHILD is the only place that mapping lives, and it is handed to
- * DevBar as props — so the bar itself names no product and the same component
+ * SharedNav as props — so the bar itself names no product and the same component
  * serves any owner.
  *
  * WHY THE ASSETS ARE IMPORTED, NOT REQUESTED. A `/mobileAssets/x.webp` URL is
@@ -36,7 +36,7 @@
 /**
  * THE MOUNTING PARENT'S TOKENS — via an alias, so no parent is named.
  *
- * Each parent fills `$hostStyles` with its own stylesheet: ReTreever points it
+ * Each parent fills `$parent/retreeved/app.css` with its own stylesheet: ReTreever points it
  * at src/app.css, rapper at src/app.tokens.css. So this one import gets
  * whichever tier actually mounted the child, and the child names neither. A
  * relative `../../rapper/src/...` would be a raw climb into a parent, which
@@ -53,13 +53,13 @@
  * became indistinguishable by eye, which is the exact illusion the two-server
  * split exists to kill.
  */
-import "$hostStyles";
+import "$parent/retreeved/app.css";
 import { page } from "$app/state";
-import DevBar from "$devPill/DevBar.svelte";
+import SharedNav from "$parent/retreeved/sharedComponents/sharedNav/SharedNav.svelte";
 /**
  * THE BRAND MARKS COME FROM THE SHARED FOLDER, not a copy in this child.
  *
- * `$devPill` is filled by whichever tier mounted this child, and both fill it
+ * `$parent/retreeved/sharedComponents/sharedNav` is filled by whichever tier mounted this child, and both fill it
  * with their own retreeved/sharedComponents/sharedMenu — which sits beside the
  * shared assets/. So one file per mark, replaced atomically from ReTreever on
  * every server start, instead of the same .webp drifting in three places.
@@ -68,8 +68,8 @@ import DevBar from "$devPill/DevBar.svelte";
  * exactly how that kind of duplication hides: nothing looks wrong until one
  * side is updated and the others silently are not.
  */
-import logoUrl from "$sharedAssets/ReTreever_logo_sm.webp";
-import ghIconUrl from "$sharedAssets/github-logo.png";
+import logoUrl from "$parent/retreeved/sharedAssets/ReTreever_logo_sm.webp";
+import ghIconUrl from "$parent/retreeved/sharedAssets/github-logo.png";
 
 const dev = import.meta.env.DEV;
 
@@ -157,7 +157,7 @@ let { children } = $props();
 	{/if}
 </svelte:head>
 
-<DevBar
+<SharedNav
 	owner={CHILD.owner}
 	name={CHILD.name}
 	logo={logoUrl}
