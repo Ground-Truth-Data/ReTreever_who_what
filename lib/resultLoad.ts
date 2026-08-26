@@ -1,5 +1,4 @@
-import { error } from "@sveltejs/kit";
-import type { WhoWhatEndpoints } from "./whoWhatTypes";
+import type { WhoWhatEndpoints, WhoWhatFail } from "./whoWhatTypes";
 import { toTransparencyScore } from "./whoWhatTypes";
 
 /**
@@ -50,6 +49,10 @@ async function fetchItem<T>(
 	endpoint: string,
 	envelopeKey: string,
 	notFoundMessage: string,
+	// The host's `error`. See WhoWhatFail — this used to be an import of
+	// @sveltejs/kit, which is the one thing here that could not survive the
+	// child becoming its own repo.
+	fail: WhoWhatFail,
 ): Promise<T> {
 	let res: Response;
 	try {
@@ -63,15 +66,15 @@ async function fetchItem<T>(
 		}
 	} catch (cause) {
 		console.error(`results: ${endpoint} failed`, cause);
-		throw error(500, "Could not reach the data service");
+		throw fail(500, "Could not reach the data service");
 	}
 
 	if (res.status === 404) {
-		throw error(404, notFoundMessage);
+		throw fail(404, notFoundMessage);
 	}
 	if (!res.ok) {
 		console.error(`results: ${endpoint} responded ${res.status}`);
-		throw error(500, "Could not load this record");
+		throw fail(500, "Could not load this record");
 	}
 
 	const payload = (await res.json()) as Record<string, T>;
@@ -79,7 +82,7 @@ async function fetchItem<T>(
 	// A 200 with an empty envelope would otherwise reach the page as a card of
 	// undefineds; treat it as the missing record it describes.
 	if (!item) {
-		throw error(404, notFoundMessage);
+		throw fail(404, notFoundMessage);
 	}
 	return item;
 }
@@ -100,6 +103,7 @@ export async function loadOrganization(
 	// no endpoints, and inventing a path here would aim it at whichever product
 	// happened to mount the page.
 	endpoints: WhoWhatEndpoints,
+	fail: WhoWhatFail,
 ): Promise<SearchResult> {
 	const fields =
 		"organizationKey,organizationName,scoreOrgFinal,scoreRankOverall,primaryStakeholderCategory";
@@ -108,6 +112,7 @@ export async function loadOrganization(
 		`${endpoints.organization?.(organizationKey) ?? ""}?fields=${fields}`,
 		"organization",
 		`No organization with the key "${organizationKey}"`,
+		fail,
 	);
 
 	return {
@@ -133,6 +138,7 @@ export async function loadProject(
 	fetch: typeof globalThis.fetch,
 	projectKey: string,
 	endpoints: WhoWhatEndpoints,
+	fail: WhoWhatFail,
 ): Promise<SearchResult> {
 	const fields = "projectKey,projectName,scoreProject,scoreProjectRank";
 	const project = await fetchItem<ProjectRow>(
@@ -140,6 +146,7 @@ export async function loadProject(
 		`${endpoints.project?.(projectKey) ?? ""}?fields=${fields}`,
 		"project",
 		`No project with the key "${projectKey}"`,
+		fail,
 	);
 
 	return {

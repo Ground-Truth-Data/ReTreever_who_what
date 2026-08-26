@@ -45,6 +45,32 @@ export type WhoWhatEndpoints = {
 	project?: (key: string) => string;
 };
 
+/**
+ * How this child fails a page — supplied by the host, like the endpoints above.
+ *
+ * WHY THIS IS A PORT AND NOT AN IMPORT.
+ * resultLoad used `import { error } from "@sveltejs/kit"` and it was the only
+ * thing in this child that reached a real package for behaviour rather than
+ * types. That single line broke both results pages the moment the child moved
+ * out to its own repo on 26 Aug 2026: Node resolves a bare import by walking UP
+ * from the importing file, so from fetch/ReTreever_who_what/ it never reaches
+ * the host's node_modules. /who/[key] and /what/[key] returned 500 before they
+ * ran a line of their own code.
+ *
+ * `@sveltejs/kit` was a peerDependency — "the host provides this" — so making
+ * it an actual prop states out loud what was already true, and no Vite setting
+ * can fix it: SvelteKit forces its own package external whatever `noExternal`
+ * says. The host passes SvelteKit's real `error`, so the thrown value is still
+ * the HttpError SvelteKit recognises and the status page renders as before.
+ *
+ * NOT OPTIONAL, unlike the two above. Absent endpoints mean "render without
+ * them"; absent failure handling has no such reading — a loader with no way to
+ * say 404 cannot do its job. Required means a host that forgets it fails to
+ * COMPILE, which is exactly what did not happen when /what forgot to pass its
+ * endpoints and shipped a runtime crash instead.
+ */
+export type WhoWhatFail = (status: number, message: string) => never;
+
 /** The host's URL map. Absent → the page renders without those links. */
 export type WhoWhatRoutes = {
 	who?: string;

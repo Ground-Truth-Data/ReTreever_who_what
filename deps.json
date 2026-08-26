@@ -3,7 +3,6 @@
   "child": "ReTreever_who_what",
   "allow": [
     "$app/navigation",
-    "@sveltejs/kit",
     "clsx",
     "svelte",
     "tailwind-merge",
@@ -11,5 +10,6 @@
   ],
   "channel": "./lib/",
   "_channel_why": "THE CHANNEL. One door to the host. The child names the channel, never ReTreever. A host wires its real implementation in; rapper wires a fixture. Anything the channel does not provide comes back null and the child renders nothing rather than crashing. Every $-import outside this prefix is a SECOND DOOR.",
-  "_self_contained": "This is the ONE child with no $harness imports at all — it depends on no sibling child, unlike ReTreever_where (which needs getCache_OnlineMap). The host's API surface and URL map arrive as PROPS, so on rapper the lists come back empty, the links do not render, and the page still stands. That makes it the cheapest child to publish and the natural first test of any change to the publishing model."
+  "_self_contained": "This is the ONE child with no $harness imports at all — it depends on no sibling child, unlike ReTreever_where (which needs getCache_OnlineMap). The host's API surface and URL map arrive as PROPS, so on rapper the lists come back empty, the links do not render, and the page still stands. That makes it the cheapest child to publish and the natural first test of any change to the publishing model.",
+  "_no_kit_import": "@sveltejs/kit was removed from this list on 26 Aug 2026. resultLoad's `import { error }` was the child's only runtime import of a real package, and it broke both results pages the moment this folder became its own repo — Node resolves a bare import from the IMPORTER, which is now outside any host's node_modules. It is a prop now (WhoWhatFail), so the child imports no framework package at all. $app/* stays: those are SvelteKit VIRTUAL modules, supplied by the plugin, never resolved from node_modules, so they were never affected."
 }

@@ -21,4 +21,8 @@ export { SHARDS, shard, shardId, shardsFor, byArt } from "./lib/shared/shardInde
 export type { ShardEntry, ShardPage } from "./lib/shared/shardIndex";
 
 export { toTransparencyScore, formatTransparencyScore } from "./lib/whoWhatTypes";
-export type { WhoWhatEndpoints, WhoWhatRoutes } from "./lib/whoWhatTypes";
+export type {
+	WhoWhatEndpoints,
+	WhoWhatFail,
+	WhoWhatRoutes,
+} from "./lib/whoWhatTypes";
