@@ -56,6 +56,7 @@
 import "$parent/retreeved/app.css";
 import { page } from "$app/state";
 import SharedNav from "$parent/retreeved/sharedComponents/sharedNav/SharedNav.svelte";
+import type { TierRoute } from "$parent/retreeved/sharedComponents/sharedNav/tierRoutes";
 /**
  * THE BRAND MARKS COME FROM THE SHARED FOLDER, not a copy in this child.
  *
@@ -130,7 +131,33 @@ const ENV = import.meta.env as Record<string, string | undefined>;
 const THIS_TIER = ENV.VITE_RAPPER_TIER ?? "harness";
 const OTHER_TIER = ENV.VITE_OTHER_TIER ?? "";
 const OTHER_ORIGIN = ENV.VITE_OTHER_ORIGIN;
-const MOUNT_THERE = ENV.VITE_OTHER_MOUNT ?? "/";
+/**
+ * THE ROUTE TABLE, injected like every other parent fact.
+ *
+ * It replaced VITE_OTHER_MOUNT, which was a single path for the whole tier —
+ * so the pill sent you to that one page regardless of where you stood. Where
+ * you are is only knowable from the live URL, so the parent supplies a MAP and
+ * the bar resolves it at render time.
+ *
+ * Parsed rather than injected as an object because `define` substitutes text:
+ * a JSON string is one literal that survives the paste intact, and a child
+ * cloned alone gets `undefined`, parses nothing, and shows no pill — the same
+ * honest answer as every other absent parent fact.
+ *
+ * try/catch, not a bare parse: a malformed table is a config typo in a dev
+ * tool, and a dev tool must never be the thing that white-screens the app it
+ * is meant to help you look at.
+ */
+function readRoutes(raw: string | undefined): TierRoute[] {
+	if (!raw) return [];
+	try {
+		const parsed = JSON.parse(raw);
+		return Array.isArray(parsed) ? parsed : [];
+	} catch {
+		return [];
+	}
+}
+const TIER_ROUTES = readRoutes(ENV.VITE_TIER_ROUTES);
 // Which half this tier occupies in the pill. Fixed per tier, so the control
 // looks identical on both servers and only the highlight moves.
 const THIS_SLOT = (ENV.VITE_TIER_SLOT ?? "right") as "left" | "right";
@@ -169,7 +196,8 @@ let { children } = $props();
 	otherTier={OTHER_TIER}
 	tierSlot={THIS_SLOT}
 	otherHost={OTHER_ORIGIN}
-	otherPath={MOUNT_THERE}
+	routes={TIER_ROUTES}
+	selfRepo={THIS_TIER}
 />
 
 <main>
