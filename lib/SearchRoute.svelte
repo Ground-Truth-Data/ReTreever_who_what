@@ -40,12 +40,12 @@ let {
 	/** The results card; absent on the search page itself. */
 	results?: Snippet;
 	/**
-	 * The host's URL map. ReTreever passes its AppRoutes; the harness passes
+	 * The host's URL map. ReTreever passes its AppRoutes; rapper passes
 	 * nothing, and selecting a result then goes nowhere rather than to a 404.
 	 */
 	routes?: WhoWhatRoutes;
 	/**
-	 * The host's API surface. ReTreever passes its `endpoints`; the harness
+	 * The host's API surface. ReTreever passes its `endpoints`; rapper
 	 * passes nothing and every list fetch is skipped rather than aimed at a
 	 * 404. Without this prop the list loaders got `undefined` and threw on
 	 * their own no-endpoint guard.

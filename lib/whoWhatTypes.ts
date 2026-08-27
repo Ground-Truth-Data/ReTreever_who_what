@@ -8,7 +8,7 @@
  * have made the host supply arithmetic it has no special knowledge of.
  *
  * WHAT DID NOT MOVE. `endpoints` and `AppRoutes` are genuinely the host's — its
- * API surface and its URL map. A child running on the harness has no /api/who
+ * API surface and its URL map. A child running on rapper has no /api/who
  * to fetch and no /who page to link to, so both arrive as props and both are
  * optional. Given nothing, the search lists come back empty and the links do
  * not render. That is the honest unhitched state, not a bug.
@@ -35,7 +35,7 @@ export function formatTransparencyScore(score: unknown): string {
 }
 
 /**
- * The host's API surface. ReTreever passes its `endpoints`; the harness passes
+ * The host's API surface. ReTreever passes its `endpoints`; rapper passes
  * nothing and every fetch is skipped rather than aimed at a 404.
  */
 export type WhoWhatEndpoints = {

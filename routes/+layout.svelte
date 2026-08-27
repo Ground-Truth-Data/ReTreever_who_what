@@ -77,14 +77,25 @@ const dev = import.meta.env.DEV;
 /**
  * THE MOUNTED CHILD — written by the installer, one per rapper.
  *
- * `views` is a LIST because one child need not be one page. This one is: the
- * search page is the whole child, mounted at "/".
+ * `views` IS NOW EMPTY, and the "search" button that sat here is DELETED.
+ *
+ * It pointed at "/", from when this child served its whole self from the root.
+ * The child serves /who and /what by name now, so "/" is only a reroute into
+ * /who — the button was a third spelling of a page that already has two real
+ * ones, and it rendered on EVERY page the parent served, because this layout
+ * is kit.files.routes. On /offline it offered "search" back to the search
+ * child. A view list that outlives the routes it names is the same drift the
+ * registry exists to end.
+ *
+ * `name` and `repo` stay for the child-cloned-alone case, where no registry
+ * entry is reachable; SharedNav prefers the per-path lookup whenever it has
+ * one, so these no longer label another child's page.
  */
 const CHILD = {
 	name: "who_what",
 	owner: "ReTreever",
 	repo: "ReTreever_who_what",
-	views: [{ href: "/", label: "search" }],
+	views: [],
 };
 
 /**
@@ -172,7 +183,7 @@ let { children } = $props();
 </script>
 
 <svelte:head>
-	<!-- IDENTITY FOLLOWS THE CHILD. The harness is a surrogate parent: it has
+	<!-- IDENTITY FOLLOWS THE CHILD. rapper is a surrogate parent: it has
 	     no brand of its own, so the tab shows whichever product the mounted
 	     child belongs to. -->
 	<title>{`${CHILD.owner} — ${CHILD.name}`}</title>

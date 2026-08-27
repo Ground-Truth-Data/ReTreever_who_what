@@ -113,7 +113,7 @@ let {
 	/** Where the spinning globe beside the caption points. */
 	mapHref?: string;
 	/**
-	 * The host's URL map. ReTreever passes its AppRoutes; the harness passes
+	 * The host's URL map. ReTreever passes its AppRoutes; rapper passes
 	 * nothing and the tab stickers render without hrefs.
 	 */
 	routes?: WhoWhatRoutes;
