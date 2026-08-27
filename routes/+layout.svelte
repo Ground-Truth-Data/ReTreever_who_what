@@ -131,6 +131,12 @@ const ENV = import.meta.env as Record<string, string | undefined>;
 const THIS_TIER = ENV.VITE_RAPPER_TIER ?? "rapper";
 const OTHER_TIER = ENV.VITE_OTHER_TIER ?? "";
 const OTHER_ORIGIN = ENV.VITE_OTHER_ORIGIN;
+// Where the other tier's pill lands when this page maps nowhere there. Injected
+// beside the origin, for the same reason: the mounting parent is the only thing
+// that knows which tier is on the other side, so it is also the only thing that
+// knows where that tier's useful entry point is. Undefined in a solo clone,
+// which degrades to "/".
+const OTHER_HOME = ENV.VITE_OTHER_HOME;
 /**
  * THE ROUTE TABLE, injected like every other parent fact.
  *
@@ -196,6 +202,7 @@ let { children } = $props();
 	otherTier={OTHER_TIER}
 	tierSlot={THIS_SLOT}
 	otherHost={OTHER_ORIGIN}
+	otherHome={OTHER_HOME}
 	routes={TIER_ROUTES}
 	selfRepo={THIS_TIER}
 />
