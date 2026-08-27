@@ -128,7 +128,7 @@ const CHILD = {
  */
 const ENV = import.meta.env as Record<string, string | undefined>;
 
-const THIS_TIER = ENV.VITE_RAPPER_TIER ?? "harness";
+const THIS_TIER = ENV.VITE_RAPPER_TIER ?? "rapper";
 const OTHER_TIER = ENV.VITE_OTHER_TIER ?? "";
 const OTHER_ORIGIN = ENV.VITE_OTHER_ORIGIN;
 /**
