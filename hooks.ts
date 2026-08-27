@@ -1,29 +1,40 @@
 import type { Reroute } from "@sveltejs/kit";
 
 /**
- * "/" RESOLVES TO THE DEFAULT VIEW — without becoming a second url for it.
+ * A CLOSED LOOP — every url this install can be given lands on a real page.
  *
- * The child declares two views and serves each at its own path. That leaves
- * "/" with nothing of its own to be, and the two obvious answers are both
- * wrong:
+ * THE DEFAULT is /who. "/" resolves here, the nav logo links here, and
+ * the dev server prints it. THE SECOND view is /what. Between them, plus
+ * nothing else, that is the WHOLE surface of a solo install.
  *
- *   - render the search page here too → one view, TWO urls. "Which url am I
- *     on" stops answering "which view am I looking at", which is precisely the
- *     ambiguity that left the Projects tab unlinkable and forced a
- *     `?rtvrFrom=` query stamp to carry which tab a tier-switch came from.
- *   - a redirect from a `+page.ts` load → tried first, and it 500s in this
- *     mount: SvelteKit resolves the child's routes through the parent's
- *     `kit.files.routes`, and a bare root load that only throws never produced
- *     a usable response here.
+ * WHY ANYTHING ELSE COMES BACK RATHER THAN 404ING.
+ * Someone who installed one child from npm has no other tier and no second
+ * child. A url outside this set cannot be a page they meant to reach — it is a
+ * typo, a stale bookmark, or a link copied from the two-tier workspace. Sending
+ * them to a dead end is the worst of the three answers, so an unknown path
+ * resolves to the default. There is no way to get stranded.
  *
- * `reroute` maps the url to a ROUTE without changing the address bar and
- * without a load running at all. "/" is answered by the /who route; /who stays
- * the only url that names that view. It is the same mechanism ReTreever's own
- * hooks.ts uses for getcache.org's root, for the same reason.
+ * `reroute` maps a url to a ROUTE without changing the address bar and without
+ * a load running, so each view keeps exactly ONE url that names it. Alternatives
+ * were measured worse in the who_what child: rendering a page at "/" too gives
+ * one view TWO urls, and a redirect from a root `+page.ts` 500s in this mount,
+ * because SvelteKit resolves the child's routes through the PARENT's
+ * `kit.files.routes`.
  *
- * A UNIVERSAL hook, so it applies to hard loads and client-side navigations
- * alike — otherwise the two disagree about what "/" means.
+ * A UNIVERSAL hook, so hard loads and client-side navigations agree. Reached
+ * only when a parent points `kit.files.hooks.universal` at this file; a child
+ * cloned alone with its own config simply never runs it.
+ *
+ * KEEP IN STEP with this child's `defaultPath` in retreeved/childRegistry.ts —
+ * that record is what the nav and the printed url read.
  */
+const SERVED = ["/who", "/what"];
+const DEFAULT = "/who";
+
 export const reroute: Reroute = ({ url }) => {
-	if (url.pathname === "/") return "/who";
+	// The DEFAULT counts as served too — it is the one url guaranteed to exist.
+	// Listing it here rather than in SERVED keeps SERVED meaning "the OTHER
+	// views", so the two constants stay readable side by side.
+	const known = [DEFAULT, ...SERVED].some((p) => url.pathname === p);
+	if (!known) return DEFAULT;
 };
