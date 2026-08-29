@@ -32,10 +32,6 @@ import upperGrassFrontWebp from "./assets/pub-Rtvr/home/uppergrass_front.webp";
 import upperGrassFrontAvif from "./assets/pub-Rtvr/home/uppergrass_front.avif";
 import upperGrassBackWebp from "./assets/pub-Rtvr/home/uppergrass_back.webp";
 import upperGrassBackAvif from "./assets/pub-Rtvr/home/uppergrass_back.avif";
-import lowerGrassFrontWebp from "./assets/pub-Rtvr/home/lowergrass_front.webp";
-import lowerGrassFrontAvif from "./assets/pub-Rtvr/home/lowergrass_front.avif";
-import lowerGrassBackWebp from "./assets/pub-Rtvr/home/lowergrass_back.webp";
-import lowerGrassBackAvif from "./assets/pub-Rtvr/home/lowergrass_back.avif";
 import {
 	HEADLINE,
 	HOME,
@@ -102,6 +98,9 @@ const searchIndex = $derived(
 // caret opens; `total` drives a "keep typing to narrow" row so the overflow is
 // signalled, not silently dropped.
 const MAX_DROPDOWN_ROWS = 50;
+// An empty query is the "just arrived" state: five suggestions, not a catalogue.
+// TODO: order these by search frequency once SearchQueryTable exists (rapper_director/TODO.md).
+const TOP_ROWS = 5;
 const filtered = $derived.by(() => {
 	const q = query.trim().toLowerCase();
 	const matches = q
@@ -109,9 +108,46 @@ const filtered = $derived.by(() => {
 		: searchIndex;
 	return {
 		total: matches.length,
-		rows: matches.slice(0, MAX_DROPDOWN_ROWS).map((e) => e.item),
+		rows: matches.slice(0, q ? MAX_DROPDOWN_ROWS : TOP_ROWS).map((e) => e.item),
 	};
 });
+
+// Keyboard highlight: -1 = the input itself. Focus never leaves the field;
+// the highlighted row is announced through aria-activedescendant.
+let highlighted = $state(-1);
+const LIST_ID = "home-search-list";
+const rowId = (i: number) => `${LIST_ID}-row-${i}`;
+
+$effect(() => {
+	filtered.rows;
+	dropdownOpen;
+	highlighted = -1;
+});
+
+function moveHighlight(dir: 1 | -1) {
+	const n = filtered.rows.length;
+	if (n === 0) return;
+	// ↑ off the first row lands back on the input; ↓ off the last stays put.
+	highlighted = Math.min(n - 1, Math.max(-1, highlighted + dir));
+	if (highlighted >= 0) {
+		document
+			.getElementById(rowId(highlighted))
+			?.scrollIntoView({ block: "nearest" });
+	}
+}
+
+// Enter and the search button mean "take the row I'm on" while the list is
+// open — the top row when nothing is highlighted — so a partial query still
+// lands somewhere instead of bouncing off resolveSearchKey with "No match".
+function submit(q: string) {
+	if (dropdownOpen && filtered.rows.length > 0) {
+		const item = filtered.rows[Math.max(0, highlighted)];
+		selectItem(item);
+		onsearch?.(item.name, activeTab);
+		return;
+	}
+	onsearch?.(q, activeTab);
+}
 
 /**
  * Picking a row is a fill, not a search: the route only hears `onsearch`.
@@ -413,7 +449,7 @@ $effect(() => {
      The stylesheet below then names only variables, never paths — so a
      missing asset falls through to --rtvr-missing-art (violet) instead of
      silently 404ing. -->
-<div class="home-search-page" style="--art-sky: url({skyUrl}); --art-hill-pattern-webp: url({hillPatternWebp}); --art-hill-pattern-avif: url({hillPatternAvif}); --art-hill-fill-webp: url({hillFillWebp}); --art-hill-fill-avif: url({hillFillAvif}); --art-uppergrass-front-webp: url({upperGrassFrontWebp}); --art-uppergrass-front-avif: url({upperGrassFrontAvif}); --art-uppergrass-back-webp: url({upperGrassBackWebp}); --art-uppergrass-back-avif: url({upperGrassBackAvif}); --art-lowergrass-front-webp: url({lowerGrassFrontWebp}); --art-lowergrass-front-avif: url({lowerGrassFrontAvif}); --art-lowergrass-back-webp: url({lowerGrassBackWebp}); --art-lowergrass-back-avif: url({lowerGrassBackAvif})">
+<div class="home-search-page" style="--art-sky: url({skyUrl}); --art-hill-pattern-webp: url({hillPatternWebp}); --art-hill-pattern-avif: url({hillPatternAvif}); --art-hill-fill-webp: url({hillFillWebp}); --art-hill-fill-avif: url({hillFillAvif}); --art-uppergrass-front-webp: url({upperGrassFrontWebp}); --art-uppergrass-front-avif: url({upperGrassFrontAvif}); --art-uppergrass-back-webp: url({upperGrassBackWebp}); --art-uppergrass-back-avif: url({upperGrassBackAvif});">
 	<!-- ---- Hero: golden sky over greenery, wildflower band at its foot ---- -->
 	<section class="hero-section" class:has-results={results} bind:this={heroEl}>
 		{#each shards as shard (shard.id)}
@@ -481,20 +517,29 @@ $effect(() => {
 					bind:dropdownOpen
 					placeholder={activeTab === "orgs" ? "Search organizations…" : "Search projects…"}
 					ariaLabel={activeTab === "orgs" ? "Search organizations" : "Search projects"}
-					onsearch={(q) => onsearch?.(q, activeTab)}
+					onsearch={submit}
 					{onactivate}
+					onkeynav={moveHighlight}
+					listId={LIST_ID}
+					activeDescendant={highlighted >= 0 ? rowId(highlighted) : undefined}
 				/>
 
 				<!-- Plain panel stand-in for the drop-window SVG from the design
 				     (not yet exported); same palette as the bar so it reads as one
 				     control. Swap the chrome when the artwork lands, keep the list. -->
 				{#if dropdownOpen}
-					<ul class="search-dropdown">
-						{#each filtered.rows as item (item.key)}
-							<li>
+					<ul class="search-dropdown" id={LIST_ID} role="listbox">
+						{#each filtered.rows as item, i (item.key)}
+							<li
+								id={rowId(i)}
+								role="option"
+								aria-selected={i === highlighted}
+							>
 								<button
 									type="button"
 									class="dropdown-row"
+									class:highlighted={i === highlighted}
+									tabindex="-1"
 									onclick={() => selectItem(item)}
 								>
 									<span class="row-name">{item.name}</span>
@@ -504,7 +549,7 @@ $effect(() => {
 								</button>
 							</li>
 						{:else}
-							<li class="dropdown-empty">
+							<li class="dropdown-empty" role="presentation">
 								{#if listLoading}
 									Loading {activeTab === "orgs"
 										? "organizations"
@@ -516,7 +561,7 @@ $effect(() => {
 							</li>
 						{/each}
 						{#if filtered.total > filtered.rows.length}
-							<li class="dropdown-more">
+							<li class="dropdown-more" role="presentation">
 								Showing {filtered.rows.length} of {filtered.total} — keep
 								typing to narrow
 							</li>
@@ -555,14 +600,11 @@ $effect(() => {
 		</div>
 	</div>
 
-	<!-- ---- Headline: hill pattern all the way up, its own band at its foot ----
-	     The design draws TWO different wildflower bands: the hero's (uppergrass,
-	     shorter) and this one (lowergrass, taller and denser). An earlier cut of
-	     this section reused the hero's band here and it read as the same row of
-	     weeds twice — that's gone now that each section gets its own artwork. -->
+	<!-- ---- Headline: hill pattern all the way up. One wildflower band on the
+	     page, the hero's — a second at this section's foot read as the same
+	     row of weeds twice. -->
 	<section class="headline-section" bind:this={headlineEl}>
 		<div class="greenery headline-greenery" aria-hidden="true"></div>
-		<div class="wildflower-band wildflower-band--lower" aria-hidden="true"></div>
 
 		{#each headlineShards as shard (shard.id)}
 			<!-- see the hero's shards above for why id-per-shard + shared class. -->
@@ -631,7 +673,6 @@ $effect(() => {
 	     hill_pattern.webp        crest top y1126, troughs opaque by y1449
 	                              → wave drop 323/2049 = 0.158
 	     uppergrass_*.webp        y1247-2028 → hero band 781/2049 = 0.381
-	     lowergrass_*.webp        y2677-3873 → bottom band 1196/2049 = 0.584
 	     crest top → hero band bottom: 902/2049 = 0.440 (--greenery-h)
 
 	   --art is capped so a desktop viewport doesn't scale these mobile-page
@@ -644,7 +685,6 @@ $effect(() => {
 	.headline-section {
 		--art: min(100vw, 1200px);
 		--upper-band: calc(var(--art) * 0.381);
-		--lower-band: calc(var(--art) * 0.584);
 		/* Crest top to hero-band bottom, straight from the canvas. The floor
 		   keeps the band reading as a band on narrow phones, where 0.44 x
 		   width collapses below what the artwork needs. */
@@ -882,28 +922,6 @@ $effect(() => {
 		);
 	}
 
-	/* The bottom band is its own, taller artwork (0.584 x width vs 0.381),
-	   denser and reaching higher — NOT the hero band repeated. */
-	.wildflower-band--lower {
-		height: var(--lower-band);
-	}
-
-	/* Same black-behind-green swap as the hero band above. */
-	.wildflower-band--lower::before {
-		background-image: var(--art-lowergrass-front-webp, var(--rtvr-missing-art));
-		background-image: image-set(
-			var(--art-lowergrass-front-avif, var(--rtvr-missing-art)) type("image/avif"),
-			var(--art-lowergrass-front-webp, var(--rtvr-missing-art)) type("image/webp")
-		);
-	}
-
-	.wildflower-band--lower::after {
-		background-image: var(--art-lowergrass-back-webp, var(--rtvr-missing-art));
-		background-image: image-set(
-			var(--art-lowergrass-back-avif, var(--rtvr-missing-art)) type("image/avif"),
-			var(--art-lowergrass-back-webp, var(--rtvr-missing-art)) type("image/webp")
-		);
-	}
 
 	/* ---- Decorative forest-photo shards ringed around the search card ----
 	   Position and width are inline, scaled from the percentages authored in
@@ -1161,8 +1179,24 @@ $effect(() => {
 	}
 
 	.dropdown-row:hover,
-	.dropdown-row:focus-visible {
+	.dropdown-row:focus-visible,
+	.dropdown-row.highlighted {
 		background: rgb(250 215 2 / 0.14);
+	}
+
+	/* Thin rule between rows, inset to match the row padding so it stops short
+	   of the gold border instead of running edge to edge. */
+	.search-dropdown li + li {
+		position: relative;
+	}
+	.search-dropdown li + li::before {
+		content: "";
+		position: absolute;
+		top: 0;
+		left: 10px;
+		right: 10px;
+		height: 1px;
+		background: #2e3342;
 	}
 
 	.row-name {

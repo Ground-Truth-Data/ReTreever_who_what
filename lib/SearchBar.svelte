@@ -12,6 +12,9 @@ let {
 	class: className = "",
 	onsearch,
 	onactivate,
+	onkeynav,
+	activeDescendant = undefined,
+	listId = undefined,
 }: {
 	value?: string;
 	dropdownOpen?: boolean;
@@ -22,7 +25,22 @@ let {
 	onsearch?: (query: string) => void;
 	/** First intent to search — lets the route lazy-load dropdown rows only when actually wanted. */
 	onactivate?: () => void;
+	/** Arrow keys walk the dropdown while focus stays in the field (combobox pattern). */
+	onkeynav?: (dir: 1 | -1) => void;
+	activeDescendant?: string;
+	listId?: string;
 } = $props();
+
+function handleKeydown(e: KeyboardEvent) {
+	if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+		e.preventDefault();
+		if (!dropdownOpen) {
+			dropdownOpen = true;
+			onactivate?.();
+		}
+		onkeynav?.(e.key === "ArrowDown" ? 1 : -1);
+	}
+}
 
 function handleSubmit(event: SubmitEvent) {
 	event.preventDefault();
@@ -118,7 +136,16 @@ function handleSubmit(event: SubmitEvent) {
 					class="search-input"
 					{placeholder}
 					aria-label={ariaLabel}
-					onfocus={() => onactivate?.()}
+					role="combobox"
+					aria-expanded={dropdownOpen}
+					aria-controls={listId}
+					aria-activedescendant={activeDescendant}
+					aria-autocomplete="list"
+					onfocus={() => {
+						dropdownOpen = true;
+						onactivate?.();
+					}}
+					onkeydown={handleKeydown}
 					oninput={(e) => {
 						// ⚠️ Read from the DOM, not `value` — must not depend on bind ordering.
 						if (e.currentTarget.value.trim().length > 0) {
