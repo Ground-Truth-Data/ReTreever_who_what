@@ -1,6 +1,8 @@
 <script lang="ts">
 import type { PageData } from "./$types";
 import SearchRoute from "../../lib/SearchRoute.svelte";
+import EphemeralCard from "$rig/dev/EphemeralCard.svelte";
+import EphemeralDock from "$rig/dev/EphemeralDock.svelte";
 
 let { data }: { data: PageData } = $props();
 
@@ -12,3 +14,4 @@ const OWN_ROUTES = { who: "/who", what: "/what" };
 	routes={OWN_ROUTES}
 	title={data.tab === "orgs" ? "Who — Organizations" : "What — Projects"}
 />
+<EphemeralDock side="left"><EphemeralCard title="who_what" /></EphemeralDock>
