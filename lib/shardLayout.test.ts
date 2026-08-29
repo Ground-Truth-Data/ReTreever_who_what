@@ -11,21 +11,6 @@ import {
 	type ShardSpec,
 } from "./shardLayout";
 
-/**
- * These tests assert AUTHORABILITY, not geometry.
- *
- * The previous suite tested a collision solver: that no two shards' borders came
- * within 26px, at seventeen viewport widths. Those tests passed on an
- * arrangement that had ejected three shards off the left edge of the page —
- * because "off-screen" satisfies "not touching". The rule was enforceable and
- * the result was wrong, which is the whole reason the solver is gone.
- *
- * What matters now is the property that makes hand-authoring possible: a change
- * to one shard moves that shard, by that amount, and touches nothing else.
- * Spacing is a matter of taste, checked by looking at the page. These tests
- * check the things taste CAN'T: that the config is honoured exactly.
- */
-
 const WIDTHS = [360, 430, 768, 1024, 1440, 1920, 2560];
 
 describe("place", () => {
@@ -44,9 +29,6 @@ describe("place", () => {
 		for (const vw of WIDTHS) {
 			for (const p of place(HOME, vw, 700)) {
 				expect(p.h).toBeGreaterThan(0);
-				// h is derived from w and a fixed per-artwork aspect, so the ratio
-				// must be identical at every viewport. A shard that stretches means
-				// something is overriding the artwork's own proportions.
 				const ratio = p.w / p.h;
 				const at1440 = place(HOME, 1440, 700).find((q) => q.id === p.id)!;
 				expect(ratio).toBeCloseTo(at1440.w / at1440.h, 6);
@@ -65,9 +47,6 @@ describe("place", () => {
 	});
 
 	it("is pure — the same inputs always give the same output", () => {
-		// The solver was iterative and order-dependent; this is not. Two calls
-		// must be byte-identical, so a re-solve on resize can never nudge a
-		// shard that the config didn't move.
 		const a = place(HOME, 1440, 700);
 		const b = place(HOME, 1440, 700);
 		expect(a).toEqual(b);
@@ -81,13 +60,6 @@ describe("place", () => {
 	});
 });
 
-/**
- * THE POINT OF THE REWRITE.
- *
- * Each of these edits one shard and asserts every OTHER shard is bit-identical.
- * Under the old solver none of them could pass: moving any shard re-ran 60
- * relaxation passes over the whole set, so a single number changed the page.
- */
 describe("editing one shard", () => {
 	const edit = (
 		specs: ShardSpec[], id: number, patch: Partial<ShardSpec>,
@@ -121,9 +93,6 @@ describe("editing one shard", () => {
 	});
 
 	it("moves shards proportionally — no thresholds, no cascades", () => {
-		// The old solver's failure mode in one assertion: a change either fell
-		// under a 26px gap threshold and did NOTHING, or crossed it and moved
-		// everything. Ten equal nudges must now give ten equal steps.
 		const vw = 1440;
 		const sectionH = 700;
 		const step = (sectionH * 1) / 100;
@@ -137,9 +106,6 @@ describe("editing one shard", () => {
 	});
 
 	it("puts a shard off-page only when the config asks for it", () => {
-		// The solver could eject a shard past the viewport edge on its own, with
-		// no bound, when it ran out of room — which is how three shards vanished
-		// from the left of /what. Nothing does that now: an on-page x stays on.
 		for (const vw of WIDTHS) {
 			for (const p of place(HOME, vw, 700)) {
 				const spec = HOME.find((s) => s.id === p.id)!;
@@ -168,9 +134,6 @@ describe("the authored rings", () => {
 	});
 
 	it("leaves every shard at least partly on screen at every width", () => {
-		// The shards bleed off the edges by design, so this is not "fully
-		// visible" — it is the weaker, real requirement that no shard is
-		// entirely outside the viewport, which is what the broken page did.
 		for (const vw of WIDTHS) {
 			for (const ring of [HOME, HEADLINE]) {
 				for (const p of place(ring, vw, 700)) {
@@ -214,10 +177,6 @@ describe("depth", () => {
 		const narrowest = P.reduce((a, b) => (a.w <= b.w ? a : b));
 		const biggest = P.reduce((a, b) => (a.w >= b.w ? a : b));
 		expect(depthOf(biggest, widest)).toBeCloseTo(1, 6);
-		// Near, not exactly, 0: NARROWEST_RATIO is a fixed 0.35 rather than the
-		// actual narrowest present, so the smallest shard lands just above the
-		// floor. That's the intended shape — the constant keeps depth stable
-		// when a shard is resized, which a live minimum would not.
 		expect(depthOf(narrowest, widest)).toBeLessThan(0.02);
 	});
 
@@ -254,8 +213,7 @@ describe("parallax", () => {
 	});
 
 	it("is zero at the top of the page", () => {
-		// toBeCloseTo, not toBe: the formula negates, so scroll 0 yields -0,
-		// which Object.is distinguishes from 0 and CSS does not.
+		// toBeCloseTo, not toBe — the formula can yield -0, which Object.is (and toBe) treats as != 0.
 		expect(parallaxY(1, 0)).toBeCloseTo(0, 10);
 	});
 

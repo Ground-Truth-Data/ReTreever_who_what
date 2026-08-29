@@ -1,38 +1,21 @@
 <script lang="ts">
 import { cn } from "./cn";
-// The sprite is IMPORTED, not requested from the host at "/pub-Rtvr/...".
-// An import is resolved by the bundler at build time and the bytes are
-// copied into whatever app builds this child, so the globe travels with
-// the component. A leading-slash URL is resolved by the BROWSER against
-// whatever server is answering, which is only ReTreever — everywhere else
-// it is a 404.
+// Sprite is imported (bundled), not a host URL — a leading-slash path 404s outside ReTreever.
 import globeSprite from "./assets/pub-Rtvr/animations/globe-spin-sprite.webp";
 
 let {
 	class: className = "",
-	// `/who/map`, NOT `/retreeve/who/map`. ReTreever's pages moved to the top
-	// level; the old prefix only survives as a legacy 301 in hooks.server.ts.
-	// Linking to it still WORKS, which is why this went unnoticed — but the
-	// client router cannot resolve a path that is not in its manifest, so it
-	// hands off to the browser and the 301 turns an in-app link into a FULL
-	// PAGE LOAD. Same defect that made every land click on /where reload the
-	// whole Mapbox page.
+	// ⚠️ Use `/who/map`, not `/retreeve/who/map` — the old prefix still 301s but forces a full page load instead of client nav.
 	href = "/who/map",
 }: { class?: string; href?: string } = $props();
 </script>
 
-<!-- 3fps rotating-globe sprite (6-frame, 3x2 grid), spinning continuously —
-     "Maps_page_redirect_animation" in Desktop layout. -->
+<!-- 3fps rotating-globe sprite (6-frame, 3x2 grid); "Maps_page_redirect_animation" in Desktop layout. -->
 <a {href} aria-label="Explore the map" class={cn("globe-spin-link", className)}>
 	<div class="globe-spin" style="--globe-sprite: url({globeSprite})"></div>
 </a>
 
 <style>
-	/* Hover: grow and tilt, matching the search bar's glyphs and the tab
-	   stickers. A dip to 0.85 opacity was the old signal and it read as nothing
-	   — fading something OUT is a strange way to say "this is live". Lifting it
-	   off the page is the same gesture every other sticker on this page makes.
-	   The overshoot easing gives it the small bounce of a picked-up cutout. */
 	.globe-spin-link {
 		display: inline-flex;
 		transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -73,8 +56,5 @@ let {
 		}
 	}
 
-	/* NO prefers-reduced-motion gate. These are commissioned brand animations
-	   and the machine this site is authored on has Reduce Motion ON, so a gate
-	   here means the author never sees his own artwork. Repo law — see the
-	   "no reduced-motion gate" rule. Do not re-add it. */
+	/* ⚠️ NO prefers-reduced-motion gate — repo law, do not re-add. */
 </style>

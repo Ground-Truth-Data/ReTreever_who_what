@@ -1,28 +1,5 @@
 /**
- * EVERY RELATIVE IMPORT MUST MATCH THE FILESYSTEM'S EXACT CASE.
- *
- * THE LIE THIS EXISTS TO CATCH
- * macOS formats APFS case-INSENSITIVE by default. `./assets/pub-Rtvr/x.webp`
- * and `./assets/pub-Rtvr/x.webp` are the same file to it, so Vite resolves a
- * misspelled import, the page renders, and nothing anywhere reports a problem.
- * The editor's red squiggle is the ONLY signal, and a squiggle is not a gate.
- *
- * MEASURED 25 Aug 2026: `pub-Rtvr` (wrong case) opened the file successfully
- * on this machine. The globe kept spinning. The build stayed green.
- *
- * WHY IT MATTERS MORE THAN A TYPO
- * Linux is case-SENSITIVE, and Linux is what Vercel builds on. So a casing
- * mistake is invisible on every developer's Mac and fatal in production —
- * the failure appears at deploy time, in someone else's terminal, detached
- * from the edit that caused it.
- *
- * This is not a silent failure; it is a silent PASS, which is worse. A local
- * "it works" is not evidence when the filesystem is more permissive than the
- * one that will run the code.
- *
- * So the case is asserted against what readdir actually REPORTS, rather than
- * against whether the file opens — because opening is exactly the check that
- * lies here.
+ * ⚠️ Relative import specifiers must match the filesystem's exact case — macOS's case-insensitive APFS lets a wrong-case import resolve locally and fail only on Linux/Vercel at deploy time.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
@@ -41,13 +18,7 @@ function sources(dir: string, out: string[] = []): string[] {
 	return out;
 }
 
-/**
- * Does this path exist with EXACTLY this spelling?
- *
- * existsSync() cannot answer that on a case-insensitive volume — it says yes
- * to any casing. The only reliable check is to read each parent directory and
- * look for the segment in the listing, which reports true on-disk names.
- */
+// existsSync() can't detect case on a case-insensitive volume; read each parent directory's listing instead.
 function existsWithExactCase(abs: string): boolean {
 	if (!existsSync(abs)) return false;
 	let cur = resolve("/");
@@ -84,8 +55,6 @@ describe("relative imports match the filesystem's exact case", () => {
 				const bare = spec.split("?")[0];
 				const abs = resolve(dirname(file), bare);
 
-				// Extensionless specifiers resolve through several candidate
-				// paths; only assert the ones that name a file outright.
 				if (!/\.[a-z0-9]+$/i.test(bare)) continue;
 				if (!existsSync(abs)) continue; // missing entirely — a real import error, and fatal already
 
@@ -107,9 +76,7 @@ describe("relative imports match the filesystem's exact case", () => {
 	});
 
 	it("the check itself works — a wrong-case path is detected as wrong", () => {
-		// Guard against the guard rotting into a no-op: if existsWithExactCase
-		// ever starts returning true unconditionally, every test above passes
-		// while checking nothing.
+		// Guards against existsWithExactCase rotting into a no-op that always returns true.
 		const real = join(CHILD, "lib", "assets");
 		if (!existsSync(real) || !statSync(real).isDirectory()) return;
 

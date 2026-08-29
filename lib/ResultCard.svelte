@@ -1,15 +1,7 @@
 <script lang="ts">
 import { formatTransparencyScore } from "./whoWhatTypes";
 
-/**
- * The submitted search's answer: one name and one rating, sitting directly
- * under the search card inside the golden hero.
- *
- * PLACEHOLDER BY DESIGN. This is the whole results page for now — the real
- * results layout replaces this component, and because it renders inside
- * SearchPage's `results` snippet it can grow without touching the page's
- * artwork. Same component for orgs and projects; only `label` differs.
- */
+// ⚠️ PLACEHOLDER BY DESIGN — the real results layout replaces this component.
 let {
 	name,
 	rating,
@@ -26,8 +18,7 @@ let {
 	<h2 class="result-name">{name}</h2>
 	<p class="result-rating">
 		<span class="result-label">{label}</span>
-		<!-- An unscored row is a real state, not an error: show a dash rather
-		     than 0.0%, which would read as "scored, and scored terribly". -->
+		<!-- ⚠️ Unscored is a real state — show a dash, not 0.0% (which reads as "scored terribly"). -->
 		<span class="result-score">
 			{rating === null ? "—" : formatTransparencyScore(rating)}
 		</span>
@@ -80,14 +71,7 @@ let {
 		font-size: calc(13 * var(--bar-scale, 1));
 	}
 
-	/* THE NUMBER CARRIES THE CUSTOM FACE — Retreever OTF, declared once in
-	   app.css and aliased there as --font-retreever. Only the number: the name
-	   and the label stay in the page's body face (Futura). That split is the
-	   one WherePage's marker panel already uses for a transparency rating, so
-	   the site's two rating readouts match.
-
-	   Keep the `, inherit` fallback — if the OTF fails to load, the score
-	   degrades to readable body text instead of disappearing. */
+	/* ⚠️ Keep the `, inherit` fallback — if the OTF fails to load, the score degrades to readable body text instead of disappearing. */
 	.result-score {
 		font-family: var(--font-retreever, inherit);
 		color: #fad702;
