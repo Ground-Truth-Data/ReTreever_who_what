@@ -1,15 +1,4 @@
-/**
- * THE PUBLIC SURFACE of ReTreever_who_what.
- *
- * Everything a host may import lives here and nothing else does. The five
- * entry points below are exactly what ReTreever reaches for today — measured,
- * not guessed — so this file is the contract, and anything not re-exported
- * here is this child's private business.
- *
- * The host surface itself is PROPS, not modules: `routes` (WhoWhatRoutes) is
- * the host's URL map and every field is optional, so ReTreever passes its
- * AppRoutes and rapper passes nothing. See deps.json `_channel_why`.
- */
+// Public surface of ReTreever_who_what — everything a host may import lives here, nothing else.
 
 export { default as SearchRoute } from "./lib/SearchRoute.svelte";
 export { default as ResultCard } from "./lib/ResultCard.svelte";

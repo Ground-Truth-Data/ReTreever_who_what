@@ -22,13 +22,7 @@ import poly10Raw from "./homeAssets/poly/Search_page_SP_poly_10.svg?raw";
 import poly11Raw from "./homeAssets/poly/Search_page_SP_poly_11.svg?raw";
 import MiddleDividerRaw from "./homeAssets/poly/Search_page_Middle_Divider.svg?raw";
 
-// ---- BACKDROP ART -------------------------------------------------
-// Imported, never requested from the host at "/pub-Rtvr/...". An import
-// is resolved by the bundler at build time and the bytes are copied into
-// whatever app builds this child; a leading-slash URL is resolved by the
-// BROWSER against whatever server answers, which is ReTreever alone.
-// They are handed to CSS as custom properties on the root element so the
-// stylesheet below never names a path.
+// ⚠️ Imported, never a leading-slash URL — a URL resolves against whatever server answers (ReTreever alone), an import is bundled into whatever app builds this child.
 import skyUrl from "./assets/golden_sky_background.webp";
 import hillPatternWebp from "./assets/hill_pattern.webp";
 import hillPatternAvif from "./assets/hill_pattern.avif";
@@ -51,39 +45,13 @@ import {
 	parallaxY,
 	type Placed,
 } from "./shardLayout";
-/**
- * Shard ids come from the INDEX, never from a literal typed here. The layout
- * config works in artwork numbers (poly 1..11); the index owns the site-wide shard
- * numbers, and `byArt` is the bridge between the two. Hardcoding an id here is
- * what let two pages both claim "number 5" — see shardIndex.ts.
- */
+// ⚠️ Shard ids come from the INDEX, never a literal typed here — hardcoding one let two pages both claim "number 5". See shardIndex.ts.
 import { byArt, shard, shardId } from "./shared/shardIndex";
 import type { WhoWhatRoutes } from "./whoWhatTypes";
 import type { SearchListItem } from "./searchTypes";
 import type { Snippet } from "svelte";
 
-/**
- * Markup and artwork for the retreeve search page — served at /retreeve/who
- * (Orgs) and /retreeve/what (Projects); /retreeve itself is the globe hero,
- * not this page. It owns the layout and the presentational state (whether
- * the dropdown caret is flipped); it owns no data. `SearchRoute.svelte`
- * supplies `activeTab` from the route and `onsearch`, so the actual search —
- * server action, API call, navigation — stays in the route. The tabs are
- * plain links to /who and /what (the tab IS the route, so the filter lives
- * in the URL) — anchors, not buttons + goto(), so the app-wide
- * data-sveltekit-preload-data="hover" starts the target's server load on
- * hover/touchstart instead of at click time.
- *
- * Kept as one file: both sections derive their bands from the shared `--art`
- * token block below, so splitting them would trade size for coupling.
- *
- * THE RESULTS PAGES RENDER THIS SAME COMPONENT. A submitted search lands on
- * /retreeve/who/[organizationKey] (or the projects twin), which renders this
- * page with its answer passed in through the optional `results` snippet — so
- * the artwork, the shard layout and the fold rule exist once, and a fix to
- * any of them reaches both pages. With no snippet the page is exactly what it
- * has always been; it never learns that a results page exists.
- */
+// ⚠️ Tabs are plain <a> links, not buttons + goto() — anchors let the app-wide data-sveltekit-preload-data="hover" start the target's server load on hover/touchstart. The results pages render this SAME component via the optional `results` snippet, so the artwork/shard layout/fold rule exist once.
 let {
 	query = $bindable(""),
 	activeTab = "orgs",
@@ -102,38 +70,18 @@ let {
 	query?: string;
 	activeTab?: "orgs" | "projects";
 	dropdownOpen?: boolean;
-	/**
-	 * The row the user last picked from the dropdown, handed back so the route
-	 * can navigate to the exact record rather than re-deriving it from the
-	 * text. Names are not unique, so the text alone can be ambiguous.
-	 */
+	/** Names are not unique, so the text alone can be ambiguous — handed back for the route to navigate the exact record. */
 	selected?: SearchListItem | null;
-	/** Short message under the bar, e.g. when a submit matched nothing. */
 	notice?: string | null;
-	/** Where the spinning globe beside the caption points. */
 	mapHref?: string;
-	/**
-	 * The host's URL map. ReTreever passes its AppRoutes; rapper passes
-	 * nothing and the tab stickers render without hrefs.
-	 */
+	/** rapper passes nothing and the tab stickers render without hrefs. */
 	routes?: WhoWhatRoutes;
-	/** Rows for the dropdown under the Orgs tab; the route loads them. */
 	orgs?: SearchListItem[];
-	/** Rows for the dropdown under the Projects tab. */
 	projects?: SearchListItem[];
-	/** Fired on submit; the tab rides along so the route knows what to query. */
 	onsearch?: (query: string, tab: "orgs" | "projects") => void;
-	/** Threaded to the bar; fires on first focus/open so the route lazy-loads
-	 *  the dropdown rows. */
 	onactivate?: () => void;
-	/** True while the lazy list fetch is in flight — shows "Loading…" in the
-	 *  dropdown rather than a misleading "none loaded". */
 	listLoading?: boolean;
-	/**
-	 * A submitted search's answer, rendered inside the search card under the
-	 * caption. Absent on the search page itself — that's the seam the results
-	 * pages hang off, and the only thing that distinguishes them.
-	 */
+	/** Absent on the search page itself — the seam the results pages hang off. */
 	results?: Snippet;
 } = $props();
 

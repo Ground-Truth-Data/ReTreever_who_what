@@ -1,27 +1,7 @@
 <script lang="ts">
 import { cn } from "./cn";
 
-/**
- * Prop-driven search bar primitive: an input, a dropdown toggle and a submit,
- * with no knowledge of what is being searched or what happens on submit. The
- * consuming route owns `onsearch` and the placeholder/label copy.
- *
- * The bar from `Search_page_Search_Bar.svg`, rendered as live SVG with
- * the real controls dropped in through `<foreignObject>` instead of being
- * rebuilt in HTML/CSS. That keeps the hand-drawn geometry — the skewed dark
- * panel, the off-square gold border, the slanted submit panel — pixel-exact,
- * and lets the input, the dropdown hit-target and the submit hit-target scale
- * with the artwork instead of being re-tuned at every breakpoint.
- *
- * All foreignObject boxes are in the SVG's own user units (viewBox is
- * 284.70643 x 49.229731), measured off the source paths after their
- * `matrix(1.051742,0,0,1.051742,-377.28326,-728.02404)` group transform:
- *   dark input panel   x 2.4 → 207.7,  y 2.7 → 47.1
- *   gold divider line  x 39  → 35.8,   y 5.1 → 44.6
- *   submit panel       x 205.4 → 282.1, y 2.1 → 44.4
- * Font sizes inside a foreignObject are user units too, so `font-size: 15`
- * below is ~30% of the bar's height at every rendered size.
- */
+// ⚠️ All foreignObject boxes are in the SVG's own user units (viewBox 284.70643 x 49.229731) — font-size etc. inside one scales with the artwork, not px.
 
 let {
 	value = $bindable(""),
@@ -40,11 +20,7 @@ let {
 	id?: string;
 	class?: string;
 	onsearch?: (query: string) => void;
-	/**
-	 * First intent to search — the input gaining focus or the list being
-	 * opened. Lets the route lazy-load the dropdown rows only when they're
-	 * actually wanted, instead of on every page visit.
-	 */
+	/** First intent to search — lets the route lazy-load dropdown rows only when actually wanted. */
 	onactivate?: () => void;
 } = $props();
 
@@ -54,12 +30,7 @@ function handleSubmit(event: SubmitEvent) {
 }
 </script>
 
-<!-- `id` + `form=` wire the foreignObject controls to this form explicitly
-     rather than leaning on DOM ancestry across the SVG boundary. -->
-<!-- `onpointerenter` warms the dropdown data on hover — the fetch is usually
-     already in flight by the time the bar is focused/clicked, so the list feels
-     instant without loading for visitors who never approach it. Touch devices
-     don't hover, but there `onfocus`/the caret still trigger it on tap. -->
+<!-- `id` + `form=` wire the foreignObject controls to this form explicitly rather than leaning on DOM ancestry across the SVG boundary. -->
 <form
 	{id}
 	class={cn("search-bar", className)}
@@ -149,12 +120,7 @@ function handleSubmit(event: SubmitEvent) {
 					aria-label={ariaLabel}
 					onfocus={() => onactivate?.()}
 					oninput={(e) => {
-						// Reveal matches as the user types, even if they never
-						// clicked the caret — otherwise typing filters an
-						// invisible list. Read from the DOM (not `value`) so it
-						// doesn't depend on bind ordering. Emptying the field
-						// leaves it open, showing the browse list, same as the
-						// caret.
+						// ⚠️ Read from the DOM, not `value` — must not depend on bind ordering.
 						if (e.currentTarget.value.trim().length > 0) {
 							dropdownOpen = true;
 						}

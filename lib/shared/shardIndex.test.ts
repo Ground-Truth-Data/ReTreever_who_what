@@ -1,14 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SHARDS, byArt, shard, shardId, shardsFor } from './shardIndex';
 
-/**
- * These tests exist to make a collision IMPOSSIBLE, not merely noticed.
- *
- * The whole reason shardIndex.ts was written is that ids used to be hand-typed
- * into markup, so two pages could — and did — both claim "number 5". Grepping
- * afterwards catches a collision that already shipped. A failing test catches
- * it before it can.
- */
 describe('shard numbers are unique across the whole site', () => {
 	it('never reuses a number, on any page', () => {
 		const seen = new Map<number, string>();
@@ -53,8 +45,7 @@ describe('the index describes something real', () => {
 	});
 
 	it('throws on a number nobody allocated, rather than returning undefined', () => {
-		// A silent undefined would render id="undefined" somewhere far from the
-		// typo; throwing points at the call site that invented the number.
+		// silent undefined would render id="undefined" far from the typo — throwing points at the call site instead
 		expect(() => shard(9999)).toThrow(/No shard numbered 9999/);
 	});
 });
@@ -62,8 +53,6 @@ describe('the index describes something real', () => {
 describe('artwork mapping', () => {
 	it('maps artwork numbers to shards per page', () => {
 		const m = byArt('search');
-		// artwork 9 is shard 6 — the two number lines diverged once numbering
-		// went global, which is exactly why this bridge exists.
 		expect(m.get(9)?.n).toBe(6);
 		expect(m.get(1)?.n).toBe(1);
 	});

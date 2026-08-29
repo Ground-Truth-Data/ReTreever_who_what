@@ -1,19 +1,7 @@
 import type { WhoWhatEndpoints, WhoWhatFail } from "./whoWhatTypes";
 import { toTransparencyScore } from "./whoWhatTypes";
 
-/**
- * Loading one search result — the org or project a submitted search lands on.
- *
- * Both results routes share this so the two pages can't drift on the parts
- * that must match: which score column becomes "the rating", the 0–1 → 0–100
- * conversion, and what a missing key does. What differs between them is only
- * the endpoint, the field list, and the column names, so that's all each
- * loader below spells out.
- *
- * Unlike the search page's dropdown lists (streamed, page renders fine
- * without them), these loads are AWAITED: the name and the rating are the
- * page — there is nothing to show while they're in flight.
- */
+// Shared org/project result loader, so the two results routes can't drift on scoring/missing-key behavior. Unlike the search page's streamed dropdowns, these loads are AWAITED — the name and rating ARE the page.
 
 /** What a results page renders, whichever resource it came from. */
 export interface SearchResult {
@@ -28,36 +16,18 @@ export interface SearchResult {
 	hint?: string | null;
 }
 
-/**
- * Fetch one item from a collection's single-item endpoint.
- *
- * The API's own 404 (unknown key, or a soft-deleted row) becomes the page's
- * 404, so a mistyped URL renders the site error page instead of a results
- * page with empty fields. Anything else upstream is a 500: the caller asked
- * for a specific record and we can't say anything true about it.
- *
- * A redirect is followed ONCE. The organizations endpoint answers a child
- * org's key with a 302 to its parent, and SvelteKit's server-side fetch of an
- * internal route hands back the 3xx rather than following it — so without this
- * the results page would treat "go here instead" as an unusable response. One
- * hop, not a loop: the target is by construction a record the endpoint serves
- * directly, so a second redirect means the data is malformed, and following it
- * blindly would hang the request instead of failing it.
- */
+// ⚠️ Follows exactly one redirect — SvelteKit's server-side fetch of an internal route returns a 3xx instead of following it itself; a second redirect would mean the data is malformed, so it is not looped.
 async function fetchItem<T>(
 	fetch: typeof globalThis.fetch,
 	endpoint: string,
 	envelopeKey: string,
 	notFoundMessage: string,
-	// The host's `error`. See WhoWhatFail — this used to be an import of
-	// @sveltejs/kit, which is the one thing here that could not survive the
-	// child becoming its own repo.
+	// The host's `error` function — see WhoWhatFail; passed in because a child can't import @sveltejs/kit itself.
 	fail: WhoWhatFail,
 ): Promise<T> {
 	let res: Response;
 	try {
-		// A server-side fetch of an internal route calls the handler directly —
-		// no HTTP round trip — so the query stays in one place (the API).
+		// A server-side fetch of an internal route calls the handler directly, no HTTP round trip, so the query stays in one place (the API).
 		res = await fetch(endpoint);
 
 		const redirectedTo = res.status === 302 && res.headers.get("location");
@@ -79,8 +49,7 @@ async function fetchItem<T>(
 
 	const payload = (await res.json()) as Record<string, T>;
 	const item = payload[envelopeKey];
-	// A 200 with an empty envelope would otherwise reach the page as a card of
-	// undefineds; treat it as the missing record it describes.
+	// A 200 with an empty envelope would otherwise reach the page as a card of undefineds; treat it as the missing record it is.
 	if (!item) {
 		throw fail(404, notFoundMessage);
 	}
@@ -99,9 +68,7 @@ interface OrgRow {
 export async function loadOrganization(
 	fetch: typeof globalThis.fetch,
 	organizationKey: string,
-	// The host's API surface. Passed in the same way `fetch` is — a child owns
-	// no endpoints, and inventing a path here would aim it at whichever product
-	// happened to mount the page.
+	// The host's API surface, passed in like `fetch` — a child owns no endpoints, so hardcoding a path here would bind it to whichever product mounts the page.
 	endpoints: WhoWhatEndpoints,
 	fail: WhoWhatFail,
 ): Promise<SearchResult> {
@@ -118,8 +85,7 @@ export async function loadOrganization(
 	return {
 		key: org.organizationKey,
 		name: org.organizationName,
-		// Converted HERE, once, so the page only ever sees the 0–100 number —
-		// scoreOrgFinal is a Prisma Decimal and arrives over json() as a string.
+		// Converted HERE, once — scoreOrgFinal is a Prisma Decimal and arrives over json() as a string, so the page only ever sees the 0–100 number.
 		rating: toTransparencyScore(org.scoreOrgFinal),
 		rank: org.scoreRankOverall,
 		hint: org.primaryStakeholderCategory,
