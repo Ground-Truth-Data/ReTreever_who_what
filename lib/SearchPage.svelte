@@ -58,6 +58,7 @@ let {
 	mapHref = undefined,
 	orgs = [],
 	projects = [],
+	topKeys = [],
 	onsearch,
 	onactivate,
 	listLoading = false,
@@ -74,6 +75,8 @@ let {
 	routes?: WhoWhatRoutes;
 	orgs?: SearchListItem[];
 	projects?: SearchListItem[];
+	/** Most-searched keys, best first — orders the empty-query dropdown. */
+	topKeys?: string[];
 	onsearch?: (query: string, tab: "orgs" | "projects") => void;
 	onactivate?: () => void;
 	listLoading?: boolean;
@@ -98,17 +101,27 @@ const searchIndex = $derived(
 // caret opens; `total` drives a "keep typing to narrow" row so the overflow is
 // signalled, not silently dropped.
 const MAX_DROPDOWN_ROWS = 50;
-// An empty query is the "just arrived" state: five suggestions, not a catalogue.
-// TODO: order these by search frequency once SearchQueryTable exists (rapper_director/TODO.md).
+// An empty query is the "just arrived" state: the five most-searched entries,
+// alphabetical filling any gap (a fresh database has no hits yet).
 const TOP_ROWS = 5;
 const filtered = $derived.by(() => {
 	const q = query.trim().toLowerCase();
-	const matches = q
-		? searchIndex.filter((e) => e.hay.includes(q))
-		: searchIndex;
+	if (q) {
+		const matches = searchIndex.filter((e) => e.hay.includes(q));
+		return {
+			total: matches.length,
+			rows: matches.slice(0, MAX_DROPDOWN_ROWS).map((e) => e.item),
+		};
+	}
+	const byKey = new Map(listItems.map((item) => [item.key, item]));
+	const top = topKeys
+		.map((k) => byKey.get(k))
+		.filter((item): item is SearchListItem => item !== undefined);
+	const seen = new Set(top.map((item) => item.key));
+	const fill = listItems.filter((item) => !seen.has(item.key));
 	return {
-		total: matches.length,
-		rows: matches.slice(0, q ? MAX_DROPDOWN_ROWS : TOP_ROWS).map((e) => e.item),
+		total: listItems.length,
+		rows: [...top, ...fill].slice(0, TOP_ROWS),
 	};
 });
 

@@ -3,7 +3,12 @@ import { untrack, type Snippet } from "svelte";
 import { goto } from "$app/navigation";
 import type { WhoWhatEndpoints, WhoWhatRoutes } from "./whoWhatTypes";
 import SearchPage from "./SearchPage.svelte";
-import { loadOrgList, loadProjectList } from "./searchLists";
+import {
+	loadOrgList,
+	loadProjectList,
+	loadTopKeys,
+	recordSearchHit,
+} from "./searchLists";
 import { resolveSearchKey } from "./searchResolve";
 import type { SearchListItem } from "./searchTypes";
 
@@ -33,6 +38,8 @@ let {
 
 let orgs = $state<SearchListItem[]>([]);
 let projects = $state<SearchListItem[]>([]);
+/** Most-searched keys per tab; orders the empty-query dropdown. */
+let topKeys = $state<{ orgs: string[]; projects: string[] }>({ orgs: [], projects: [] });
 let orgsLoaded = false;
 let projectsLoaded = false;
 let activated = false;
@@ -45,6 +52,10 @@ async function loadTab(which: "orgs" | "projects") {
 	else projectsLoaded = true;
 
 	listLoading = true;
+	// The list is what the page waits on; the ranking rides beside it and lands whenever it lands.
+	loadTopKeys(fetch, endpoints, which).then((keys) => {
+		topKeys = { ...topKeys, [which]: keys };
+	});
 	try {
 		if (which === "orgs") orgs = await loadOrgList(fetch, endpoints);
 		else projects = await loadProjectList(fetch, endpoints);
@@ -120,6 +131,7 @@ function submitSearch(q: string, t: "orgs" | "projects") {
 	}
 
 	notice = null;
+	recordSearchHit(fetch, endpoints, t, key);
 	const href =
 		t === "orgs" ? routes.whoOrg?.(key) : routes.whatProject?.(key);
 	// ⚠️ No host URL map → do nothing, silently — goto(undefined) throws.
@@ -140,6 +152,7 @@ function submitSearch(q: string, t: "orgs" | "projects") {
 	{routes}
 	{orgs}
 	{projects}
+	topKeys={topKeys[tab]}
 	{listLoading}
 	{results}
 	onsearch={submitSearch}

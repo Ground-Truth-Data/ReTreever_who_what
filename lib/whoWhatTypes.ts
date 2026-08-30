@@ -19,6 +19,8 @@ export type WhoWhatEndpoints = {
 	projects?: string;
 	organization?: (key: string) => string;
 	project?: (key: string) => string;
+	/** Search-hit analytics: GET top keys per tab, POST a landing. Absent → alphabetical, nothing logged. */
+	searchHits?: string;
 };
 
 // ⚠️ Never `import { error } from "@sveltejs/kit"` directly here — bare imports break once this child ships standalone (walks up, misses node_modules, /who and /what 500 instead)

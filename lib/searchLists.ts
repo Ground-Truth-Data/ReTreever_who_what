@@ -73,3 +73,38 @@ export async function loadProjectList(
 		return [];
 	}
 }
+
+/** Most-searched keys for a tab, best first. Empty when the host has no analytics endpoint. */
+export async function loadTopKeys(
+	fetch: typeof globalThis.fetch,
+	endpoints: WhoWhatEndpoints,
+	tab: "orgs" | "projects",
+	limit = 5,
+): Promise<string[]> {
+	if (!endpoints.searchHits) return [];
+	try {
+		const res = await fetch(`${endpoints.searchHits}?tab=${tab}&limit=${limit}`);
+		if (!res.ok) throw new Error(`searchHits responded ${res.status}`);
+		const { keys } = (await res.json()) as { keys: string[] };
+		return Array.isArray(keys) ? keys : [];
+	} catch (error) {
+		console.error("search: failed to load top keys", error);
+		return [];
+	}
+}
+
+/** Fire-and-forget: the page is about to navigate, so keepalive lets the request outlive it. */
+export function recordSearchHit(
+	fetch: typeof globalThis.fetch,
+	endpoints: WhoWhatEndpoints,
+	tab: "orgs" | "projects",
+	key: string,
+): void {
+	if (!endpoints.searchHits) return;
+	fetch(endpoints.searchHits, {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ tab, key }),
+		keepalive: true,
+	}).catch(() => {});
+}
