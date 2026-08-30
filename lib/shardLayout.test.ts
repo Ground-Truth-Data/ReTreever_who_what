@@ -171,13 +171,17 @@ describe("layoutPage", () => {
 });
 
 describe("depth", () => {
-	it("gives the widest shard depth 1 and the narrowest depth 0", () => {
+	it("gives the widest shard depth 1 and the narrowest near 0", () => {
 		const P = place(HOME, 1440, 700);
 		const widest = Math.max(...P.map((p) => p.w));
 		const narrowest = P.reduce((a, b) => (a.w <= b.w ? a : b));
 		const biggest = P.reduce((a, b) => (a.w >= b.w ? a : b));
 		expect(depthOf(biggest, widest)).toBeCloseTo(1, 6);
-		expect(depthOf(narrowest, widest)).toBeLessThan(0.02);
+		// Near, not exactly, 0: NARROWEST_RATIO is a fixed floor, not the live
+		// minimum, so taste-tuning the smallest shard's width nudges this.
+		// The bound guards the rescale itself — without it the narrowest would
+		// sit at ~0.38, wasting a third of the range.
+		expect(depthOf(narrowest, widest)).toBeLessThan(0.1);
 	});
 
 	it("is monotonic in width", () => {
