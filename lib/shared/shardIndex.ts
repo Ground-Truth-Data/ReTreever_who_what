@@ -16,18 +16,18 @@ export type ShardEntry = {
 };
 
 export const SHARDS: ShardEntry[] = [
-	{ n: 1, page: 'search', what: 'hero shard, top-left long reach', art: 1 },
+	{ n: 1, page: 'search', what: 'hero shard, top-right long reach', art: 1 },
 	{ n: 2, page: 'search', what: 'hero shard, corner punctuation', art: 2 },
 	{ n: 3, page: 'search', what: 'hero shard, top-right small', art: 3 },
-	{ n: 4, page: 'search', what: 'hero shard, upper-right medium', art: 4 },
-	{ n: 5, page: 'search', what: 'hero shard, mid-right long reach', art: 5 },
+	{ n: 4, page: 'search', what: 'hero shard, upper-left medium', art: 4 },
+	{ n: 5, page: 'search', slug: 'headline', what: 'headline shard (artwork 5), lower-right', art: 5 },
 	{ n: 6, page: 'search', what: 'hero shard (artwork 9), bottom-left', art: 9 },
 	{ n: 7, page: 'search', what: 'hero shard (artwork 11), mid-left', art: 11 },
 
 	{ n: 12, page: 'search', slug: 'headline', what: 'headline shard, right', art: 7 },
 	{ n: 13, page: 'search', slug: 'headline', what: 'headline shard, left', art: 6 },
 	{ n: 14, page: 'search', slug: 'headline', what: 'headline shard, lower-left', art: 10 },
-	{ n: 15, page: 'search', slug: 'headline', what: 'headline shard, lower-right', art: 8 },
+	{ n: 15, page: 'search', what: 'hero shard (artwork 8), mid-right — the planters', art: 8 },
 
 	{ n: 16, page: 'why', what: 'corner poly 1 (D_poly_1.svg)', art: 1 },
 	{ n: 17, page: 'why', what: 'corner poly 2 (D_poly_2.svg)', art: 2 },

@@ -37,16 +37,16 @@ export const NAVBAR_H = 80;
 
 // The hero ring — shards around the search card.
 export const HOME: ShardSpec[] = [
-	// top-left: long reach inward, the biggest shard on the page
-	{ id: 1, x: -16, y: 4, w: 44, maxw: 500, minw: 96, rot: -7 },
+	// top-right: long reach inward, the biggest shard on the page (artwork mirrored)
+	{ id: 1, x: 74, y: 4, w: 44, maxw: 500, minw: 96, rot: 7 },
 	// small punctuation below it, tucked against the left edge
 	{ id: 2, x: 20, y: -22, w: 33, maxw: 190, minw: 52, rot: 11 },
 	// top-right punctuation, outboard of the search card
 	{ id: 3, x: 86, y: -9, w: 82, maxw: 335, minw: 68, rot: 11 },
-	// upper-right: medium, beside the search bar but never touching it
-	{ id: 4, x: 81, y: 30, w: 26, maxw: 385, minw: 96, rot: 6 },
-	// mid-right: another long reach
-	{ id: 5, x: 82, y: 55, w: 26, maxw: 425, minw: 100, rot: -5 },
+	// upper-left: medium, beside the search bar but never touching it (artwork mirrored)
+	{ id: 4, x: -5, y: 20, w: 36, maxw: 785, minw: 96, rot: -6 },
+	// mid-right: the planters, near-square
+	{ id: 8, x: 82, y: 55, w: 26, maxw: 425, minw: 100, rot: -5 },
 	// bottom-left: long reach across the foot
 	{ id: 9, x: -6, y: 72, w: 31, maxw: 455, minw: 84, rot: 7 },
 	// mid-left: medium, fills the gap between shard 1 and the foot
@@ -55,10 +55,10 @@ export const HOME: ShardSpec[] = [
 
 // The headline ring — around "Find Truth in Reforestation."
 export const HEADLINE: ShardSpec[] = [
-	{ id: 7, x: 80, y: 6, w: 30, maxw: 440, minw: 96, rot: -9 },
+	{ id: 7, x: 80, y: 6, w: 30, maxw: 540, minw: 96, rot: -9 },
 	{ id: 6, x: -9, y: 18, w: 28, maxw: 410, minw: 88, rot: 12 },
 	{ id: 10, x: -8, y: 62, w: 26, maxw: 385, minw: 96, rot: -13 },
-	{ id: 8, x: 84, y: 66, w: 24, maxw: 355, minw: 84, rot: 10 },
+	{ id: 5, x: 84, y: 66, w: 24, maxw: 355, minw: 84, rot: 10 },
 ];
 
 // A shard resolved to px for a given viewport.
