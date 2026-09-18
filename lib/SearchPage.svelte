@@ -60,6 +60,7 @@ let {
 	projects = [],
 	topKeys = [],
 	onsearch,
+	onpick,
 	onactivate,
 	listLoading = false,
 	results,
@@ -78,6 +79,8 @@ let {
 	/** Most-searched keys, best first — orders the empty-query dropdown. */
 	topKeys?: string[];
 	onsearch?: (query: string, tab: "orgs" | "projects") => void;
+	/** A row was clicked and its own link is doing the navigating — the route only needs to count it. */
+	onpick?: (item: SearchListItem, tab: "orgs" | "projects") => void;
 	onactivate?: () => void;
 	listLoading?: boolean;
 	/** Absent on the search page itself — the seam the results pages hang off. */
@@ -163,14 +166,23 @@ function submit(q: string) {
 }
 
 /**
- * Picking a row is a fill, not a search: the route only hears `onsearch`.
- * The row itself rides out through `selected` so a later submit can use its
- * key instead of matching the text back to a row.
+ * The row rides out through `selected` so a submit can use its key instead of
+ * matching the text back to a row — names are not unique.
  */
 function selectItem(item: SearchListItem) {
 	query = item.name;
 	selected = item;
 	dropdownOpen = false;
+}
+
+const hrefOf = (item: SearchListItem) =>
+	activeTab === "orgs" ? routes.whoOrg?.(item.key) : routes.whatProject?.(item.key);
+
+// ⚠️ No preventDefault — the anchor navigates. A modified click opens elsewhere, so this page's bar stays as it was.
+function pickRow(e: MouseEvent, item: SearchListItem) {
+	onpick?.(item, activeTab);
+	if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+	selectItem(item);
 }
 
 // Dismiss the dropdown on a click/tap outside, or on Escape. `searchWrapEl`
@@ -543,23 +555,40 @@ $effect(() => {
 				{#if dropdownOpen}
 					<ul class="search-dropdown" id={LIST_ID} role="listbox">
 						{#each filtered.rows as item, i (item.key)}
+							{@const href = hrefOf(item)}
+							{#snippet rowBody()}
+								<span class="row-name">{item.name}</span>
+								{#if item.hint}
+									<span class="row-hint">{item.hint}</span>
+								{/if}
+							{/snippet}
 							<li
 								id={rowId(i)}
 								role="option"
 								aria-selected={i === highlighted}
 							>
-								<button
-									type="button"
-									class="dropdown-row"
-									class:highlighted={i === highlighted}
-									tabindex="-1"
-									onclick={() => selectItem(item)}
-								>
-									<span class="row-name">{item.name}</span>
-									{#if item.hint}
-										<span class="row-hint">{item.hint}</span>
-									{/if}
-								</button>
+								<!-- A link, not a button + goto(): hover preload has the page loading before the click. No host URL map → the row can only fill the bar. -->
+								{#if href}
+									<a
+										{href}
+										class="dropdown-row"
+										class:highlighted={i === highlighted}
+										tabindex="-1"
+										onclick={(e) => pickRow(e, item)}
+									>
+										{@render rowBody()}
+									</a>
+								{:else}
+									<button
+										type="button"
+										class="dropdown-row"
+										class:highlighted={i === highlighted}
+										tabindex="-1"
+										onclick={() => selectItem(item)}
+									>
+										{@render rowBody()}
+									</button>
+								{/if}
 							</li>
 						{:else}
 							<li class="dropdown-empty" role="presentation">
@@ -1189,6 +1218,8 @@ $effect(() => {
 		cursor: pointer;
 		text-align: left;
 		font-family: inherit;
+		box-sizing: border-box;
+		text-decoration: none;
 	}
 
 	.dropdown-row:hover,
