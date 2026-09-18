@@ -156,5 +156,6 @@ function submitSearch(q: string, t: "orgs" | "projects") {
 	{listLoading}
 	{results}
 	onsearch={submitSearch}
+	onpick={(item, t) => recordSearchHit(fetch, endpoints, t, item.key)}
 	onactivate={activate}
 />

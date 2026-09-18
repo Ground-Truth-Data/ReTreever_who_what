@@ -42,6 +42,15 @@ function handleKeydown(e: KeyboardEvent) {
 	}
 }
 
+let inputEl = $state<HTMLInputElement | null>(null);
+
+function clear() {
+	value = "";
+	dropdownOpen = true;
+	onactivate?.();
+	inputEl?.focus();
+}
+
 function handleSubmit(event: SubmitEvent) {
 	event.preventDefault();
 	onsearch?.(value);
@@ -153,7 +162,21 @@ function handleSubmit(event: SubmitEvent) {
 						}
 					}}
 					bind:value
+					bind:this={inputEl}
 				/>
+				{#if value}
+					<button
+						type="button"
+						class="clear"
+						form={id}
+						aria-label="Clear search"
+						onclick={clear}
+					>
+						<svg viewBox="0 0 10 10" aria-hidden="true">
+							<path d="M2 2 8 8M8 2 2 8" />
+						</svg>
+					</button>
+				{/if}
 			</div>
 		</foreignObject>
 
@@ -280,11 +303,41 @@ function handleSubmit(event: SubmitEvent) {
 	}
 
 	/* Safari draws its own clear button inside type="search"; it lands outside
-	   the panel geometry at these scales. */
+	   the panel geometry at these scales. .clear below is ours, inside it. */
 	.search-input::-webkit-search-decoration,
 	.search-input::-webkit-search-cancel-button {
 		-webkit-appearance: none;
 		appearance: none;
+	}
+
+	.clear {
+		flex: none;
+		width: 20px;
+		height: 100%;
+		padding: 0;
+		display: grid;
+		place-items: center;
+		background: none;
+		border: none;
+		border-radius: 3px;
+		cursor: pointer;
+		color: #8d93a6;
+		transition: color 0.18s ease;
+	}
+
+	.clear svg {
+		width: 9px;
+		height: 9px;
+		overflow: visible;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.6;
+		stroke-linecap: round;
+	}
+
+	.clear:hover,
+	.clear:focus-visible {
+		color: var(--color-gold-shard);
 	}
 
 	.hit {
@@ -307,6 +360,7 @@ function handleSubmit(event: SubmitEvent) {
 	}
 
 	.hit:focus-visible,
+	.clear:focus-visible,
 	.search-input:focus-visible {
 		outline: 2px solid var(--color-gold-bar);
 		outline-offset: 1px;
