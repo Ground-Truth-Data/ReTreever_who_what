@@ -30,15 +30,15 @@ This is the only child with **no `$parent/siblings` imports** — it needs no
 sibling beside it, which makes it the cheapest to publish and the first place
 to test any change to the publishing model.
 
-It also imports **no framework package at all**. `@sveltejs/kit` was dropped on
-26 Aug 2026: `resultLoad`'s `import { error }` was the last bare import of a
-real package, and it broke both results pages the moment this folder became its
-own repo — Node resolves a bare import from the importer, which is outside any
-host's `node_modules`. That is `WhoWhatFail` now. `$app/*` stays, because those
-are SvelteKit virtual modules supplied by the plugin, never resolved from disk.
+It also imports **no framework package at all**: Node resolves a bare import
+from the importer, which is outside any host's `node_modules`, so a bare
+`import { error } from "@sveltejs/kit"` breaks the moment this folder is its
+own repo. Errors go through `WhoWhatFail` instead. `$app/*` stays, because
+those are SvelteKit virtual modules supplied by the plugin, never resolved
+from disk.
 
-[`deps.json`](./deps.json) is the entire allow-list, and `lib/` is the one door
-to the host. Adding a line is a decision, not a formality.
+`lib/` is the one door to the host. Adding a host-facing member is a
+decision, not a formality.
 
 ## Public surface
 
