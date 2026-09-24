@@ -1,4 +1,3 @@
-// Matches only "who"/"what" — /who and /what share one dynamic route so tab switches don't remount and lose lazily-fetched lists
-// Typed as a guard so params.tab narrows to "who" | "what" in the route
+// /who and /what share one route so a tab switch doesn't remount and lose the lazily-fetched lists.
 export const match = (param: string): param is "who" | "what" =>
 	param === "who" || param === "what";

@@ -12,7 +12,8 @@ import {
 import { resolveSearchKey } from "./searchResolve";
 import type { SearchListItem } from "./searchTypes";
 
-// ⚠️ The tab IS the route param (/retreeve/who vs /retreeve/what, both served by [tab=searchTab]) — a tab switch keeps this whole tree mounted, only the data swaps. The results pages reuse this same component (passing `results` + `initialQuery`) rather than a second copy that could drift.
+// The tab is the route param: a switch keeps this tree mounted and only swaps
+// the data. The results pages reuse this same component.
 let {
 	tab,
 	title,
@@ -23,22 +24,18 @@ let {
 }: {
 	tab: "orgs" | "projects";
 	title: string;
-	/** Pre-fills the bar — the results pages show what was searched for. */
+	/** Pre-fills the bar on the results pages. */
 	initialQuery?: string;
-	/** The results card; absent on the search page itself. */
+	/** Absent on the search page itself. */
 	results?: Snippet;
-	/**
-	 * The host's URL map. ReTreever passes its AppRoutes; rapper passes
-	 * nothing, and selecting a result then goes nowhere rather than to a 404.
-	 */
+	/** The host's URL map; absent, selecting a result goes nowhere. */
 	routes?: WhoWhatRoutes;
-	/** rapper passes nothing and every list fetch is skipped rather than aimed at a 404. */
+	/** Absent, every list fetch is skipped. */
 	endpoints?: WhoWhatEndpoints;
 } = $props();
 
 let orgs = $state<SearchListItem[]>([]);
 let projects = $state<SearchListItem[]>([]);
-/** Most-searched keys per tab; orders the empty-query dropdown. */
 let topKeys = $state<{ orgs: string[]; projects: string[] }>({ orgs: [], projects: [] });
 let orgsLoaded = false;
 let projectsLoaded = false;
@@ -46,13 +43,13 @@ let activated = false;
 let listLoading = $state(false);
 
 async function loadTab(which: "orgs" | "projects") {
-	// ⚠️ Flag set BEFORE the await, or a focus + the tab effect can double-fetch.
+	// Flag set BEFORE the await, or a focus plus the tab effect double-fetch.
 	if (which === "orgs" ? orgsLoaded : projectsLoaded) return;
 	if (which === "orgs") orgsLoaded = true;
 	else projectsLoaded = true;
 
 	listLoading = true;
-	// The list is what the page waits on; the ranking rides beside it and lands whenever it lands.
+	// Only the list is awaited; the ranking lands whenever it lands.
 	loadTopKeys(fetch, endpoints, which).then((keys) => {
 		topKeys = { ...topKeys, [which]: keys };
 	});
@@ -64,7 +61,6 @@ async function loadTab(which: "orgs" | "projects") {
 	}
 }
 
-/** First focus / list-open: load the active tab's rows. */
 function activate() {
 	activated = true;
 	loadTab(tab);
@@ -75,7 +71,7 @@ $effect(() => {
 	if (activated) loadTab(tab);
 });
 
-// ⚠️ loadTab is idempotent, so this idle warm-up and a real hover/focus interaction can't double-fetch.
+// Idle warm-up; loadTab is idempotent, so a real interaction can't double-fetch.
 $effect(() => {
 	let idleHandle = 0;
 	let timer: ReturnType<typeof setTimeout> | undefined;
@@ -92,25 +88,24 @@ $effect(() => {
 	};
 });
 
-// ⚠️ Seeded from the prop (not an effect) so SSR renders the bar already filled — an effect alone pops the name in after hydration. untrack: genuinely one-time, the effect below owns every later change.
+// Seeded so SSR renders the bar already filled; the effect below owns every later change.
 let query = $state(untrack(() => initialQuery));
 let dropdownOpen = $state(false);
-/** The dropdown row the user last clicked; see SearchPage's `selected`. */
 let selected = $state<SearchListItem | null>(null);
 let notice = $state<string | null>(null);
 
-// ⚠️ Reads only `initialQuery`, so typing never re-triggers it — a plain initialiser would leave the previous org's name in the bar when the route's subject changes.
+// Reads only initialQuery, so typing never re-triggers it.
 $effect(() => {
 	query = initialQuery;
 });
 
-// Retires the last submit's message on edit — "No match" while typing a correction reads as a live verdict on it, which it isn't.
+// "No match" while typing a correction would read as a live verdict on it.
 $effect(() => {
 	query;
 	notice = null;
 });
 
-// ⚠️ No server-side free-text search — an unresolvable query stays put with a message rather than navigating to a guessed key and 404ing.
+// No server-side free-text search: an unresolvable query stays put.
 function submitSearch(q: string, t: "orgs" | "projects") {
 	const items = t === "orgs" ? orgs : projects;
 
@@ -134,7 +129,7 @@ function submitSearch(q: string, t: "orgs" | "projects") {
 	recordSearchHit(fetch, endpoints, t, key);
 	const href =
 		t === "orgs" ? routes.whoOrg?.(key) : routes.whatProject?.(key);
-	// ⚠️ No host URL map → do nothing, silently — goto(undefined) throws.
+	// goto(undefined) throws.
 	if (href) goto(href);
 }
 </script>

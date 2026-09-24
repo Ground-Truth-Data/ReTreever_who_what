@@ -1,5 +1,5 @@
 <script lang="ts">
-// Sparse scatter of grass clumps drawn in front of the mascot (occluders with gaps, not a full-bleed wash) — generated, not hand-placed, so it stays even at any width.
+// Generated scatter of grass clumps in front of the mascot; even at any width.
 
 let {
 	class: className = "",
@@ -13,7 +13,7 @@ let {
 	scale?: number;
 } = $props();
 
-// ⚠️ Viewport width via `innerWidth`, NOT bind:clientWidth/getComputedStyle — measuring rendered content creates a measure→re-render feedback loop that froze the renderer (tab wouldn't even close).
+// innerWidth, never bind:clientWidth: measuring rendered content froze the renderer in a measure→render loop.
 let vw = $state(0);
 
 $effect(() => {
@@ -25,7 +25,7 @@ $effect(() => {
 	return () => removeEventListener("resize", read);
 });
 
-// ⚠️ DOG_W_* mirror GrassMascot's --dog-w clamp — duplicated on purpose (reading it via getComputedStyle caused the freeze above); keep them in sync.
+// Keep in sync with --dog-w in GrassMascot.svelte (getComputedStyle caused the freeze above).
 const DOG_W_MIN = 190;
 const DOG_W_VW = 0.38;
 const DOG_W_MAX = 680;
@@ -39,7 +39,7 @@ const gapFraction = $derived(
 	spacing ?? (vw > 0 ? dogWidth / vw / DENSITY : 0.38 / DENSITY),
 );
 
-/** 14 clump cutouts (both hands); each keeps its own aspect ratio — cutouts run 1.02:1 to 1.48:1, a shared ratio squashed the tall ones. All are 320px wide, so ratio = 320 / height. */
+/** All 320px wide, so ratio = 320 / h; a shared ratio squashed the tall ones. */
 const CLUMPS: { n: number; h: number }[] = [
 	{ n: 3, h: 216 },
 	{ n: 4, h: 314 },
@@ -50,13 +50,12 @@ const CLUMPS: { n: number; h: number }[] = [
 	{ n: 9, h: 253 },
 ];
 
-// ⚠️ Uses import.meta.glob (build-time import), NOT a template-string URL — an assembled `/pub-Rtvr/...` path 404s outside ReTreever and can't be grepped/found by the build.
+// import.meta.glob, never an assembled URL: a host path 404s outside the host.
 const TUFT_URLS = import.meta.glob<string>(
 	"./assets/pub-Rtvr/home/tufts/*.webp",
 	{ eager: true, query: "?url", import: "default" },
 );
 
-/** `tuft-4-flipped` -> its built URL. Keyed by name, not by path. */
 function tuft(name: string): string {
 	const hit = Object.entries(TUFT_URLS).find(([p]) =>
 		p.endsWith(`/${name}.webp`),
@@ -71,7 +70,7 @@ const ART = CLUMPS.flatMap((c) =>
 	})),
 );
 
-// ⚠️ Seeded integer-hash, not Math.random() (would mismatch server/client hydration) and not the sin-based one-liner (too smooth at consecutive seeds — picked the same clump repeatedly).
+// Seeded: Math.random() mismatches hydration; a sin one-liner repeats at consecutive seeds.
 function rand(seed: number): number {
 	let h = Math.imul(seed ^ 0x9e3779b9, 0x85ebca6b);
 	h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
@@ -79,8 +78,7 @@ function rand(seed: number): number {
 	return (h >>> 0) / 4294967296;
 }
 
-// Jittered-grid scatter: regular grid at `spacing`, each tuft offset up to ±40% of a cell — even coverage without a fence-like rhythm.
-// Positions run -5% to 110% so the row doesn't visibly start/end inside the viewport.
+// Jittered grid from -5% to 110%: no fence rhythm, no visible start or end.
 const positions = $derived.by(() => {
 	const step = gapFraction * 100;
 	const out: {
@@ -91,7 +89,7 @@ const positions = $derived.by(() => {
 		z: number;
 	}[] = [];
 
-	// Shuffled bag, not independent picks — `ART[floor(rand()*14)]` per tuft repeats almost immediately (birthday problem) and duplicates are glaring here; shuffle all 14, deal in order, reshuffle only when empty.
+	// A shuffled bag, not independent picks: duplicates are glaring.
 	const bag = ART.map((a, i) => ({ a, k: rand(i * 101 + 7) }))
 		.sort((p, q) => p.k - q.k)
 		.map((p) => p.a);
@@ -104,9 +102,8 @@ const positions = $derived.by(() => {
 			left: x + (r1 - 0.5) * step * 0.8,
 			src: art.src,
 			ratio: art.ratio,
-			// Height reads as depth (nearer = taller); deliberately small (18-40% of band) — taller reads as a wall, not tufts.
+			// 18–40% of the band; taller reads as a wall.
 			h: (18 + r3 * 22) * scale,
-			// A few sit fractionally lower so they overlap each other.
 			z: r3 > 0.6 ? 1 : 0,
 		});
 	}
@@ -130,7 +127,6 @@ const positions = $derived.by(() => {
 </div>
 
 <style>
-	/* Sits in the band's own stacking context, above the mascot child. */
 	.tuft-layer {
 		position: absolute;
 		inset: 0;
@@ -138,7 +134,8 @@ const positions = $derived.by(() => {
 		overflow: hidden;
 	}
 
-	/* ⚠️ `width: auto` alone measures ZERO here — an absolutely-positioned replaced element with a % height has no definite height to derive auto width from, so it collapsed invisibly; each element's own `aspect-ratio` fixes it. Also: translateX(-50%) makes `left` the tuft's centre, matching the scatter maths above. */
+	/* width:auto alone measures ZERO (absolute replaced element with a % height);
+	   the inline aspect-ratio fixes it. translateX(-50%) makes `left` the centre. */
 	.tuft {
 		position: absolute;
 		bottom: 0;

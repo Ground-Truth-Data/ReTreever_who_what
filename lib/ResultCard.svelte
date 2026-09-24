@@ -1,7 +1,7 @@
 <script lang="ts">
 import { formatTransparencyScore } from "./whoWhatTypes";
 
-// ⚠️ PLACEHOLDER BY DESIGN — the real results layout replaces this component.
+// Placeholder; the real results layout replaces this component.
 let {
 	name,
 	rating,
@@ -18,7 +18,7 @@ let {
 	<h2 class="result-name">{name}</h2>
 	<p class="result-rating">
 		<span class="result-label">{label}</span>
-		<!-- ⚠️ Unscored is a real state — show a dash, not 0.0% (which reads as "scored terribly"). -->
+		<!-- Unscored shows a dash: 0.0% reads as "scored terribly". -->
 		<span class="result-score">
 			{rating === null ? "—" : formatTransparencyScore(rating)}
 		</span>
@@ -26,8 +26,6 @@ let {
 </article>
 
 <style>
-	/* Same black panel + gold border as the search dropdown right above it, so
-	   the two read as one control stack rather than two visual languages. */
 	.result-card {
 		width: 100%;
 		box-sizing: border-box;
@@ -36,18 +34,13 @@ let {
 		border: 3px solid #fad702;
 		border-radius: 2px;
 		text-align: center;
-		/* The page's three-shadow recipe, lit from up-and-left like every other
-		   sticker here, so the card rests ON the painted sky. */
 		filter:
 			drop-shadow(1px 2px 2px rgb(12 8 1 / 0.7))
 			drop-shadow(4px 7px 8px rgb(12 8 1 / 0.55))
 			drop-shadow(14px 20px 28px rgb(12 8 1 / 0.42));
 	}
 
-	/* Sized off --bar-scale (defined on .search-card, inherited here) rather
-	   than a px literal, for the same reason .search-caption is: the search
-	   bar's text is in SVG user units scaled to the card's width, so anything
-	   that must sit level with it has to track that scale. */
+	/* --bar-scale (inherited from .search-card) keeps this level with the bar's SVG-unit text. */
 	.result-name {
 		margin: 0;
 		color: var(--rtvr-on-dark);
@@ -71,7 +64,7 @@ let {
 		font-size: calc(13 * var(--bar-scale, 1));
 	}
 
-	/* ⚠️ Keep the `, inherit` fallback — if the OTF fails to load, the score degrades to readable body text instead of disappearing. */
+	/* Keep the `, inherit` fallback: without it a failed OTF load makes the score vanish. */
 	.result-score {
 		font-family: var(--font-retreever, inherit);
 		color: #fad702;
@@ -79,10 +72,7 @@ let {
 		line-height: 1.1;
 	}
 
-	/* ---- Mobile: 550px, the same breakpoint .search-caption uses ----
-	   Below it the bar spans the whole screen, so "tracking the input" would
-	   mean a headline-sized readout. Drop to fixed sizes there, exactly as the
-	   caption does. */
+	/* 550px matches .search-caption; on a phone the bar spans the screen. */
 	@media (max-width: 550px) {
 		.result-name {
 			font-size: 17px;

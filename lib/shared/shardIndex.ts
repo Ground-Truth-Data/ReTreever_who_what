@@ -3,15 +3,12 @@
 export type ShardPage = 'search' | 'why';
 
 export type ShardEntry = {
-	/** the number — unique across the WHOLE SITE, never reused */
+	/** unique across the WHOLE SITE, never reused */
 	n: number;
-	/** which page it renders on; becomes the id prefix */
 	page: ShardPage;
-	/** slug for the DOM id, e.g. `polygons`; omitted for numbered artwork shards */
 	slug?: string;
-	/** what it actually is, for humans reading this table */
 	what: string;
-	/** artwork/poly number the piece draws — NOT the same as `n` once numbering went global */
+	/** artwork number drawn; not the same as `n` */
 	art?: number;
 };
 
@@ -42,7 +39,7 @@ export const SHARDS: ShardEntry[] = [
 	{ n: 24, page: 'why', slug: 'header', what: 'WHAT we do and WHY lockup' },
 	{ n: 25, page: 'why', slug: 'affiliates', what: 'Affiliates panel' },
 
-	// out of page order on purpose — numbers are allocated, never sorted; don't renumber to reorder
+	// Out of order on purpose: numbers are allocated, never sorted.
 	{
 		n: 26,
 		page: 'search',
@@ -51,13 +48,13 @@ export const SHARDS: ShardEntry[] = [
 	},
 ];
 
-/** DOM id for a shard: `<page>_shard-<n>[-<slug>]`; n is the name, slug/page are courtesies */
+/** `<page>_shard-<n>[-<slug>]` */
 export function shardId(entry: ShardEntry): string {
 	const base = `${entry.page}_shard-${entry.n}`;
 	return entry.slug ? `${base}-${entry.slug}` : base;
 }
 
-/** Looks up a shard by number; throws instead of returning undefined so a typo fails loudly rather than rendering id="undefined" */
+/** Throws so a typo fails loudly rather than rendering id="undefined". */
 export function shard(n: number): ShardEntry {
 	const found = SHARDS.find((s) => s.n === n);
 	if (!found) {
@@ -74,7 +71,7 @@ export function shardsFor(page: ShardPage): ShardEntry[] {
 	return SHARDS.filter((s) => s.page === page).sort((a, b) => a.n - b.n);
 }
 
-/** Map from artwork number to shard number for one page — bridges solver artwork numbers (which diverged from shard numbers) to the index */
+/** Artwork number → shard, per page. */
 export function byArt(page: ShardPage): Map<number, ShardEntry> {
 	const m = new Map<number, ShardEntry>();
 	for (const s of shardsFor(page)) if (s.art !== undefined) m.set(s.art, s);

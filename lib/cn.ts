@@ -1,4 +1,4 @@
-// ⚠️ Copied on purpose, not shared — a child must never import up into ReTreever (childBoundary.test.ts forbids it). ReTreever's identical copy at src/lib/core/utils.ts is not drift.
+// Copied, not imported from the host: a child never imports up.
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 

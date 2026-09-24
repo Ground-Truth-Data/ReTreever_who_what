@@ -1,19 +1,18 @@
-// Position is purely config-driven — nothing computes/corrects/negotiates it; edit x/y/w and only that shard moves.
-// x/y can be negative or >100 — intentional bleed off the edge, not a bug.
+// Position is pure config: edit x/y/w and only that shard moves. x/y may run
+// past 0..100 — deliberate bleed off the edge.
 
 export type ShardSpec = {
 	id: number;
-	/** x of the shard's LEFT edge, as a % of viewport width. May be < 0 or > 100. */
+	/** % of viewport width */
 	x: number;
-	/** y of the shard's TOP edge, as a % of the section's height. May be < 0 or > 100. */
+	/** % of the section's height */
 	y: number;
-	/** width as a % of viewport width, then clamped by min/max px */
+	/** % of viewport width, clamped to minw..maxw px */
 	w: number;
 	maxw: number;
 	minw: number;
-	/** Rotation in degrees; keep modest (~±14) — beyond that reads as broken, not scattered. */
+	/** degrees; keep within ~±14 or it reads as broken, not scattered */
 	rot?: number;
-	/** artwork id for aspect lookup; defaults to `id` (see Placed.art) */
 	art?: number;
 };
 
@@ -32,28 +31,19 @@ const ASPECT: Record<number, number> = {
 	11: 1.75093,
 };
 
-// ⚠️ fixed navbar isn't part of section layout geometry — a shard at y:2 (in a 700px section) sits behind it, not near the top.
+// The fixed navbar is not part of section geometry: a shard at y:2 sits behind it.
 export const NAVBAR_H = 80;
 
-// The hero ring — shards around the search card.
 export const HOME: ShardSpec[] = [
-	// top-right: long reach inward, the biggest shard on the page (artwork mirrored)
 	{ id: 1, x: 74, y: 4, w: 44, maxw: 500, minw: 96, rot: 7 },
-	// small punctuation below it, tucked against the left edge
 	{ id: 2, x: 20, y: -22, w: 33, maxw: 190, minw: 52, rot: 11 },
-	// top-right punctuation, outboard of the search card
 	{ id: 3, x: 86, y: -9, w: 82, maxw: 335, minw: 68, rot: 11 },
-	// upper-left: medium, beside the search bar but never touching it (artwork mirrored)
 	{ id: 4, x: -5, y: 20, w: 36, maxw: 785, minw: 96, rot: -6 },
-	// mid-right: the planters, near-square
 	{ id: 8, x: 82, y: 55, w: 26, maxw: 425, minw: 100, rot: -5 },
-	// bottom-left: long reach across the foot
 	{ id: 9, x: -6, y: 72, w: 31, maxw: 455, minw: 84, rot: 7 },
-	// mid-left: medium, fills the gap between shard 1 and the foot
 	{ id: 11, x: -8, y: 40, w: 27, maxw: 400, minw: 96, rot: 4 },
 ];
 
-// The headline ring — around "Find Truth in Reforestation."
 export const HEADLINE: ShardSpec[] = [
 	{ id: 7, x: 80, y: 6, w: 30, maxw: 540, minw: 96, rot: -9 },
 	{ id: 6, x: -9, y: 18, w: 28, maxw: 410, minw: 88, rot: 12 },
@@ -61,7 +51,6 @@ export const HEADLINE: ShardSpec[] = [
 	{ id: 5, x: 84, y: 66, w: 24, maxw: 355, minw: 84, rot: 10 },
 ];
 
-// A shard resolved to px for a given viewport.
 export type Placed = {
 	id: number;
 	x: number;
@@ -69,11 +58,10 @@ export type Placed = {
 	w: number;
 	h: number;
 	rot?: number;
-	/** Which artwork this draws; usually same as `id`, but a whole-page solve renumbers ids so this keeps the original artwork lookup. */
 	art?: number;
 };
 
-// Resolve a section's shards to px — pure, no passes/iteration, no shard aware of another.
+/** A section's shards resolved to px. */
 export function place(
 	specs: ShardSpec[], vw: number, sectionH: number,
 ): Placed[] {
@@ -92,39 +80,36 @@ export function place(
 	});
 }
 
-// Depth: how near a shard reads, 0 (far)..1 (near); derived from width, normalized to the widest shard present.
+/** 0 (far)..1 (near), from width normalised to the widest shard present. */
 export function depthOf(p: Placed, widest: number): number {
 	if (widest <= 0) return 0;
-	// rescale so the ~0.35 floor ratio of the narrowest present maps to 0 and the widest to 1
+	// ~narrowest/widest, so the narrowest present maps to 0 instead of ~0.38.
 	const NARROWEST_RATIO = 0.35;
 	const ratio = Math.min(1, p.w / widest);
 	const t = (ratio - NARROWEST_RATIO) / (1 - NARROWEST_RATIO);
 	return Math.max(0, Math.min(1, t));
 }
 
-// Vertical parallax offset (px) for a shard at `depth`, `scrolled` px down; negative = shard rises relative to the page (scrolls slower than the background).
 export const MAX_PARALLAX_RATE = 0.12;
 
+/** Negative: shards rise against the scroll. */
 export function parallaxY(depth: number, scrolled: number): number {
 	return -scrolled * MAX_PARALLAX_RATE * depth;
 }
 
-// Paint band for a depth: 0 (nearest)..-2 (furthest); feeds z-index: calc(2 + var(--layer)).
-// ⚠️ must return an integer — z-index rounds a continuous value, silently breaking paint order.
-// negative because z-index 2 is a ceiling, not a midpoint — the grass sits at 3 and must stay in front of every shard.
+// Integers only: z-index rounds a fractional value into a hard cut. Negative
+// because the grass sits at z 3 and must stay in front of every shard.
 export function layerOf(depth: number): number {
 	if (depth >= 0.66) return 0;
 	if (depth >= 0.33) return -1;
 	return -2;
 }
 
-/** One section's inputs. */
 export type SectionInput = {
 	height: number;
 	specs: ShardSpec[];
 };
 
-// Resolve every section independently — no shared coordinate space, no cross-section collision.
 export function layoutPage(
 	vw: number, sections: SectionInput[],
 ): Placed[][] {

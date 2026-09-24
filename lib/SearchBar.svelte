@@ -1,7 +1,7 @@
 <script lang="ts">
 import { cn } from "./cn";
 
-// ⚠️ All foreignObject boxes are in the SVG's own user units (viewBox 284.70643 x 49.229731) — font-size etc. inside one scales with the artwork, not px.
+// foreignObject boxes are in SVG user units: font-size inside one scales with the artwork, not px.
 
 let {
 	value = $bindable(""),
@@ -23,9 +23,9 @@ let {
 	id?: string;
 	class?: string;
 	onsearch?: (query: string) => void;
-	/** First intent to search — lets the route lazy-load dropdown rows only when actually wanted. */
+	/** First intent to search; the route lazy-loads the rows on it. */
 	onactivate?: () => void;
-	/** Arrow keys walk the dropdown while focus stays in the field (combobox pattern). */
+	/** Arrow keys walk the dropdown while focus stays in the field. */
 	onkeynav?: (dir: 1 | -1) => void;
 	activeDescendant?: string;
 	listId?: string;
@@ -57,7 +57,7 @@ function handleSubmit(event: SubmitEvent) {
 }
 </script>
 
-<!-- `id` + `form=` wire the foreignObject controls to this form explicitly rather than leaning on DOM ancestry across the SVG boundary. -->
+<!-- form= wires the foreignObject controls explicitly; DOM ancestry doesn't cross the SVG boundary. -->
 <form
 	{id}
 	class={cn("search-bar", className)}
@@ -135,8 +135,6 @@ function handleSubmit(event: SubmitEvent) {
 			></button>
 		</foreignObject>
 
-		<!-- The live text field, inset to clear the gold rule on the left and the
-		     submit panel on the right. -->
 		<foreignObject x="44" y="8" width="157" height="32">
 			<div xmlns="http://www.w3.org/1999/xhtml" class="input-shell">
 				<input
@@ -156,7 +154,7 @@ function handleSubmit(event: SubmitEvent) {
 					}}
 					onkeydown={handleKeydown}
 					oninput={(e) => {
-						// ⚠️ Read from the DOM, not `value` — must not depend on bind ordering.
+						// The DOM, not `value`: must not depend on bind ordering.
 						if (e.currentTarget.value.trim().length > 0) {
 							dropdownOpen = true;
 						}
@@ -199,10 +197,7 @@ function handleSubmit(event: SubmitEvent) {
 		width: 100%;
 	}
 
-	/* The gold every stroke in the artwork inherits. The paths declare
-	   `stroke="currentColor"` rather than a hex, so the whole bar recolours from
-	   this ONE line — and the hover rules below can shift it without the SVG
-	   knowing. See app.css for why the .org gold is warmer than Get Cache's. */
+	/* Every stroke is currentColor; this one line recolours the bar. */
 	.search-bar-svg {
 		display: block;
 		width: 100%;
@@ -211,15 +206,7 @@ function handleSubmit(event: SubmitEvent) {
 		color: var(--color-gold-bar);
 	}
 
-	/* ---- Hover: the piece lifts and tilts ----
-	   Everything on this page is drawn as a torn sticker lying at an angle, so
-	   the hover that suits it is picking one up: a small scale, a slight skew
-	   off-axis, and a brighter gold. A wash of background colour (what this used
-	   to be, at 14% alpha) is the one thing that DOESN'T read on artwork this
-	   busy — it was invisible against the painted panels.
-
-	   The scale is deliberately small. These are big targets on a 480px card;
-	   past ~1.08 the bar visibly collides with the tabs above it. */
+	/* Hover scale stays small: past ~1.08 the bar collides with the tabs above. */
 	.glyph {
 		transform-box: fill-box;
 		transform-origin: center;
@@ -228,10 +215,7 @@ function handleSubmit(event: SubmitEvent) {
 			fill 0.18s ease;
 	}
 
-	/* The hit targets are TRANSPARENT buttons sitting over the artwork, so
-	   scaling the button itself would move nothing you can see. `:has()` lets the
-	   hover on the button drive the glyph underneath it instead — the visible
-	   thing transforms, the invisible thing stays where the pointer expects it. */
+	/* The hit buttons are transparent; :has() lets their hover drive the visible glyph. */
 	.search-bar-svg:has(.hit-search:hover) .glyph-magnifier,
 	.search-bar-svg:has(.hit-search:focus-visible) .glyph-magnifier,
 	.search-bar-svg:has(.hit-search:hover) .glyph-conifer,
@@ -246,19 +230,13 @@ function handleSubmit(event: SubmitEvent) {
 		fill: var(--color-gold-shard);
 	}
 
-	/* The submit panel itself brightens under the glyphs, so the whole slanted
-	   block reads as active rather than just the little tree. */
 	.search-bar-svg:has(.hit-search:hover) .submit-panel {
 		fill: #23304f;
 		transition: fill 0.18s ease;
 	}
 
-	/* The caret animates on TWO independent axes: `rotate` carries the
-	   open/closed 180° flip, `transform` carries the hover lift from .glyph.
-	   Keeping them as separate properties (rather than folding the flip into a
-	   transform) is what lets both run at once — a hover mid-flip composes
-	   instead of one snapping over the other. The transition must therefore name
-	   all three, since this rule would otherwise override .glyph's. */
+	/* rotate carries the open flip, transform the hover lift, so both compose;
+	   the transition must name all three or this rule overrides .glyph's. */
 	.caret {
 		transform-box: fill-box;
 		transform-origin: center;
@@ -272,7 +250,6 @@ function handleSubmit(event: SubmitEvent) {
 		rotate: 180deg;
 	}
 
-	/* ---- foreignObject contents: every length here is an SVG user unit ---- */
 	.input-shell {
 		width: 100%;
 		height: 100%;
@@ -302,8 +279,7 @@ function handleSubmit(event: SubmitEvent) {
 		color: #8d93a6;
 	}
 
-	/* Safari draws its own clear button inside type="search"; it lands outside
-	   the panel geometry at these scales. .clear below is ours, inside it. */
+	/* Safari's own clear button lands outside the panel at these scales; .clear is ours. */
 	.search-input::-webkit-search-decoration,
 	.search-input::-webkit-search-cancel-button {
 		-webkit-appearance: none;
@@ -351,10 +327,7 @@ function handleSubmit(event: SubmitEvent) {
 		transition: background-color 0.2s ease;
 	}
 
-	/* The wash stays FAINT on purpose — the visible hover is the glyph growing
-	   and tilting above, not this. At 14% it was doing the whole job and doing it
-	   invisibly; now it is just a soft ground under a transform you can actually
-	   see, and going heavier would fight the artwork it sits on. */
+	/* Faint on purpose: the glyph transform is the visible hover. */
 	.hit:hover {
 		background: rgb(245 161 25 / 0.2);
 	}

@@ -1,11 +1,9 @@
 import type { WhoWhatEndpoints, WhoWhatFail } from "./whoWhatTypes";
 import { toTransparencyScore } from "./whoWhatTypes";
 
-// Shared org/project result loader, so the two results routes can't drift on scoring/missing-key behavior. Unlike the search page's streamed dropdowns, these loads are AWAITED — the name and rating ARE the page.
+// Awaited, unlike the streamed dropdown lists: the name and rating ARE the page.
 
-/** What a results page renders, whichever resource it came from. */
 export interface SearchResult {
-	/** organizationKey / projectKey. */
 	key: string;
 	name: string;
 	/** Transparency rating as a 0–100 percentage; null when unscored. */
@@ -16,18 +14,17 @@ export interface SearchResult {
 	hint?: string | null;
 }
 
-// ⚠️ Follows exactly one redirect — SvelteKit's server-side fetch of an internal route returns a 3xx instead of following it itself; a second redirect would mean the data is malformed, so it is not looped.
+// Follows exactly one redirect: SvelteKit's server-side fetch of an internal
+// route returns the 3xx instead of following it.
 async function fetchItem<T>(
 	fetch: typeof globalThis.fetch,
 	endpoint: string,
 	envelopeKey: string,
 	notFoundMessage: string,
-	// The host's `error` function — see WhoWhatFail; passed in because a child can't import @sveltejs/kit itself.
 	fail: WhoWhatFail,
 ): Promise<T> {
 	let res: Response;
 	try {
-		// A server-side fetch of an internal route calls the handler directly, no HTTP round trip, so the query stays in one place (the API).
 		res = await fetch(endpoint);
 
 		const redirectedTo = res.status === 302 && res.headers.get("location");
@@ -49,7 +46,7 @@ async function fetchItem<T>(
 
 	const payload = (await res.json()) as Record<string, T>;
 	const item = payload[envelopeKey];
-	// A 200 with an empty envelope would otherwise reach the page as a card of undefineds; treat it as the missing record it is.
+	// A 200 with an empty envelope is the missing record it is.
 	if (!item) {
 		throw fail(404, notFoundMessage);
 	}
@@ -64,11 +61,10 @@ interface OrgRow {
 	primaryStakeholderCategory: string | null;
 }
 
-/** The org's rating is `scoreOrgFinal` — the final blended org score. */
+/** The org's rating is `scoreOrgFinal`, the final blended org score. */
 export async function loadOrganization(
 	fetch: typeof globalThis.fetch,
 	organizationKey: string,
-	// The host's API surface, passed in like `fetch` — a child owns no endpoints, so hardcoding a path here would bind it to whichever product mounts the page.
 	endpoints: WhoWhatEndpoints,
 	fail: WhoWhatFail,
 ): Promise<SearchResult> {
@@ -85,7 +81,7 @@ export async function loadOrganization(
 	return {
 		key: org.organizationKey,
 		name: org.organizationName,
-		// Converted HERE, once — scoreOrgFinal is a Prisma Decimal and arrives over json() as a string, so the page only ever sees the 0–100 number.
+		// scoreOrgFinal is a Prisma Decimal, a string over json().
 		rating: toTransparencyScore(org.scoreOrgFinal),
 		rank: org.scoreRankOverall,
 		hint: org.primaryStakeholderCategory,

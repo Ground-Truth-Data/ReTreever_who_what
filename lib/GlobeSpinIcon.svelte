@@ -1,16 +1,15 @@
 <script lang="ts">
 import { cn } from "./cn";
-// Sprite is imported (bundled), not a host URL — a leading-slash path 404s outside ReTreever.
 import globeSprite from "./assets/pub-Rtvr/animations/globe-spin-sprite.webp";
 
 let {
 	class: className = "",
-	// ⚠️ Use `/who/map`, not `/retreeve/who/map` — the old prefix still 301s but forces a full page load instead of client nav.
+	// Not /retreeve/who/map: that prefix 301s into a full page load.
 	href = "/who/map",
 }: { class?: string; href?: string } = $props();
 </script>
 
-<!-- 3fps rotating-globe sprite (6-frame, 3x2 grid); "Maps_page_redirect_animation" in Desktop layout. -->
+<!-- 3fps 6-frame 3x2 sprite. -->
 <a {href} aria-label="Explore the map" class={cn("globe-spin-link", className)}>
 	<div class="globe-spin" style="--globe-sprite: url({globeSprite})"></div>
 </a>
@@ -56,5 +55,5 @@ let {
 		}
 	}
 
-	/* ⚠️ NO prefers-reduced-motion gate — repo law, do not re-add. */
+	/* NO prefers-reduced-motion gate — repo law. */
 </style>
