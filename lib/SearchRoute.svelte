@@ -12,8 +12,6 @@ import {
 import { resolveSearchKey } from "./searchResolve";
 import type { SearchListItem } from "./searchTypes";
 
-// The tab is the route param: a switch keeps this tree mounted and only swaps
-// the data. The results pages reuse this same component.
 let {
 	tab,
 	title,
@@ -49,7 +47,6 @@ async function loadTab(which: "orgs" | "projects") {
 	else projectsLoaded = true;
 
 	listLoading = true;
-	// Only the list is awaited; the ranking lands whenever it lands.
 	loadTopKeys(fetch, endpoints, which).then((keys) => {
 		topKeys = { ...topKeys, [which]: keys };
 	});
@@ -67,7 +64,7 @@ function activate() {
 }
 
 $effect(() => {
-	tab; // re-run when the tab changes
+	tab;
 	if (activated) loadTab(tab);
 });
 
@@ -88,24 +85,20 @@ $effect(() => {
 	};
 });
 
-// Seeded so SSR renders the bar already filled; the effect below owns every later change.
 let query = $state(untrack(() => initialQuery));
 let dropdownOpen = $state(false);
 let selected = $state<SearchListItem | null>(null);
 let notice = $state<string | null>(null);
 
-// Reads only initialQuery, so typing never re-triggers it.
 $effect(() => {
 	query = initialQuery;
 });
 
-// "No match" while typing a correction would read as a live verdict on it.
 $effect(() => {
 	query;
 	notice = null;
 });
 
-// No server-side free-text search: an unresolvable query stays put.
 function submitSearch(q: string, t: "orgs" | "projects") {
 	const items = t === "orgs" ? orgs : projects;
 
@@ -129,7 +122,6 @@ function submitSearch(q: string, t: "orgs" | "projects") {
 	recordSearchHit(fetch, endpoints, t, key);
 	const href =
 		t === "orgs" ? routes.whoOrg?.(key) : routes.whatProject?.(key);
-	// goto(undefined) throws.
 	if (href) goto(href);
 }
 </script>

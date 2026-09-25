@@ -1,5 +1,4 @@
-// Position is pure config: edit x/y/w and only that shard moves. x/y may run
-// past 0..100 — deliberate bleed off the edge.
+// x/y may run past 0..100 — deliberate bleed off the edge.
 
 export type ShardSpec = {
 	id: number;
@@ -16,7 +15,6 @@ export type ShardSpec = {
 	art?: number;
 };
 
-// Each artwork's aspect ratio (w/h), read off its SVG viewBox.
 const ASPECT: Record<number, number> = {
 	1: 1.63924,
 	2: 0.67299,
@@ -31,7 +29,6 @@ const ASPECT: Record<number, number> = {
 	11: 1.75093,
 };
 
-// The fixed navbar is not part of section geometry: a shard at y:2 sits behind it.
 export const NAVBAR_H = 80;
 
 export const HOME: ShardSpec[] = [
@@ -61,7 +58,6 @@ export type Placed = {
 	art?: number;
 };
 
-/** A section's shards resolved to px. */
 export function place(
 	specs: ShardSpec[], vw: number, sectionH: number,
 ): Placed[] {
@@ -80,7 +76,6 @@ export function place(
 	});
 }
 
-/** 0 (far)..1 (near), from width normalised to the widest shard present. */
 export function depthOf(p: Placed, widest: number): number {
 	if (widest <= 0) return 0;
 	// ~narrowest/widest, so the narrowest present maps to 0 instead of ~0.38.
@@ -92,13 +87,11 @@ export function depthOf(p: Placed, widest: number): number {
 
 export const MAX_PARALLAX_RATE = 0.12;
 
-/** Negative: shards rise against the scroll. */
 export function parallaxY(depth: number, scrolled: number): number {
 	return -scrolled * MAX_PARALLAX_RATE * depth;
 }
 
-// Integers only: z-index rounds a fractional value into a hard cut. Negative
-// because the grass sits at z 3 and must stay in front of every shard.
+// Negative: the grass sits at z 3 and must stay in front of every shard.
 export function layerOf(depth: number): number {
 	if (depth >= 0.66) return 0;
 	if (depth >= 0.33) return -1;

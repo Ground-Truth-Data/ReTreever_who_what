@@ -22,7 +22,6 @@ import poly10Raw from "./homeAssets/poly/Search_page_SP_poly_10.svg?raw";
 import poly11Raw from "./homeAssets/poly/Search_page_SP_poly_11.svg?raw";
 import MiddleDividerRaw from "./homeAssets/poly/Search_page_Middle_Divider.svg?raw";
 
-// Imported, never a leading-slash URL: an import is bundled into whatever app builds this child.
 import skyUrl from "./assets/golden_sky_background.webp";
 import hillPatternWebp from "./assets/hill_pattern.webp";
 import hillPatternAvif from "./assets/hill_pattern.avif";
@@ -41,13 +40,11 @@ import {
 	parallaxY,
 	type Placed,
 } from "./shardLayout";
-// Shard ids come from the index, never a literal typed here.
 import { byArt, shard, shardId } from "./shared/shardIndex";
 import type { WhoWhatRoutes } from "./whoWhatTypes";
 import type { SearchListItem } from "./searchTypes";
 import type { Snippet } from "svelte";
 
-// Tabs are plain <a> links so hover preload starts the target's load. The results pages render this same component via the `results` snippet.
 let {
 	query = $bindable(""),
 	activeTab = "orgs",
@@ -75,14 +72,12 @@ let {
 	routes?: WhoWhatRoutes;
 	orgs?: SearchListItem[];
 	projects?: SearchListItem[];
-	/** Most-searched keys, best first — orders the empty-query dropdown. */
 	topKeys?: string[];
 	onsearch?: (query: string, tab: "orgs" | "projects") => void;
 	/** The row's own link navigates; the route only counts the pick. */
 	onpick?: (item: SearchListItem, tab: "orgs" | "projects") => void;
 	onactivate?: () => void;
 	listLoading?: boolean;
-	/** Absent on the search page itself. */
 	results?: Snippet;
 } = $props();
 
@@ -92,7 +87,6 @@ const searchIndex = $derived(
 	listItems.map((item) => ({ item, hay: item.name.toLowerCase() })),
 );
 
-// The loader applies no limit; a broad match could mount thousands of rows.
 const MAX_DROPDOWN_ROWS = 50;
 const TOP_ROWS = 5;
 const filtered = $derived.by(() => {
@@ -116,7 +110,6 @@ const filtered = $derived.by(() => {
 	};
 });
 
-// -1 = the input itself; focus never leaves the field.
 let highlighted = $state(-1);
 const LIST_ID = "home-search-list";
 const rowId = (i: number) => `${LIST_ID}-row-${i}`;
@@ -138,7 +131,6 @@ function moveHighlight(dir: 1 | -1) {
 	}
 }
 
-// While the list is open, submit takes the highlighted row (top row if none) so a partial query lands somewhere.
 function submit(q: string) {
 	if (dropdownOpen && filtered.rows.length > 0) {
 		const item = filtered.rows[Math.max(0, highlighted)];
@@ -158,7 +150,7 @@ function selectItem(item: SearchListItem) {
 const hrefOf = (item: SearchListItem) =>
 	activeTab === "orgs" ? routes.whoOrg?.(item.key) : routes.whatProject?.(item.key);
 
-// No preventDefault: the anchor navigates. A modified click opens elsewhere, so the bar stays as it was.
+// No preventDefault: a modified click opens elsewhere, so the bar stays as-is.
 function pickRow(e: MouseEvent, item: SearchListItem) {
 	onpick?.(item, activeTab);
 	if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -177,14 +169,11 @@ function dismissOnOutside(e: PointerEvent) {
 function dismissOnEscape(e: KeyboardEvent) {
 	if (dropdownOpen && e.key === "Escape") {
 		dropdownOpen = false;
-		// Chrome also clears a type="search" field on Escape; leave that to a second press.
 		e.preventDefault();
 	}
 }
 
-// The shard photos are `<image href>`s inside the SVG text, which `?raw` leaves
-// unresolved; withLocalPhotos swaps in the bundled URLs. A miss paints violet
-// via --rtvr-missing-art.
+// `?raw` leaves the SVG's `<image href>`s unresolved; this swaps in bundled URLs.
 const SHARD_PHOTOS = import.meta.glob<string>(
 	"./assets/pub-Rtvr/home/poly/*.webp",
 	{ eager: true, query: "?url", import: "default" },
@@ -216,7 +205,6 @@ const shardArt: Record<number, string> = {
 	11: withLocalPhotos(poly11Raw),
 };
 
-// Empty until measured, so the server renders no shards.
 let shards = $state<Placed[]>([]);
 let headlineShards = $state<Placed[]>([]);
 let heroEl = $state<HTMLElement | null>(null);
@@ -225,7 +213,7 @@ let headlineEl = $state<HTMLElement | null>(null);
 let scrolled = $state(0);
 
 // One depth reference across BOTH sections, or the headline ring's widest shard
-// would drift like a foreground piece while sitting behind one.
+// drifts like a foreground piece while sitting behind one.
 const widestShard = $derived(
 	Math.max(
 		1,
@@ -236,17 +224,14 @@ const widestShard = $derived(
 
 const searchShards = byArt("search");
 
-// Resolved here: `{#each shards as shard}` shadows the imported shard() in the markup.
+// Resolved here: `{#each shards as shard}` shadows the imported shard() below.
 const dividerId = shardId(shard(26));
 
-// An unregistered artwork gets a deliberately ugly id, not a plausible one.
 const idForArt = (art: number) => {
 	const entry = searchShards.get(art);
 	return entry ? shardId(entry) : `search_shard-UNREGISTERED-art${art}`;
 };
 
-// The headline ring's parallax starts from zero as it enters the viewport,
-// not from the document origin.
 let headlineOffset = $state(0);
 
 const headlineScrolled = $derived(Math.max(0, scrolled - headlineOffset));
@@ -266,13 +251,10 @@ function resolveShards() {
 	headlineShards = head;
 }
 
-// --hero-top feeds the fold rule; the site header sits above the hero but
-// outside this component, so its height can only be measured.
 let lastHeroTop = -1;
 function measureHeroTop() {
 	if (!heroEl) return;
 	const top = Math.round(heroEl.getBoundingClientRect().top + window.scrollY);
-	// The write re-dirties layout even when nothing moved.
 	if (top === lastHeroTop) return;
 	lastHeroTop = top;
 	heroEl.style.setProperty("--hero-top", `${top}px`);
@@ -280,7 +262,6 @@ function measureHeroTop() {
 
 function measureHeadlineOffset() {
 	if (!headlineEl) return;
-	// Minus one viewport: parallax starts as the section ENTERS view.
 	const top = headlineEl.getBoundingClientRect().top + window.scrollY;
 	headlineOffset = Math.max(0, top - window.innerHeight);
 }
@@ -290,8 +271,7 @@ $effect(() => {
 	resolveShards();
 	measureHeroTop();
 	measureHeadlineOffset();
-	// One solve per frame. measureHeroTop writes to heroEl, which this observer
-	// watches, so a synchronous callback could feed itself.
+	// One solve per frame: a synchronous callback could feed itself via heroEl.
 	let raf = 0;
 	const schedule = () => {
 		if (raf) return;
@@ -305,7 +285,6 @@ $effect(() => {
 	const ro = new ResizeObserver(schedule);
 	if (heroEl) ro.observe(heroEl);
 	if (headlineEl) ro.observe(headlineEl);
-	// The header's height moves the hero without resizing its box.
 	window.addEventListener("resize", schedule);
 
 	return () => {
@@ -315,7 +294,7 @@ $effect(() => {
 	};
 });
 
-// Its own effect: the layout effect re-runs on every solve and would tear the
+// Own effect: the layout effect re-runs on every solve and would tear the
 // scroll listener down each time. Not gated on prefers-reduced-motion — Chris
 // runs Reduce Motion on and would never see it.
 $effect(() => {
@@ -329,7 +308,6 @@ $effect(() => {
 		});
 	};
 	window.addEventListener("scroll", onScroll, { passive: true });
-	// A reload part-way down must not snap on first scroll.
 	scrolled = window.scrollY;
 
 	return () => window.removeEventListener("scroll", onScroll);
@@ -338,11 +316,10 @@ $effect(() => {
 
 <svelte:window onpointerdown={dismissOnOutside} onkeydown={dismissOnEscape} />
 
-<!-- Art bound once as custom properties; a missing asset falls through to --rtvr-missing-art. -->
+<!-- Missing asset falls through to --rtvr-missing-art. -->
 <div class="home-search-page" style="--art-sky: url({skyUrl}); --art-hill-pattern-webp: url({hillPatternWebp}); --art-hill-pattern-avif: url({hillPatternAvif}); --art-hill-fill-webp: url({hillFillWebp}); --art-hill-fill-avif: url({hillFillAvif}); --art-uppergrass-front-webp: url({upperGrassFrontWebp}); --art-uppergrass-front-avif: url({upperGrassFrontAvif}); --art-uppergrass-back-webp: url({upperGrassBackWebp}); --art-uppergrass-back-avif: url({upperGrassBackAvif});">
 	<section class="hero-section" class:has-results={results} bind:this={heroEl}>
 		{#each shards as shard (shard.id)}
-			<!-- Section-prefixed ids: the hero and the headline draw from the same numbered artwork set. -->
 			<div
 				id={idForArt(shard.id)}
 				class="bg-poly"
@@ -360,8 +337,7 @@ $effect(() => {
 		{/each}
 
 		<div class="greenery hero-greenery" aria-hidden="true"></div>
-		<!-- Back to front: black wash (::before), green wash (::after), the dog, then
-		     scattered tufts on top so he passes BEHIND a few of them. -->
+		<!-- Back to front: black wash, green wash, dog, then tufts (he passes BEHIND some). -->
 		<div class="wildflower-band" aria-hidden="true">
 			<GrassMascot ground="grass" />
 			<GrassTufts />
@@ -416,7 +392,6 @@ $effect(() => {
 								role="option"
 								aria-selected={i === highlighted}
 							>
-								<!-- A link so hover preload starts the load; without a host URL map the row can only fill the bar. -->
 								{#if href}
 									<a
 										{href}
@@ -460,7 +435,6 @@ $effect(() => {
 					</ul>
 				{/if}
 
-				<!-- Out of flow so appearing doesn't re-measure the shard sections. -->
 				{#if notice}
 					<p class="search-notice" role="status" aria-live="polite">{notice}</p>
 				{/if}
@@ -471,7 +445,6 @@ $effect(() => {
 				<GlobeSpinIcon class="globe-icon" href={mapHref ?? routes.whoMap} />
 			</div>
 
-			<!-- Inside the card so it inherits --bar-scale. -->
 			{@render results?.()}
 		</div>
 	</section>
@@ -483,7 +456,6 @@ $effect(() => {
 		</div>
 	</div>
 
-	<!-- One wildflower band on the page: a second at this foot read as the same weeds twice. -->
 	<section class="headline-section" bind:this={headlineEl}>
 		<div class="greenery headline-greenery" aria-hidden="true"></div>
 
@@ -532,19 +504,15 @@ $effect(() => {
 		overflow-x: clip;
 	}
 
-	/* Band ratios come from the 2049px-wide mobile canvas the art was exported on:
-	   uppergrass band 781/2049, crest top to hero-band bottom 902/2049. --art is
-	   capped so a desktop viewport doesn't scale them into thousand-pixel bands. */
+	/* Band ratios come from the 2049px-wide mobile canvas the art was exported on;
+	   --art is capped so a desktop viewport doesn't scale them into huge bands. */
 	.hero-section,
 	.headline-section {
 		--art: min(100vw, 1200px);
 		--upper-band: calc(var(--art) * 0.381);
-		/* The floor keeps the band a band on narrow phones. */
 		--greenery-h: max(calc(var(--art) * 0.44), 230px);
-		/* Overwritten live by measureHeroTop. */
 		--hero-top: 80px;
-		/* 416px = the search card plus room, a FLOOR: min() would eat into it on
-		   tall windows and push the band past the fold. Grows whenever the card does. */
+		/* 416px = the search card plus room, a FLOOR — grows whenever the card does. */
 		--hero-chrome: calc(var(--hero-top) + 416px);
 		position: relative;
 		width: 100%;
@@ -553,22 +521,19 @@ $effect(() => {
 		flex-direction: column;
 		align-items: center;
 		justify-content: flex-start;
-		/* Bottom padding reserves the greenery zone; centring let the caption drift into the wave. */
 		padding: clamp(28px, 7vh, 80px) 16px calc(var(--greenery-h) + 16px);
 	}
 
 	.hero-section {
 		min-height: min(56vh, 620px);
-		/* THE FOLD RULE: the band is bottom:0 of this section, so capping the band
-		   to the viewport minus the chrome above it lands its foot ON the fold.
-		   Capping the band rather than clipping the section keeps the card visible. */
+		/* THE FOLD RULE: the band is bottom:0, so capping it to viewport minus
+		   chrome lands its foot ON the fold; clipping the section would hide the card. */
 		--greenery-h: clamp(
 			230px,
 			calc(var(--art) * 0.44),
 			max(230px, calc(100dvh - var(--hero-chrome)))
 		);
 		max-height: 100dvh;
-		/* The flat colour matches the painted sky so a taller viewport never shows a cut. */
 		background-color: #cc9f47;
 		background-image: var(--art-sky, var(--rtvr-missing-art));
 		background-size: cover;
@@ -576,14 +541,11 @@ $effect(() => {
 		background-repeat: no-repeat;
 	}
 
-	/* The results card adds to the search card, so the fold rule must clear it
-	   too. Measured: ~145px is its ceiling at the 576px card cap. */
+	/* The results card adds to the search card; the fold rule must clear it too. */
 	.hero-section.has-results {
 		--hero-chrome: calc(var(--hero-top) + 561px);
 	}
 
-	/* Content clears only the dense bottom 0.221 of the band; sparse stems may
-	   pass behind the headline, as in the mock. */
 	.headline-section {
 		min-height: min(50vh, 560px);
 		padding-top: clamp(48px, 12vh, 130px);
@@ -591,8 +553,8 @@ $effect(() => {
 		background: #0b1109;
 	}
 
-	/* Each background is declared twice: plain WebP, then image-set() with AVIF
-	   first. Safari < 16.4 drops the image-set line and keeps the WebP. */
+	/* Each background: plain WebP, then image-set() with AVIF first — Safari <
+	   16.4 drops the image-set line and keeps the WebP. */
 	.greenery {
 		position: absolute;
 		left: 0;
@@ -602,8 +564,7 @@ $effect(() => {
 		z-index: 0;
 	}
 
-	/* 100% auto keeps the crest's drawn proportion; the file (0.781 × width
-	   deep) always exceeds the box. */
+	/* 100% auto keeps the crest's drawn proportion; the file always exceeds the box. */
 	.hero-greenery {
 		top: auto;
 		height: var(--greenery-h);
@@ -616,8 +577,7 @@ $effect(() => {
 		background-position: top center;
 	}
 
-	/* Cropped below the crest's trough so no glow shows under the divider;
-	   cover because this box can be taller than the art on phones. */
+	/* Cropped below the crest's trough so no glow shows under the divider. */
 	.headline-greenery {
 		top: 0;
 		background-image: var(--art-hill-fill-webp, var(--rtvr-missing-art));
@@ -629,8 +589,7 @@ $effect(() => {
 		background-position: top center;
 	}
 
-	/* Two aligned layers cropped from the same canvas box; no bottom mask, the
-	   blade bases dissolve into the page on their own. */
+	/* No bottom mask: the blade bases dissolve into the page on their own. */
 	.wildflower-band {
 		position: absolute;
 		left: 0;
@@ -641,8 +600,8 @@ $effect(() => {
 		z-index: 3;
 	}
 
-	/* Numbered, not left to paint order: ::after paints above ordinary children,
-	   so without a z-index the green wash would cover the dog and the tufts. */
+	/* Numbered: ::after paints above ordinary children by default and would
+	   otherwise cover the dog and tufts. */
 	.wildflower-band::before,
 	.wildflower-band::after {
 		content: "";
@@ -669,8 +628,7 @@ $effect(() => {
 		z-index: 3;
 	}
 
-	/* Black silhouette BEHIND green: the dog stacks between the pseudos, in
-	   front of the shadow layer and behind the lit blades. */
+	/* Black silhouette BEHIND green: the dog stacks between the two pseudos. */
 	.wildflower-band::before {
 		background-image: var(--art-uppergrass-front-webp, var(--rtvr-missing-art));
 		background-image: image-set(
@@ -688,24 +646,20 @@ $effect(() => {
 	}
 
 
-	/* Position and width are inline from shardLayout.ts; the transform carries
-	   ONLY parallax and rotation, so left/top always equal the config. */
+	/* Position/width are inline from shardLayout.ts; transform carries ONLY
+	   parallax and rotation, so left/top always equal the config. */
 	.bg-poly {
 		position: absolute;
 		pointer-events: none;
-		/* The torn border is stroke="currentColor"; this one line colours every shard. */
 		color: var(--color-gold-shard);
-		/* --layer is an integer 0..-2 from the template: z-index rounds a
-		   fractional calc into a hard cut. Subtracted so the nearest band stays
-		   at 2, under the grass band (3) the dog runs in front of. */
+		/* --layer is 0..-2: z-index would round a fractional calc into a hard
+		   cut, so it's an offset instead — nearest band stays under grass (3). */
 		z-index: calc(2 + var(--layer, 0));
 		will-change: transform;
 	}
 
-	/* drop-shadow follows the torn alpha; three shadows from one light source
-	   up-left. Keep the alphas ASCENDING outward and the near blur ≥ 6px: a
-	   dense crisp near shadow reads as a black outline, not shade.
-	   --lift scales with depth and never reaches 0 (a far shard still rests ON the page). */
+	/* Three shadows from one light source up-left; keep alphas ASCENDING outward
+	   and the near blur ≥ 6px, or a crisp near shadow reads as a black outline. */
 	.bg-poly :global(svg) {
 		--lift: calc(0.55 + (var(--depth, 0.5) * 0.75));
 		width: 100%;
@@ -749,8 +703,8 @@ $effect(() => {
 		border: 0;
 	}
 
-	/* --card-max feeds both max-width and --bar-scale (the bar's SVG is 284.7
-	   wide), so every "matched to the input" size tracks the card's real width. */
+	/* --card-max feeds both max-width and --bar-scale, so every "matched to the
+	   input" size tracks the card's real width. */
 	.search-card {
 		--card-max: 576px;
 		position: relative;
@@ -764,24 +718,18 @@ $effect(() => {
 		--bar-scale: calc(min(100vw - 32px, var(--card-max)) / 284.70643);
 	}
 
-	/* File-folder tabs tucked under the bar's top edge by a negative margin, not
-	   absolute positioning: the row must keep its height in flow for the fold rule. */
+	/* Tabs tuck under the bar's top edge via negative margin, not absolute
+	   positioning — the row must keep its height in flow for the fold rule. */
 	.tabs {
-		/* A flat 10px: the tuck hides a border plus shadow, constant at every
-		   width. Scaled by --bar-scale it cropped the shorter tab's label. */
+		/* Flat 10px, not scaled by --bar-scale, or it crops the shorter tab's label. */
 		--tab-tuck: 10px;
-		/* Real px, not viewBox units × --bar-scale (~2× at the cap): the tabs
-		   are chrome beside the bar, not matched to the input. */
 		--tab-h-idle: clamp(34px, 4.4vw, 46px);
 		--tab-h-active: clamp(48px, 6.4vw, 66px);
 		display: flex;
-		/* Bottoms aligned so both tabs disappear into the same line. */
 		align-items: flex-end;
 		gap: 16px;
-		/* The tuck plus the card's gap. No padding-bottom: it adds back exactly
-		   what the margin removes and the tuck moves nothing. */
+		/* No padding-bottom: it would add back what this margin removes. */
 		margin-bottom: calc(0px - var(--tab-tuck) - clamp(8px, 1.4vw, 16px));
-		/* Below .search-bar-wrap, which hides the tabs' bottom border. */
 		position: relative;
 		z-index: 0;
 	}
@@ -789,11 +737,9 @@ $effect(() => {
 	.search-bar-wrap {
 		position: relative;
 		width: 100%;
-		/* Above .tabs — stated, not left to source order. */
 		z-index: 1;
 	}
 
-	/* Overlays the caption: opening must not re-measure the shard sections. */
 	.search-dropdown {
 		position: absolute;
 		top: calc(100% + 4px);
@@ -892,7 +838,6 @@ $effect(() => {
 		}
 	}
 
-	/* Height per state on the link; width follows each SVG's own aspect. */
 	.tab-sticker {
 		display: block;
 		height: var(--tab-h-idle);
@@ -904,7 +849,7 @@ $effect(() => {
 	}
 
 	/* Brighten, never rotate or grow: a tilt swings the tucked edge out from
-	   under the bar, and size now means "selected". Both tabs respond. */
+	   under the bar, and size already means "selected". */
 	.tab-sticker:hover :global(svg),
 	.tab-sticker:focus-visible :global(svg) {
 		filter:
@@ -914,8 +859,8 @@ $effect(() => {
 			brightness(1.18);
 	}
 
-	/* Same shadow recipe as the shards; alphas ascend outward and the near
-	   shadow is blurred — a crisp dark rule along the tucked seam undoes the tuck. */
+	/* Alphas ascend outward with a blurred near shadow, or a crisp dark rule
+	   along the tucked seam undoes the tuck. */
 	.tab-sticker :global(svg) {
 		height: 100%;
 		width: auto;
@@ -942,8 +887,8 @@ $effect(() => {
 		width: 100%;
 	}
 
-	/* The input's font-size is in SVG user units scaled by --bar-scale; the
-	   caption uses the same units so it tracks the input at every width. */
+	/* Caption font-size uses the bar's SVG user units so it tracks the input
+	   at every width. */
 	.search-caption {
 		flex: 0 1 auto;
 		max-width: 420px;
@@ -952,7 +897,6 @@ $effect(() => {
 		font-size: calc(18 * var(--bar-scale));
 		line-height: 1.35;
 		margin: 0;
-		/* Text shadow, not a filter: cheaper and keeps glyph edges crisp. */
 		text-shadow:
 			0 1px 1px rgb(255 255 255 / 0.35),
 			1px 2px 3px rgb(12 8 1 / 0.4);
@@ -973,12 +917,9 @@ $effect(() => {
 		align-self: center;
 		width: 116vw;
 		flex-shrink: 0;
-		/* The SVG's own viewBox. */
 		aspect-ratio: 1254.0259 / 94.484817;
 		overflow: visible;
 		z-index: 3;
-		/* The strip's own backing navy, so the uncovered corner wedges read as
-		   one band rather than holes. */
 		background: #171d31;
 	}
 
@@ -1023,8 +964,7 @@ $effect(() => {
 		}
 	}
 
-	/* 550px is the Get Cache breakpoint. On a phone the bar spans the screen, so
-	   "matching the input" would make the caption headline-sized. */
+	/* 550px is the Get Cache breakpoint, where the bar spans the screen. */
 	@media (max-width: 550px) {
 		.search-caption {
 			font-size: 18px;

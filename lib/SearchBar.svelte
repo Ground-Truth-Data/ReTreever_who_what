@@ -74,14 +74,12 @@ function handleSubmit(event: SubmitEvent) {
 			transform="matrix(1.051742,0,0,1.051742,-377.28326,-728.02404)"
 			aria-hidden="true"
 		>
-			<!-- dark query panel -->
 			<path
 				d="m 366.00274,695.09496 188.98809,-0.30013 1.25992,39.6875 -195.28769,2.51984 z"
 				fill="#000000"
 				stroke="currentColor"
 				stroke-width="3.96875"
 			/>
-			<!-- navy submit panel -->
 			<path
 				class="submit-panel"
 				d="m 553.99891,694.80111 62.77816,-0.62848 10.14092,39.90808 -71.7001,0.314 z"
@@ -89,26 +87,22 @@ function handleSubmit(event: SubmitEvent) {
 				stroke="currentColor"
 				stroke-width="3.89914"
 			/>
-			<!-- conifer glyph -->
 			<path
 				class="glyph glyph-conifer"
 				d="m 601.15926,701.13475 -6.74173,10.91518 5.13655,-2.88931 -6.74173,8.50742 5.13656,-3.21035 -6.09966,8.34691 8.02586,-4.81552 -0.64206,8.98898 h 3.53138 v -7.70485 l 5.77863,3.21035 -3.85242,-8.3469 4.81552,1.92621 -5.77863,-6.74173 5.4576,1.60517 z"
 				fill="var(--rtvr-on-dark)"
 			/>
-			<!-- magnifier glyph -->
 			<path
 				class="glyph glyph-magnifier"
 				d="m 581.88475,700.49754 c -2.72423,-0.0819 -5.33111,1.26812 -7.06397,4.09602 -4.14618,6.76624 1.40955,10.67195 0.8297,11.45174 l -6.97062,9.46013 2.48951,2.82151 7.46852,-10.29003 c 0,0 6.3265,3.10153 10.29004,-1.65961 3.77015,-4.52883 2.55525,-9.95714 -0.8299,-13.11135 -1.90466,-1.77471 -4.09442,-2.70472 -6.21328,-2.76841 z m 0.6535,3.76422 a 6.3897379,5.476919 0 0 1 6.38968,5.47691 6.3897379,5.476919 0 0 1 -6.38968,5.47692 6.3897379,5.476919 0 0 1 -6.38986,-5.47692 6.3897379,5.476919 0 0 1 6.38986,-5.47691 z"
 				fill="var(--rtvr-on-dark)"
 			/>
-			<!-- dropdown caret -->
 			<path
 				class="glyph caret"
 				class:caret-open={dropdownOpen}
 				d="m 374.23363,707.44914 7.0626,19.92288 4.57452,-19.92288 z"
 				fill="var(--rtvr-on-dark)"
 			/>
-			<!-- gold rule between the caret and the query field -->
 			<path
 				d="m 395.88813,697.06297 -3.23154,37.52044"
 				fill="none"
@@ -119,7 +113,6 @@ function handleSubmit(event: SubmitEvent) {
 			/>
 		</g>
 
-		<!-- Dropdown hit-target, sitting over the caret. -->
 		<foreignObject x="6" y="5" width="34" height="39">
 			<button
 				xmlns="http://www.w3.org/1999/xhtml"
@@ -178,7 +171,6 @@ function handleSubmit(event: SubmitEvent) {
 			</div>
 		</foreignObject>
 
-		<!-- Submit hit-target over the navy panel. -->
 		<foreignObject x="207" y="4" width="68" height="38">
 			<button
 				xmlns="http://www.w3.org/1999/xhtml"
@@ -235,8 +227,7 @@ function handleSubmit(event: SubmitEvent) {
 		transition: fill 0.18s ease;
 	}
 
-	/* rotate carries the open flip, transform the hover lift, so both compose;
-	   the transition must name all three or this rule overrides .glyph's. */
+	/* rotate + transform compose; transition must name all three or this overrides .glyph's. */
 	.caret {
 		transform-box: fill-box;
 		transform-origin: center;

@@ -1,6 +1,4 @@
 <script lang="ts">
-// Generated scatter of grass clumps in front of the mascot; even at any width.
-
 let {
 	class: className = "",
 	/** Average gap between tufts, as a fraction of viewport width. */
@@ -25,7 +23,7 @@ $effect(() => {
 	return () => removeEventListener("resize", read);
 });
 
-// Keep in sync with --dog-w in GrassMascot.svelte (getComputedStyle caused the freeze above).
+// Keep in sync with --dog-w in GrassMascot.svelte.
 const DOG_W_MIN = 190;
 const DOG_W_VW = 0.38;
 const DOG_W_MAX = 680;
@@ -33,13 +31,12 @@ const dogWidth = $derived(
 	vw > 0 ? Math.min(Math.max(DOG_W_MIN, DOG_W_VW * vw), DOG_W_MAX) : 0,
 );
 
-/** Gap between tufts, as a fraction of the layer width. */
 const DENSITY = 3;
 const gapFraction = $derived(
 	spacing ?? (vw > 0 ? dogWidth / vw / DENSITY : 0.38 / DENSITY),
 );
 
-/** All 320px wide, so ratio = 320 / h; a shared ratio squashed the tall ones. */
+// All 320px wide; ratio = 320 / h, since a shared ratio squashed the tall ones.
 const CLUMPS: { n: number; h: number }[] = [
 	{ n: 3, h: 216 },
 	{ n: 4, h: 314 },
@@ -134,8 +131,7 @@ const positions = $derived.by(() => {
 		overflow: hidden;
 	}
 
-	/* width:auto alone measures ZERO (absolute replaced element with a % height);
-	   the inline aspect-ratio fixes it. translateX(-50%) makes `left` the centre. */
+	/* width:auto alone measures ZERO here; the inline aspect-ratio fixes it. */
 	.tuft {
 		position: absolute;
 		bottom: 0;
