@@ -9,17 +9,6 @@ import GrassMascot from "./GrassMascot.svelte";
 import GrassTufts from "./GrassTufts.svelte";
 import GlobeSpinIcon from "./GlobeSpinIcon.svelte";
 import SearchBar from "./SearchBar.svelte";
-import poly1Raw from "./homeAssets/poly/Search_page_SP_poly_1.svg?raw";
-import poly2Raw from "./homeAssets/poly/Search_page_SP_poly_2.svg?raw";
-import poly3Raw from "./homeAssets/poly/Search_page_SP_poly_3.svg?raw";
-import poly4Raw from "./homeAssets/poly/Search_page_SP_poly_4.svg?raw";
-import poly5Raw from "./homeAssets/poly/Search_page_SP_poly_5.svg?raw";
-import poly6Raw from "./homeAssets/poly/Search_page_SP_poly_6.svg?raw";
-import poly7Raw from "./homeAssets/poly/Search_page_SP_poly_7.svg?raw";
-import poly8Raw from "./homeAssets/poly/Search_page_SP_poly_8.svg?raw";
-import poly9Raw from "./homeAssets/poly/Search_page_SP_poly_9.svg?raw";
-import poly10Raw from "./homeAssets/poly/Search_page_SP_poly_10.svg?raw";
-import poly11Raw from "./homeAssets/poly/Search_page_SP_poly_11.svg?raw";
 import MiddleDividerRaw from "./homeAssets/poly/Search_page_Middle_Divider.svg?raw";
 
 import skyUrl from "./assets/golden_sky_background.webp";
@@ -82,6 +71,7 @@ let {
 } = $props();
 
 const listItems = $derived(activeTab === "orgs" ? orgs : projects);
+const noun = $derived(activeTab === "orgs" ? "organizations" : "projects");
 
 const searchIndex = $derived(
 	listItems.map((item) => ({ item, hay: item.name.toLowerCase() })),
@@ -191,19 +181,15 @@ function withLocalPhotos(svg: string): string {
 	);
 }
 
-const shardArt: Record<number, string> = {
-	1: withLocalPhotos(poly1Raw),
-	2: withLocalPhotos(poly2Raw),
-	3: withLocalPhotos(poly3Raw),
-	4: withLocalPhotos(poly4Raw),
-	5: withLocalPhotos(poly5Raw),
-	6: withLocalPhotos(poly6Raw),
-	7: withLocalPhotos(poly7Raw),
-	8: withLocalPhotos(poly8Raw),
-	9: withLocalPhotos(poly9Raw),
-	10: withLocalPhotos(poly10Raw),
-	11: withLocalPhotos(poly11Raw),
-};
+const shardArt: Record<number, string> = Object.fromEntries(
+	Object.entries(
+		import.meta.glob<string>("./homeAssets/poly/Search_page_SP_poly_*.svg", {
+			eager: true,
+			query: "?raw",
+			import: "default",
+		}),
+	).map(([path, svg]) => [Number(/poly_(\d+)\.svg$/.exec(path)![1]), withLocalPhotos(svg)]),
+);
 
 let shards = $state<Placed[]>([]);
 let headlineShards = $state<Placed[]>([]);
@@ -236,50 +222,42 @@ let headlineOffset = $state(0);
 
 const headlineScrolled = $derived(Math.max(0, scrolled - headlineOffset));
 
-function resolveShards() {
-	if (!heroEl || !headlineEl) return;
-	const vw = heroEl.clientWidth;
-	const heroH = heroEl.clientHeight;
-	const headH = headlineEl.clientHeight;
-	if (vw <= 0 || heroH <= 0 || headH <= 0) return;
-
-	const [hero, head] = layoutPage(vw, [
-		{ height: heroH, specs: HOME },
-		{ height: headH, specs: HEADLINE },
-	]);
-	shards = hero;
-	headlineShards = head;
-}
-
 let lastHeroTop = -1;
-function measureHeroTop() {
-	if (!heroEl) return;
-	const top = Math.round(heroEl.getBoundingClientRect().top + window.scrollY);
-	if (top === lastHeroTop) return;
-	lastHeroTop = top;
-	heroEl.style.setProperty("--hero-top", `${top}px`);
-}
-
-function measureHeadlineOffset() {
-	if (!headlineEl) return;
-	const top = headlineEl.getBoundingClientRect().top + window.scrollY;
-	headlineOffset = Math.max(0, top - window.innerHeight);
+function measure() {
+	if (heroEl && headlineEl) {
+		const vw = heroEl.clientWidth;
+		const heroH = heroEl.clientHeight;
+		const headH = headlineEl.clientHeight;
+		if (vw > 0 && heroH > 0 && headH > 0) {
+			[shards, headlineShards] = layoutPage(vw, [
+				{ height: heroH, specs: HOME },
+				{ height: headH, specs: HEADLINE },
+			]);
+		}
+	}
+	if (heroEl) {
+		const top = Math.round(heroEl.getBoundingClientRect().top + window.scrollY);
+		if (top !== lastHeroTop) {
+			lastHeroTop = top;
+			heroEl.style.setProperty("--hero-top", `${top}px`);
+		}
+	}
+	if (headlineEl) {
+		const top = headlineEl.getBoundingClientRect().top + window.scrollY;
+		headlineOffset = Math.max(0, top - window.innerHeight);
+	}
 }
 
 $effect(() => {
 	if (!heroEl && !headlineEl) return;
-	resolveShards();
-	measureHeroTop();
-	measureHeadlineOffset();
+	measure();
 	// One solve per frame: a synchronous callback could feed itself via heroEl.
 	let raf = 0;
 	const schedule = () => {
 		if (raf) return;
 		raf = requestAnimationFrame(() => {
 			raf = 0;
-			resolveShards();
-			measureHeroTop();
-			measureHeadlineOffset();
+			measure();
 		});
 	};
 	const ro = new ResizeObserver(schedule);
@@ -316,24 +294,29 @@ $effect(() => {
 
 <svelte:window onpointerdown={dismissOnOutside} onkeydown={dismissOnEscape} />
 
+{#snippet polyShard(shard: Placed, scroll: number)}
+	{@const depth = depthOf(shard, widestShard)}
+	<div
+		id={idForArt(shard.id)}
+		class="bg-poly"
+		aria-hidden="true"
+		style:left="{shard.x}px"
+		style:top="{shard.y}px"
+		style:width="{shard.w}px"
+		style:--depth={depth}
+		style:--layer={layerOf(depth)}
+		style:transform="translateY({parallaxY(depth, scroll)}px) rotate({shard.rot ?? 0}deg)"
+	>
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+		{@html shardArt[shard.id]}
+	</div>
+{/snippet}
+
 <!-- Missing asset falls through to --rtvr-missing-art. -->
 <div class="home-search-page" style="--art-sky: url({skyUrl}); --art-hill-pattern-webp: url({hillPatternWebp}); --art-hill-pattern-avif: url({hillPatternAvif}); --art-hill-fill-webp: url({hillFillWebp}); --art-hill-fill-avif: url({hillFillAvif}); --art-uppergrass-front-webp: url({upperGrassFrontWebp}); --art-uppergrass-front-avif: url({upperGrassFrontAvif}); --art-uppergrass-back-webp: url({upperGrassBackWebp}); --art-uppergrass-back-avif: url({upperGrassBackAvif});">
 	<section class="hero-section" class:has-results={results} bind:this={heroEl}>
 		{#each shards as shard (shard.id)}
-			<div
-				id={idForArt(shard.id)}
-				class="bg-poly"
-				aria-hidden="true"
-				style:left="{shard.x}px"
-				style:top="{shard.y}px"
-				style:width="{shard.w}px"
-				style:--depth={depthOf(shard, widestShard)}
-				style:--layer={layerOf(depthOf(shard, widestShard))}
-				style:transform="translateY({parallaxY(depthOf(shard, widestShard), scrolled)}px) rotate({shard.rot ?? 0}deg)"
-			>
-				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				{@html shardArt[shard.id]}
-			</div>
+			{@render polyShard(shard, scrolled)}
 		{/each}
 
 		<div class="greenery hero-greenery" aria-hidden="true"></div>
@@ -367,8 +350,8 @@ $effect(() => {
 				<SearchBar
 					bind:value={query}
 					bind:dropdownOpen
-					placeholder={activeTab === "orgs" ? "Search organizations…" : "Search projects…"}
-					ariaLabel={activeTab === "orgs" ? "Search organizations" : "Search projects"}
+					placeholder="Search {noun}…"
+					ariaLabel="Search {noun}"
 					onsearch={submit}
 					{onactivate}
 					onkeynav={moveHighlight}
@@ -417,11 +400,9 @@ $effect(() => {
 						{:else}
 							<li class="dropdown-empty" role="presentation">
 								{#if listLoading}
-									Loading {activeTab === "orgs"
-										? "organizations"
-										: "projects"}…
+									Loading {noun}…
 								{:else}
-									No {activeTab === "orgs" ? "organizations" : "projects"}
+									No {noun}
 									{query.trim() ? "match" : "loaded"}
 								{/if}
 							</li>
@@ -460,20 +441,7 @@ $effect(() => {
 		<div class="greenery headline-greenery" aria-hidden="true"></div>
 
 		{#each headlineShards as shard (shard.id)}
-			<div
-				id={idForArt(shard.id)}
-				class="bg-poly"
-				aria-hidden="true"
-				style:left="{shard.x}px"
-				style:top="{shard.y}px"
-				style:width="{shard.w}px"
-				style:--depth={depthOf(shard, widestShard)}
-				style:--layer={layerOf(depthOf(shard, widestShard))}
-				style:transform="translateY({parallaxY(depthOf(shard, widestShard), headlineScrolled)}px) rotate({shard.rot ?? 0}deg)"
-			>
-				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				{@html shardArt[shard.id]}
-			</div>
+			{@render polyShard(shard, headlineScrolled)}
 		{/each}
 
 		<div class="headline">
@@ -612,14 +580,6 @@ $effect(() => {
 		background-repeat: no-repeat;
 	}
 
-	.wildflower-band::before {
-		z-index: 0;
-	}
-
-	.wildflower-band::after {
-		z-index: 1;
-	}
-
 	.wildflower-band :global(.mascot-track) {
 		z-index: 2;
 	}
@@ -630,6 +590,7 @@ $effect(() => {
 
 	/* Black silhouette BEHIND green: the dog stacks between the two pseudos. */
 	.wildflower-band::before {
+		z-index: 0;
 		background-image: var(--art-uppergrass-front-webp, var(--rtvr-missing-art));
 		background-image: image-set(
 			var(--art-uppergrass-front-avif, var(--rtvr-missing-art)) type("image/avif"),
@@ -638,13 +599,13 @@ $effect(() => {
 	}
 
 	.wildflower-band::after {
+		z-index: 1;
 		background-image: var(--art-uppergrass-back-webp, var(--rtvr-missing-art));
 		background-image: image-set(
 			var(--art-uppergrass-back-avif, var(--rtvr-missing-art)) type("image/avif"),
 			var(--art-uppergrass-back-webp, var(--rtvr-missing-art)) type("image/webp")
 		);
 	}
-
 
 	/* Position/width are inline from shardLayout.ts; transform carries ONLY
 	   parallax and rotation, so left/top always equal the config. */
@@ -679,17 +640,6 @@ $effect(() => {
 				calc(40px * var(--lift)) rgb(12 8 1 / 0.46)
 			);
 	}
-
-
-
-
-
-
-
-
-
-
-
 
 	.visually-hidden {
 		position: absolute;

@@ -29,8 +29,6 @@ const ASPECT: Record<number, number> = {
 	11: 1.75093,
 };
 
-export const NAVBAR_H = 80;
-
 export const HOME: ShardSpec[] = [
 	{ id: 1, x: 74, y: 4, w: 44, maxw: 500, minw: 96, rot: 7 },
 	{ id: 2, x: 20, y: -22, w: 33, maxw: 190, minw: 52, rot: 11 },
