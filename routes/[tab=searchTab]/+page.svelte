@@ -1,8 +1,8 @@
 <script lang="ts">
-import type { PageData } from "./$types";
+import type { load } from "./+page";
 import SearchRoute from "../../lib/SearchRoute.svelte";
 
-let { data }: { data: PageData } = $props();
+let { data }: { data: ReturnType<typeof load> } = $props();
 
 const OWN_ROUTES = { who: "/who", what: "/what" };
 </script>
