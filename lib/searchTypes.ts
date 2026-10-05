@@ -3,6 +3,6 @@ export interface SearchListItem {
 	key: string;
 	/** Display name, and what a selection writes into the query field. */
 	name: string;
-	/** Secondary line, e.g. an org's primaryStakeholderCategory. */
+	/** Secondary line, e.g. an org's stakeholder category name. */
 	hint?: string | null;
 }

@@ -58,7 +58,7 @@ interface OrgRow {
 	organizationName: string;
 	scoreOrgFinal: unknown;
 	scoreRankOverall: number | null;
-	primaryStakeholderCategory: string | null;
+	primaryStakeholderCategoryName: string | null;
 }
 
 /** The org's rating is `scoreOrgFinal`, the final blended org score. */
@@ -84,7 +84,7 @@ export async function loadOrganization(
 		// scoreOrgFinal is a Prisma Decimal, a string over json().
 		rating: toTransparencyScore(org.scoreOrgFinal),
 		rank: org.scoreRankOverall,
-		hint: org.primaryStakeholderCategory,
+		hint: org.primaryStakeholderCategoryName,
 	};
 }
 
