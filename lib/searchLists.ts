@@ -6,7 +6,7 @@ import type { SearchListItem } from "./searchTypes";
 interface OrgListRow {
 	organizationKey: string;
 	organizationName: string;
-	primaryStakeholderCategory: string | null;
+	primaryStakeholderCategoryName: string | null;
 }
 
 interface ProjectListRow {
@@ -34,7 +34,7 @@ export async function loadOrgList(
 		return organizations.map((org) => ({
 			key: org.organizationKey,
 			name: org.organizationName,
-			hint: org.primaryStakeholderCategory,
+			hint: org.primaryStakeholderCategoryName,
 		}));
 	} catch (error) {
 		console.error("who: failed to load organizations list", error);
