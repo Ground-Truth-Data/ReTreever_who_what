@@ -132,7 +132,7 @@ $effect(() => {
 			</div>
 		{/each}
 
-		<div class="bar-row">
+		<div class="bar-block">
 			<nav class="tabs" aria-label="Search by">
 				<a href={routes.who ?? null} class="tab-sticker" aria-current={tab === "orgs" ? "page" : undefined}>
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -143,20 +143,22 @@ $effect(() => {
 					{@html tab === "projects" ? ProjectsSelectedRaw : ProjectsUnselectedRaw}
 				</a>
 			</nav>
-			<div class="bar">
-				<SearchBar
-					bind:value={query}
-					id="rating-search"
-					placeholder={tab === "orgs" ? "Search organizations…" : "Search projects…"}
-					ariaLabel={tab === "orgs" ? "Search organizations" : "Search projects"}
-					onsearch={(q) => onsearch?.(q)}
-					{onactivate}
-				/>
-				{#if notice}
-					<p class="search-notice" role="status" aria-live="polite">{notice}</p>
-				{/if}
+			<div class="bar-row">
+				<div class="bar">
+					<SearchBar
+						bind:value={query}
+						id="rating-search"
+						placeholder={tab === "orgs" ? "Search organizations…" : "Search projects…"}
+						ariaLabel={tab === "orgs" ? "Search organizations" : "Search projects"}
+						onsearch={(q) => onsearch?.(q)}
+						{onactivate}
+					/>
+					{#if notice}
+						<p class="search-notice" role="status" aria-live="polite">{notice}</p>
+					{/if}
+				</div>
+				<GlobeSpinIcon class="globe-icon" href={routes.whoMap} />
 			</div>
-			<GlobeSpinIcon class="globe-icon" href={routes.whoMap} />
 		</div>
 
 		<div class="hero-grid">
@@ -233,7 +235,8 @@ $effect(() => {
 		width: 100%;
 		box-sizing: border-box;
 		min-height: calc(100vh - 5rem);
-		padding: clamp(20px, 3vh, 36px) var(--pad) clamp(32px, 5vh, 72px);
+		/* Top padding is the strip shard's lane: it sits above the tabs, not behind them. */
+		padding: clamp(64px, 12vh, 140px) var(--pad) clamp(32px, 5vh, 72px);
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -275,30 +278,37 @@ $effect(() => {
 			drop-shadow(calc(18px * var(--lift)) calc(24px * var(--lift)) calc(40px * var(--lift)) rgb(12 8 1 / 0.46));
 	}
 
-	.bar-row {
+	/* The search page's block: tabs tucked under the bar's top edge, the bar at
+	   the card's width, every size in the bar's own units so they track it. */
+	.bar-block {
+		--card-max: 576px;
+		--bar-scale: calc(min(100vw - 32px, var(--card-max)) / 284.70643);
 		position: relative;
 		z-index: 5;
 		width: 100%;
-		max-width: 720px;
-		display: grid;
-		grid-template-columns: auto minmax(0, 1fr) auto;
-		align-items: end;
-		gap: clamp(8px, 1.5vw, 16px);
+		max-width: var(--card-max);
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
 	}
 
 	.tabs {
+		--tab-tuck: min(10px, calc(5 * var(--bar-scale)));
 		display: flex;
 		align-items: flex-end;
-		gap: 8px;
+		gap: calc(8 * var(--bar-scale));
+		margin: 0 0 calc(0px - var(--tab-tuck)) calc(40 * var(--bar-scale));
+		position: relative;
+		z-index: 0;
 	}
 
 	.tab-sticker {
 		display: block;
-		height: clamp(28px, 4vw, 44px);
+		height: calc(22.75 * var(--bar-scale));
 	}
 
 	.tab-sticker[aria-current="page"] {
-		height: clamp(40px, 5.6vw, 62px);
+		height: calc(32.6 * var(--bar-scale));
 	}
 
 	.tab-sticker :global(svg) {
@@ -308,6 +318,16 @@ $effect(() => {
 		filter:
 			drop-shadow(1px 2px 6px rgb(12 8 1 / 0.3))
 			drop-shadow(4px 6px 12px rgb(12 8 1 / 0.42));
+	}
+
+	.bar-row {
+		position: relative;
+		z-index: 1;
+		width: 100%;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		gap: calc(10 * var(--bar-scale));
 	}
 
 	.bar {
@@ -332,7 +352,7 @@ $effect(() => {
 	}
 
 	.bar-row :global(.globe-icon) {
-		width: clamp(44px, 5vw, 64px);
+		width: calc(30 * var(--bar-scale));
 		flex-shrink: 0;
 	}
 
@@ -508,13 +528,5 @@ $effect(() => {
 			align-self: center;
 		}
 
-		.bar-row {
-			grid-template-columns: minmax(0, 1fr) auto;
-		}
-
-		.tabs {
-			grid-column: 1 / -1;
-			justify-content: center;
-		}
 	}
 </style>
