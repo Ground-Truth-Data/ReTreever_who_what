@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	HEADLINE,
 	HOME,
+	RATING,
 	MAX_PARALLAX_RATE,
 	SCALE_MAX,
 	SCALE_MIN,
@@ -23,10 +24,13 @@ const cardW = (vw: number) => Math.min(576, vw - 32);
 // The headline lockup: two stickers side by side, or stacked under 640px.
 const lockupW = (vw: number) => (vw < 640 ? 105 : Math.min(422, vw * 0.3));
 
+// The rating hero keeps its lockup clear; its shards sit behind the rest of the
+// content by design, so it is checked for overlap and bounds, not the channel.
 const sections = (vw: number) =>
 	[
-		{ ring: HOME, h: vw < 640 ? 504 : 767, clear: cardW(vw), name: "hero" },
-		{ ring: HEADLINE, h: vw < 640 ? 450 : 538, clear: lockupW(vw), name: "headline" },
+		{ ring: HOME, h: vw < 640 ? 504 : 767, clear: cardW(vw), name: "hero", channel: true },
+		{ ring: HEADLINE, h: vw < 640 ? 450 : 538, clear: lockupW(vw), name: "headline", channel: true },
+		{ ring: RATING, h: vw < 640 ? 1400 : 900, clear: lockupW(vw), name: "rating", channel: false },
 	] as const;
 
 const at = (P: Placed[], id: number) => P.find((p) => p.id === id)!;
@@ -82,7 +86,7 @@ describe("place", () => {
 	});
 
 	it("slides a gutter shard off screen as the card fills the viewport", () => {
-		const spec: ShardSpec = { id: 4, side: "left", lane: "gutter", reach: 60, y: 20, w: 24 };
+		const spec: ShardSpec = { id: 4, side: "left", lane: "gutter", reach: 60, y: 20, w: 24, aspect: 1.7 };
 		const wide = at(place([spec], 1440, 700, 576), 4);
 		const phone = at(place([spec], 390, 504, 354), 4);
 		expect(wide.x + wide.w).toBeGreaterThan(200);
@@ -150,14 +154,14 @@ describe("editing one shard", () => {
 
 describe("the authored rings", () => {
 	it("has a unique id per shard within each ring", () => {
-		for (const ring of [HOME, HEADLINE]) {
+		for (const ring of [HOME, HEADLINE, RATING]) {
 			const ids = ring.map((s) => s.id);
 			expect(new Set(ids).size).toBe(ids.length);
 		}
 	});
 
 	it("keeps rotation modest enough to read as scattered, not broken", () => {
-		for (const ring of [HOME, HEADLINE]) {
+		for (const ring of [HOME, HEADLINE, RATING]) {
 			for (const s of ring) {
 				expect(Math.abs(s.rot ?? 0)).toBeLessThanOrEqual(14);
 			}
@@ -165,7 +169,7 @@ describe("the authored rings", () => {
 	});
 
 	it("never reaches into the content a gutter shard is meant to flank", () => {
-		for (const ring of [HOME, HEADLINE]) {
+		for (const ring of [HOME, HEADLINE, RATING]) {
 			for (const s of ring) {
 				if (s.lane === "gutter") expect(s.reach).toBeLessThanOrEqual(80);
 			}
@@ -174,7 +178,7 @@ describe("the authored rings", () => {
 
 	it("stays clear of the centred content from a laptop up", () => {
 		for (const vw of WIDTHS.filter((w) => w >= 1024)) {
-			for (const { ring, h, clear } of sections(vw)) {
+			for (const { ring, h, clear } of sections(vw).filter((s) => s.channel)) {
 				const left = (vw - clear) / 2;
 				const right = vw - left;
 				for (const p of place(ring, vw, h, clear)) {
@@ -215,7 +219,7 @@ describe("the authored rings", () => {
 
 	it("hangs every shard off its own edge from a laptop up", () => {
 		for (const vw of WIDTHS.filter((w) => w >= 1024)) {
-			for (const { ring, h, clear } of sections(vw)) {
+			for (const { ring, h, clear } of sections(vw).filter((s) => s.channel)) {
 				for (const p of place(ring, vw, h, clear)) {
 					const s = ring.find((q) => q.id === p.id)!;
 					if (s.side === "left") expect(p.x).toBeLessThan(0);

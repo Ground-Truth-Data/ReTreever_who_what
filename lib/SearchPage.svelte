@@ -30,9 +30,9 @@ import {
 	type Placed,
 } from "./shardLayout";
 import { byArt, shard, shardId } from "./shared/shardIndex";
+import { withLocalPhotos } from "./shardPhotos";
 import type { WhoWhatRoutes } from "./whoWhatTypes";
 import type { SearchListItem } from "./searchTypes";
-import type { Snippet } from "svelte";
 
 let {
 	query = $bindable(""),
@@ -49,7 +49,6 @@ let {
 	onpick,
 	onactivate,
 	listLoading = false,
-	results,
 }: {
 	query?: string;
 	activeTab?: "orgs" | "projects";
@@ -63,11 +62,10 @@ let {
 	projects?: SearchListItem[];
 	topKeys?: string[];
 	onsearch?: (query: string, tab: "orgs" | "projects") => void;
-	/** The row's own link navigates; the route only counts the pick. */
-	onpick?: (item: SearchListItem, tab: "orgs" | "projects") => void;
+	/** `go` false: a modified click, the row's own link navigates and the route only counts the pick. */
+	onpick?: (item: SearchListItem, tab: "orgs" | "projects", go: boolean) => void;
 	onactivate?: () => void;
 	listLoading?: boolean;
-	results?: Snippet;
 } = $props();
 
 const listItems = $derived(activeTab === "orgs" ? orgs : projects);
@@ -140,11 +138,16 @@ function selectItem(item: SearchListItem) {
 const hrefOf = (item: SearchListItem) =>
 	activeTab === "orgs" ? routes.whoOrg?.(item.key) : routes.whatProject?.(item.key);
 
-// No preventDefault: a modified click opens elsewhere, so the bar stays as-is.
+// A modified click keeps the link (opens elsewhere, the bar stays as-is); a
+// plain one is a search, so the route wipes to it like a typed one.
 function pickRow(e: MouseEvent, item: SearchListItem) {
-	onpick?.(item, activeTab);
-	if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+	if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+		onpick?.(item, activeTab, false);
+		return;
+	}
+	e.preventDefault();
 	selectItem(item);
+	onpick?.(item, activeTab, true);
 }
 
 let searchWrapEl = $state<HTMLElement | null>(null);
@@ -163,23 +166,11 @@ function dismissOnEscape(e: KeyboardEvent) {
 	}
 }
 
-// `?raw` leaves the SVG's `<image href>`s unresolved; this swaps in bundled URLs.
 const SHARD_PHOTOS = import.meta.glob<string>(
 	"./assets/pub-Rtvr/home/poly/*.webp",
 	{ eager: true, query: "?url", import: "default" },
 );
-
-function withLocalPhotos(svg: string): string {
-	return svg.replace(
-		/href="[^"]*\/pub-Rtvr\/home\/poly\/([^"]+)"/g,
-		(whole, file: string) => {
-			const hit = Object.entries(SHARD_PHOTOS).find(([path]) =>
-				path.endsWith(`/${file}`),
-			);
-			return hit ? `href="${hit[1]}"` : whole;
-		},
-	);
-}
+const localPhotos = (svg: string) => withLocalPhotos(svg, SHARD_PHOTOS, "home/poly");
 
 const shardArt: Record<number, string> = Object.fromEntries(
 	Object.entries(
@@ -188,7 +179,7 @@ const shardArt: Record<number, string> = Object.fromEntries(
 			query: "?raw",
 			import: "default",
 		}),
-	).map(([path, svg]) => [Number(/poly_(\d+)\.svg$/.exec(path)![1]), withLocalPhotos(svg)]),
+	).map(([path, svg]) => [Number(/poly_(\d+)\.svg$/.exec(path)![1]), localPhotos(svg)]),
 );
 
 let shards = $state<Placed[]>([]);
@@ -318,7 +309,7 @@ $effect(() => {
 
 <!-- Missing asset falls through to --rtvr-missing-art. -->
 <div class="home-search-page" style="--art-sky: url({skyUrl}); --art-hill-pattern-webp: url({hillPatternWebp}); --art-hill-pattern-avif: url({hillPatternAvif}); --art-hill-fill-webp: url({hillFillWebp}); --art-hill-fill-avif: url({hillFillAvif}); --art-uppergrass-front-webp: url({upperGrassFrontWebp}); --art-uppergrass-front-avif: url({upperGrassFrontAvif}); --art-uppergrass-back-webp: url({upperGrassBackWebp}); --art-uppergrass-back-avif: url({upperGrassBackAvif});">
-	<section class="hero-section" class:has-results={results} bind:this={heroEl}>
+	<section class="hero-section" bind:this={heroEl}>
 		{#each shards as shard (shard.id)}
 			{@render polyShard(shard, scrolled)}
 		{/each}
@@ -429,15 +420,13 @@ $effect(() => {
 				<p class="search-caption">Search transparency rating</p>
 				<GlobeSpinIcon class="globe-icon" href={mapHref ?? routes.whoMap} />
 			</div>
-
-			{@render results?.()}
 		</div>
 	</section>
 
 	<div class="middle-divider" id={dividerId}>
 		<div class="middle-divider-photo" aria-hidden="true">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-			{@html withLocalPhotos(MiddleDividerRaw)}
+			{@html localPhotos(MiddleDividerRaw)}
 		</div>
 	</div>
 
@@ -511,11 +500,6 @@ $effect(() => {
 		background-size: cover;
 		background-position: center top;
 		background-repeat: no-repeat;
-	}
-
-	/* The results card adds to the search card; the fold rule must clear it too. */
-	.hero-section.has-results {
-		--hero-chrome: calc(var(--hero-top) + 561px);
 	}
 
 	.headline-section {

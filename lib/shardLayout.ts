@@ -17,6 +17,8 @@ export type ShardSpec = {
 	y: number;
 	/** % of the scale width */
 	w: number;
+	/** the artwork's width ÷ height, measured from its SVG viewBox */
+	aspect: number;
 	/** degrees; keep within ~±14 or it reads as broken, not scattered */
 	rot?: number;
 	art?: number;
@@ -30,35 +32,37 @@ export function scaleWidth(vw: number): number {
 	return Math.max(SCALE_MIN, Math.min(SCALE_MAX, vw));
 }
 
-const ASPECT: Record<number, number> = {
-	1: 1.63924,
-	2: 0.67299,
-	3: 1.14372,
-	4: 1.70643,
-	5: 2.43367,
-	6: 2.02096,
-	7: 2.26411,
-	8: 1.1521,
-	9: 1.90656,
-	10: 2.45141,
-	11: 1.75093,
-};
-
 export const HOME: ShardSpec[] = [
-	{ id: 3, side: "left", lane: "edge", reach: 8, y: 2, w: 12, rot: 8 },
-	{ id: 4, side: "left", lane: "gutter", reach: 66, y: 26, w: 24, rot: -6 },
-	{ id: 11, side: "left", lane: "gutter", reach: 48, y: 57, w: 15, rot: 4 },
-	{ id: 9, side: "left", lane: "edge", reach: 17, y: 78, w: 20, rot: 7 },
-	{ id: 1, side: "right", lane: "edge", reach: 14, y: 4, w: 24, rot: 7 },
-	{ id: 2, side: "right", lane: "gutter", reach: 20, y: 38, w: 7, rot: 11 },
-	{ id: 8, side: "right", lane: "edge", reach: 16, y: 64, w: 19, rot: -5 },
+	{ id: 3, side: "left", lane: "edge", reach: 8, y: 2, w: 12, aspect: 1.14372, rot: 8 },
+	{ id: 4, side: "left", lane: "gutter", reach: 66, y: 26, w: 24, aspect: 1.70643, rot: -6 },
+	{ id: 11, side: "left", lane: "gutter", reach: 48, y: 57, w: 15, aspect: 1.75093, rot: 4 },
+	{ id: 9, side: "left", lane: "edge", reach: 17, y: 78, w: 20, aspect: 1.90656, rot: 7 },
+	{ id: 1, side: "right", lane: "edge", reach: 14, y: 4, w: 24, aspect: 1.63924, rot: 7 },
+	{ id: 2, side: "right", lane: "gutter", reach: 20, y: 38, w: 7, aspect: 0.67299, rot: 11 },
+	{ id: 8, side: "right", lane: "edge", reach: 16, y: 64, w: 19, aspect: 1.1521, rot: -5 },
+];
+
+// The rating page, from the designer's desktop plan: pine-pattern polygons
+// hung off both edges, one strip across the top above the bar. Edge lane
+// throughout — the plan places them from the viewport, behind the content.
+export const RATING: ShardSpec[] = [
+	{ id: 1, side: "left", lane: "edge", reach: 12, y: 3, w: 16, aspect: 1.6727, rot: -8 },
+	{ id: 10, side: "left", lane: "edge", reach: 17, y: 23, w: 24, aspect: 2.4464, rot: 5 },
+	{ id: 9, side: "left", lane: "edge", reach: 16, y: 42, w: 22, aspect: 1.3095, rot: -4 },
+	{ id: 8, side: "left", lane: "edge", reach: 28, y: 74, w: 28, aspect: 2.1658, rot: 6 },
+	{ id: 2, side: "left", lane: "edge", reach: 68, y: 2, w: 32, aspect: 3.4386, rot: -3 },
+	{ id: 3, side: "right", lane: "edge", reach: 22, y: 2, w: 8, aspect: 0.7545, rot: 10 },
+	{ id: 4, side: "right", lane: "edge", reach: 8, y: 2, w: 20, aspect: 1.2805, rot: 0 },
+	{ id: 5, side: "right", lane: "edge", reach: 8, y: 30, w: 15, aspect: 1.5912, rot: 0 },
+	{ id: 6, side: "right", lane: "edge", reach: 7, y: 48, w: 17, aspect: 1.5125, rot: 0 },
+	{ id: 7, side: "right", lane: "edge", reach: 13, y: 69, w: 20, aspect: 1.5323, rot: 0 },
 ];
 
 export const HEADLINE: ShardSpec[] = [
-	{ id: 7, side: "right", lane: "gutter", reach: 58, y: 6, w: 25, rot: -9 },
-	{ id: 6, side: "left", lane: "gutter", reach: 60, y: 18, w: 23, rot: 12 },
-	{ id: 10, side: "left", lane: "gutter", reach: 50, y: 64, w: 19, rot: -13 },
-	{ id: 5, side: "right", lane: "gutter", reach: 44, y: 66, w: 18, rot: 10 },
+	{ id: 7, side: "right", lane: "gutter", reach: 58, y: 6, w: 25, aspect: 2.26411, rot: -9 },
+	{ id: 6, side: "left", lane: "gutter", reach: 60, y: 18, w: 23, aspect: 2.02096, rot: 12 },
+	{ id: 10, side: "left", lane: "gutter", reach: 50, y: 64, w: 19, aspect: 2.45141, rot: -13 },
+	{ id: 5, side: "right", lane: "gutter", reach: 44, y: 66, w: 18, aspect: 2.43367, rot: 10 },
 ];
 
 export type Placed = {
@@ -79,7 +83,7 @@ export function place(
 	const gutter = Math.max(0, (ref - clearW) / 2);
 	return specs.map((s) => {
 		const w = (s.w / 100) * ref;
-		const h = w / ASPECT[s.art ?? s.id];
+		const h = w / s.aspect;
 		const lane = s.lane === "gutter" ? gutter : ref;
 		const inner = (s.reach / 100) * lane;
 		return {

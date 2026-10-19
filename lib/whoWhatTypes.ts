@@ -32,6 +32,8 @@ export type WhoWhatRoutes = {
 	who?: string;
 	what?: string;
 	whoMap?: string;
+	/** How the rating works; the rating page's info button. */
+	why?: string;
 	whoOrg?: (key: string) => string;
 	whatProject?: (key: string) => string;
 };
