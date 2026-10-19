@@ -9,6 +9,7 @@ import GrassMascot from "./GrassMascot.svelte";
 import GrassTufts from "./GrassTufts.svelte";
 import GlobeSpinIcon from "./GlobeSpinIcon.svelte";
 import SearchBar from "./SearchBar.svelte";
+import SearchDropdown from "./SearchDropdown.svelte";
 import MiddleDividerRaw from "./homeAssets/poly/Search_page_Middle_Divider.svg?raw";
 
 import skyUrl from "./assets/golden_sky_background.webp";
@@ -71,57 +72,13 @@ let {
 const listItems = $derived(activeTab === "orgs" ? orgs : projects);
 const noun = $derived(activeTab === "orgs" ? "organizations" : "projects");
 
-const searchIndex = $derived(
-	listItems.map((item) => ({ item, hay: item.name.toLowerCase() })),
-);
-
-const MAX_DROPDOWN_ROWS = 50;
-const TOP_ROWS = 5;
-const filtered = $derived.by(() => {
-	const q = query.trim().toLowerCase();
-	if (q) {
-		const matches = searchIndex.filter((e) => e.hay.includes(q));
-		return {
-			total: matches.length,
-			rows: matches.slice(0, MAX_DROPDOWN_ROWS).map((e) => e.item),
-		};
-	}
-	const byKey = new Map(listItems.map((item) => [item.key, item]));
-	const top = topKeys
-		.map((k) => byKey.get(k))
-		.filter((item): item is SearchListItem => item !== undefined);
-	const seen = new Set(top.map((item) => item.key));
-	const fill = listItems.filter((item) => !seen.has(item.key));
-	return {
-		total: listItems.length,
-		rows: [...top, ...fill].slice(0, TOP_ROWS),
-	};
-});
-
-let highlighted = $state(-1);
 const LIST_ID = "home-search-list";
-const rowId = (i: number) => `${LIST_ID}-row-${i}`;
-
-$effect(() => {
-	filtered.rows;
-	dropdownOpen;
-	highlighted = -1;
-});
-
-function moveHighlight(dir: 1 | -1) {
-	const n = filtered.rows.length;
-	if (n === 0) return;
-	highlighted = Math.min(n - 1, Math.max(-1, highlighted + dir));
-	if (highlighted >= 0) {
-		document
-			.getElementById(rowId(highlighted))
-			?.scrollIntoView({ block: "nearest" });
-	}
-}
+let list = $state<SearchDropdown | null>(null);
+let activeDescendant = $state<string | undefined>(undefined);
 
 function submit(q: string) {
-	if (dropdownOpen && filtered.rows.length > 0) {
-		const item = filtered.rows[Math.max(0, highlighted)];
+	const item = list?.current();
+	if (item) {
 		selectItem(item);
 		onsearch?.(item.name, activeTab);
 		return;
@@ -138,33 +95,12 @@ function selectItem(item: SearchListItem) {
 const hrefOf = (item: SearchListItem) =>
 	activeTab === "orgs" ? routes.whoOrg?.(item.key) : routes.whatProject?.(item.key);
 
-// A modified click keeps the link (opens elsewhere, the bar stays as-is); a
-// plain one is a search, so the route wipes to it like a typed one.
-function pickRow(e: MouseEvent, item: SearchListItem) {
-	if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
-		onpick?.(item, activeTab, false);
-		return;
-	}
-	e.preventDefault();
-	selectItem(item);
-	onpick?.(item, activeTab, true);
+function pick(item: SearchListItem, go: boolean) {
+	if (go) selectItem(item);
+	onpick?.(item, activeTab, go);
 }
 
 let searchWrapEl = $state<HTMLElement | null>(null);
-
-function dismissOnOutside(e: PointerEvent) {
-	if (!dropdownOpen) return;
-	if (searchWrapEl && !searchWrapEl.contains(e.target as Node)) {
-		dropdownOpen = false;
-	}
-}
-
-function dismissOnEscape(e: KeyboardEvent) {
-	if (dropdownOpen && e.key === "Escape") {
-		dropdownOpen = false;
-		e.preventDefault();
-	}
-}
 
 const SHARD_PHOTOS = import.meta.glob<string>(
 	"./assets/pub-Rtvr/home/poly/*.webp",
@@ -287,8 +223,6 @@ $effect(() => {
 });
 </script>
 
-<svelte:window onpointerdown={dismissOnOutside} onkeydown={dismissOnEscape} />
-
 {#snippet polyShard(shard: Placed, scroll: number)}
 	{@const depth = depthOf(shard, widestShard)}
 	<div
@@ -349,67 +283,25 @@ $effect(() => {
 					ariaLabel="Search {noun}"
 					onsearch={submit}
 					{onactivate}
-					onkeynav={moveHighlight}
+					onkeynav={(dir) => list?.move(dir)}
 					listId={LIST_ID}
-					activeDescendant={highlighted >= 0 ? rowId(highlighted) : undefined}
+					{activeDescendant}
 				/>
 
-				<!-- TODO: swap the chrome for the design's drop-window SVG once exported; keep the list. -->
-				{#if dropdownOpen}
-					<ul class="search-dropdown" id={LIST_ID} role="listbox">
-						{#each filtered.rows as item, i (item.key)}
-							{@const href = hrefOf(item)}
-							{#snippet rowBody()}
-								<span class="row-name">{item.name}</span>
-								{#if item.hint}
-									<span class="row-hint">{item.hint}</span>
-								{/if}
-							{/snippet}
-							<li
-								id={rowId(i)}
-								role="option"
-								aria-selected={i === highlighted}
-							>
-								{#if href}
-									<a
-										{href}
-										class="dropdown-row"
-										class:highlighted={i === highlighted}
-										tabindex="-1"
-										onclick={(e) => pickRow(e, item)}
-									>
-										{@render rowBody()}
-									</a>
-								{:else}
-									<button
-										type="button"
-										class="dropdown-row"
-										class:highlighted={i === highlighted}
-										tabindex="-1"
-										onclick={() => selectItem(item)}
-									>
-										{@render rowBody()}
-									</button>
-								{/if}
-							</li>
-						{:else}
-							<li class="dropdown-empty" role="presentation">
-								{#if listLoading}
-									Loading {noun}…
-								{:else}
-									No {noun}
-									{query.trim() ? "match" : "loaded"}
-								{/if}
-							</li>
-						{/each}
-						{#if filtered.total > filtered.rows.length}
-							<li class="dropdown-more" role="presentation">
-								Showing {filtered.rows.length} of {filtered.total} — keep
-								typing to narrow
-							</li>
-						{/if}
-					</ul>
-				{/if}
+				<SearchDropdown
+					bind:this={list}
+					bind:open={dropdownOpen}
+					bind:activeDescendant
+					items={listItems}
+					{topKeys}
+					{query}
+					{listLoading}
+					{noun}
+					listId={LIST_ID}
+					{hrefOf}
+					within={searchWrapEl}
+					onpick={pick}
+				/>
 
 				{#if notice}
 					<p class="search-notice" role="status" aria-live="polite">{notice}</p>
@@ -678,84 +570,6 @@ $effect(() => {
 		position: relative;
 		width: 100%;
 		z-index: 1;
-	}
-
-	.search-dropdown {
-		position: absolute;
-		top: calc(100% + 4px);
-		left: 0;
-		right: 0;
-		max-height: min(40vh, 320px);
-		overflow-y: auto;
-		margin: 0;
-		padding: 6px;
-		list-style: none;
-		background: #000;
-		border: 3px solid var(--color-gold-bar);
-		border-radius: 2px;
-		z-index: 6;
-	}
-
-	.dropdown-row {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 12px;
-		width: 100%;
-		padding: 8px 10px;
-		background: none;
-		border: none;
-		border-radius: 2px;
-		cursor: pointer;
-		text-align: left;
-		font-family: inherit;
-		box-sizing: border-box;
-		text-decoration: none;
-	}
-
-	.dropdown-row:hover,
-	.dropdown-row:focus-visible,
-	.dropdown-row.highlighted {
-		background: rgb(250 215 2 / 0.14);
-	}
-
-	.search-dropdown li + li {
-		position: relative;
-	}
-	.search-dropdown li + li::before {
-		content: "";
-		position: absolute;
-		top: 0;
-		left: 10px;
-		right: 10px;
-		height: 1px;
-		background: #2e3342;
-	}
-
-	.row-name {
-		color: var(--rtvr-on-dark);
-		font-size: 14px;
-		line-height: 1.3;
-	}
-
-	.row-hint {
-		color: #8d93a6;
-		font-size: 12px;
-		flex-shrink: 0;
-	}
-
-	.dropdown-empty {
-		padding: 10px;
-		color: #8d93a6;
-		font-size: 13px;
-	}
-
-	.dropdown-more {
-		padding: 8px 10px;
-		color: #8d93a6;
-		font-size: 12px;
-		font-style: italic;
-		border-top: 1px solid rgba(141, 147, 166, 0.2);
 	}
 
 	.search-notice {

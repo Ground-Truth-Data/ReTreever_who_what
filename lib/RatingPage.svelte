@@ -18,7 +18,9 @@ import DogStage from "./DogStage.svelte";
 import GlobeSpinIcon from "./GlobeSpinIcon.svelte";
 import RatingNumber from "./RatingNumber.svelte";
 import SearchBar from "./SearchBar.svelte";
+import SearchDropdown from "./SearchDropdown.svelte";
 import type { SearchResult } from "./resultLoad";
+import type { SearchListItem } from "./searchTypes";
 import { RATING, depthOf, layerOf, place, type Placed } from "./shardLayout";
 import { withLocalPhotos } from "./shardPhotos";
 import { byArt, shardId } from "./shared/shardIndex";
@@ -30,7 +32,11 @@ let {
 	routes = {},
 	notice = null,
 	clipRoot = undefined,
+	items = [],
+	topKeys = [],
+	listLoading = false,
 	onsearch,
+	onpick,
 	onactivate,
 }: {
 	tab: "orgs" | "projects";
@@ -38,9 +44,45 @@ let {
 	routes?: WhoWhatRoutes;
 	notice?: string | null;
 	clipRoot?: string;
+	items?: SearchListItem[];
+	topKeys?: string[];
+	listLoading?: boolean;
 	onsearch?: (query: string) => void;
+	onpick?: (item: SearchListItem, go: boolean) => void;
 	onactivate?: () => void;
 } = $props();
+
+const noun = $derived(tab === "orgs" ? "organizations" : "projects");
+const LIST_ID = "rating-search-list";
+let dropdownOpen = $state(false);
+let list = $state<SearchDropdown | null>(null);
+let activeDescendant = $state<string | undefined>(undefined);
+let barEl = $state<HTMLElement | null>(null);
+
+const hrefOf = (item: SearchListItem) =>
+	tab === "orgs" ? routes.whoOrg?.(item.key) : routes.whatProject?.(item.key);
+
+// The bar arrives filled with this record's name; opened untouched, the list
+// offers the most-searched records rather than one match for the page itself.
+
+function submit(q: string) {
+	const item = list?.current();
+	if (item) {
+		query = item.name;
+		dropdownOpen = false;
+		onpick?.(item, true);
+		return;
+	}
+	onsearch?.(q);
+}
+
+function pick(item: SearchListItem, go: boolean) {
+	if (go) {
+		query = item.name;
+		dropdownOpen = false;
+	}
+	onpick?.(item, go);
+}
 
 const PHOTOS = import.meta.glob<string>("./assets/pub-Rtvr/rating/poly/*.webp", {
 	eager: true,
@@ -144,14 +186,32 @@ $effect(() => {
 				</a>
 			</nav>
 			<div class="bar-row">
-				<div class="bar">
+				<div class="bar" bind:this={barEl}>
 					<SearchBar
 						bind:value={query}
+						bind:dropdownOpen
 						id="rating-search"
-						placeholder={tab === "orgs" ? "Search organizations…" : "Search projects…"}
-						ariaLabel={tab === "orgs" ? "Search organizations" : "Search projects"}
-						onsearch={(q) => onsearch?.(q)}
+						placeholder="Search {noun}…"
+						ariaLabel="Search {noun}"
+						onsearch={submit}
 						{onactivate}
+						onkeynav={(dir) => list?.move(dir)}
+						listId={LIST_ID}
+						{activeDescendant}
+					/>
+					<SearchDropdown
+						bind:this={list}
+						bind:open={dropdownOpen}
+						bind:activeDescendant
+						{items}
+						{topKeys}
+						query={query === result.name ? "" : query}
+						{listLoading}
+						{noun}
+						listId={LIST_ID}
+						{hrefOf}
+						within={barEl}
+						onpick={pick}
 					/>
 					{#if notice}
 						<p class="search-notice" role="status" aria-live="polite">{notice}</p>
