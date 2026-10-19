@@ -675,13 +675,15 @@ $effect(() => {
 	/* Tabs tuck under the bar's top edge via negative margin, not absolute
 	   positioning — the row must keep its height in flow for the fold rule. */
 	.tabs {
-		/* Flat 10px, not scaled by --bar-scale, or it crops the shorter tab's label. */
-		--tab-tuck: 10px;
-		--tab-h-idle: clamp(34px, 4.4vw, 46px);
-		--tab-h-active: clamp(48px, 6.4vw, 66px);
+		/* Capped at 10px: scaled up it crops the shorter tab's label; on a phone it
+		   must shrink with the tab or the label vanishes under the bar. */
+		--tab-tuck: min(10px, calc(5 * var(--bar-scale)));
+		/* Bar units, like the caption: 46px and 66px tall when the bar is full width. */
+		--tab-h-idle: calc(22.75 * var(--bar-scale));
+		--tab-h-active: calc(32.6 * var(--bar-scale));
 		display: flex;
 		align-items: flex-end;
-		gap: 16px;
+		gap: calc(8 * var(--bar-scale));
 		/* No padding-bottom: it would add back what this margin removes. */
 		margin-bottom: calc(0px - var(--tab-tuck) - clamp(8px, 1.4vw, 16px));
 		position: relative;
@@ -921,11 +923,11 @@ $effect(() => {
 	/* 550px is the Get Cache breakpoint, where the bar spans the screen. */
 	@media (max-width: 550px) {
 		.search-caption {
-			font-size: 18px;
+			font-size: max(13px, calc(14.3 * var(--bar-scale)));
 		}
 
 		.caption-row :global(.globe-icon) {
-			width: 56px;
+			width: max(40px, calc(44.5 * var(--bar-scale)));
 		}
 	}
 </style>
