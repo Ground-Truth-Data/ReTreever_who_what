@@ -1,6 +1,6 @@
 <script lang="ts">
-import { untrack, type Snippet } from "svelte";
-import { goto } from "$app/navigation";
+import { untrack } from "svelte";
+import { curtain } from "./curtain.svelte";
 import type { WhoWhatEndpoints, WhoWhatRoutes } from "./whoWhatTypes";
 import SearchPage from "./SearchPage.svelte";
 import {
@@ -16,7 +16,6 @@ let {
 	tab,
 	title,
 	initialQuery = "",
-	results,
 	routes = {},
 	endpoints = {},
 }: {
@@ -24,8 +23,6 @@ let {
 	title: string;
 	/** Pre-fills the bar on the results pages. */
 	initialQuery?: string;
-	/** Absent on the search page itself. */
-	results?: Snippet;
 	/** The host's URL map; absent, selecting a result goes nowhere. */
 	routes?: WhoWhatRoutes;
 	/** Absent, every list fetch is skipped. */
@@ -99,6 +96,13 @@ $effect(() => {
 	notice = null;
 });
 
+function pickItem(item: SearchListItem, t: "orgs" | "projects", go: boolean) {
+	recordSearchHit(fetch, endpoints, t, item.key);
+	if (!go) return;
+	const href = t === "orgs" ? routes.whoOrg?.(item.key) : routes.whatProject?.(item.key);
+	if (href) curtain.wipe(href);
+}
+
 function submitSearch(q: string, t: "orgs" | "projects") {
 	const items = t === "orgs" ? orgs : projects;
 
@@ -122,7 +126,7 @@ function submitSearch(q: string, t: "orgs" | "projects") {
 	recordSearchHit(fetch, endpoints, t, key);
 	const href =
 		t === "orgs" ? routes.whoOrg?.(key) : routes.whatProject?.(key);
-	if (href) goto(href);
+	if (href) curtain.wipe(href);
 }
 </script>
 
@@ -141,8 +145,7 @@ function submitSearch(q: string, t: "orgs" | "projects") {
 	{projects}
 	topKeys={topKeys[tab]}
 	{listLoading}
-	{results}
 	onsearch={submitSearch}
-	onpick={(item, t) => recordSearchHit(fetch, endpoints, t, item.key)}
+	onpick={pickItem}
 	onactivate={activate}
 />

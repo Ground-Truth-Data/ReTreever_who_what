@@ -1,6 +1,6 @@
 // ⚠️ Never renumber an existing shard — numbers are names, allocated once; gaps from deletions stay retired, not recycled
 
-export type ShardPage = 'search' | 'why';
+export type ShardPage = 'search' | 'why' | 'rating';
 
 export type ShardEntry = {
 	/** unique across the WHOLE SITE, never reused */
@@ -46,6 +46,18 @@ export const SHARDS: ShardEntry[] = [
 		slug: 'divider',
 		what: 'middle divider — pine-seedling photo strip between hero and headline',
 	},
+
+	// The rating page's pine-pattern polygons (Rating_page_RP_poly_N.svg); art = N.
+	{ n: 27, page: 'rating', what: 'rating shard, top-left corner', art: 1 },
+	{ n: 28, page: 'rating', what: 'rating shard, top strip above the bar', art: 2 },
+	{ n: 29, page: 'rating', what: 'rating shard, top-right sliver', art: 3 },
+	{ n: 30, page: 'rating', what: 'rating shard, upper right', art: 4 },
+	{ n: 31, page: 'rating', what: 'rating shard, mid right', art: 5 },
+	{ n: 32, page: 'rating', what: 'rating shard, lower right', art: 6 },
+	{ n: 33, page: 'rating', what: 'rating shard, bottom right by the lockup', art: 7 },
+	{ n: 34, page: 'rating', what: 'rating shard, bottom left under the lockup', art: 8 },
+	{ n: 35, page: 'rating', what: 'rating shard, mid left', art: 9 },
+	{ n: 36, page: 'rating', what: 'rating shard, upper left', art: 10 },
 ];
 
 /** `<page>_shard-<n>[-<slug>]` */

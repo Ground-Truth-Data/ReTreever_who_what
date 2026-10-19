@@ -9,6 +9,7 @@ import GrassMascot from "./GrassMascot.svelte";
 import GrassTufts from "./GrassTufts.svelte";
 import GlobeSpinIcon from "./GlobeSpinIcon.svelte";
 import SearchBar from "./SearchBar.svelte";
+import SearchDropdown from "./SearchDropdown.svelte";
 import MiddleDividerRaw from "./homeAssets/poly/Search_page_Middle_Divider.svg?raw";
 
 import skyUrl from "./assets/golden_sky_background.webp";
@@ -30,9 +31,9 @@ import {
 	type Placed,
 } from "./shardLayout";
 import { byArt, shard, shardId } from "./shared/shardIndex";
+import { withLocalPhotos } from "./shardPhotos";
 import type { WhoWhatRoutes } from "./whoWhatTypes";
 import type { SearchListItem } from "./searchTypes";
-import type { Snippet } from "svelte";
 
 let {
 	query = $bindable(""),
@@ -49,7 +50,6 @@ let {
 	onpick,
 	onactivate,
 	listLoading = false,
-	results,
 }: {
 	query?: string;
 	activeTab?: "orgs" | "projects";
@@ -63,67 +63,22 @@ let {
 	projects?: SearchListItem[];
 	topKeys?: string[];
 	onsearch?: (query: string, tab: "orgs" | "projects") => void;
-	/** The row's own link navigates; the route only counts the pick. */
-	onpick?: (item: SearchListItem, tab: "orgs" | "projects") => void;
+	/** `go` false: a modified click, the row's own link navigates and the route only counts the pick. */
+	onpick?: (item: SearchListItem, tab: "orgs" | "projects", go: boolean) => void;
 	onactivate?: () => void;
 	listLoading?: boolean;
-	results?: Snippet;
 } = $props();
 
 const listItems = $derived(activeTab === "orgs" ? orgs : projects);
 const noun = $derived(activeTab === "orgs" ? "organizations" : "projects");
 
-const searchIndex = $derived(
-	listItems.map((item) => ({ item, hay: item.name.toLowerCase() })),
-);
-
-const MAX_DROPDOWN_ROWS = 50;
-const TOP_ROWS = 5;
-const filtered = $derived.by(() => {
-	const q = query.trim().toLowerCase();
-	if (q) {
-		const matches = searchIndex.filter((e) => e.hay.includes(q));
-		return {
-			total: matches.length,
-			rows: matches.slice(0, MAX_DROPDOWN_ROWS).map((e) => e.item),
-		};
-	}
-	const byKey = new Map(listItems.map((item) => [item.key, item]));
-	const top = topKeys
-		.map((k) => byKey.get(k))
-		.filter((item): item is SearchListItem => item !== undefined);
-	const seen = new Set(top.map((item) => item.key));
-	const fill = listItems.filter((item) => !seen.has(item.key));
-	return {
-		total: listItems.length,
-		rows: [...top, ...fill].slice(0, TOP_ROWS),
-	};
-});
-
-let highlighted = $state(-1);
 const LIST_ID = "home-search-list";
-const rowId = (i: number) => `${LIST_ID}-row-${i}`;
-
-$effect(() => {
-	filtered.rows;
-	dropdownOpen;
-	highlighted = -1;
-});
-
-function moveHighlight(dir: 1 | -1) {
-	const n = filtered.rows.length;
-	if (n === 0) return;
-	highlighted = Math.min(n - 1, Math.max(-1, highlighted + dir));
-	if (highlighted >= 0) {
-		document
-			.getElementById(rowId(highlighted))
-			?.scrollIntoView({ block: "nearest" });
-	}
-}
+let list = $state<SearchDropdown | null>(null);
+let activeDescendant = $state<string | undefined>(undefined);
 
 function submit(q: string) {
-	if (dropdownOpen && filtered.rows.length > 0) {
-		const item = filtered.rows[Math.max(0, highlighted)];
+	const item = list?.current();
+	if (item) {
 		selectItem(item);
 		onsearch?.(item.name, activeTab);
 		return;
@@ -140,46 +95,18 @@ function selectItem(item: SearchListItem) {
 const hrefOf = (item: SearchListItem) =>
 	activeTab === "orgs" ? routes.whoOrg?.(item.key) : routes.whatProject?.(item.key);
 
-// No preventDefault: a modified click opens elsewhere, so the bar stays as-is.
-function pickRow(e: MouseEvent, item: SearchListItem) {
-	onpick?.(item, activeTab);
-	if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-	selectItem(item);
+function pick(item: SearchListItem, go: boolean) {
+	if (go) selectItem(item);
+	onpick?.(item, activeTab, go);
 }
 
 let searchWrapEl = $state<HTMLElement | null>(null);
 
-function dismissOnOutside(e: PointerEvent) {
-	if (!dropdownOpen) return;
-	if (searchWrapEl && !searchWrapEl.contains(e.target as Node)) {
-		dropdownOpen = false;
-	}
-}
-
-function dismissOnEscape(e: KeyboardEvent) {
-	if (dropdownOpen && e.key === "Escape") {
-		dropdownOpen = false;
-		e.preventDefault();
-	}
-}
-
-// `?raw` leaves the SVG's `<image href>`s unresolved; this swaps in bundled URLs.
 const SHARD_PHOTOS = import.meta.glob<string>(
 	"./assets/pub-Rtvr/home/poly/*.webp",
 	{ eager: true, query: "?url", import: "default" },
 );
-
-function withLocalPhotos(svg: string): string {
-	return svg.replace(
-		/href="[^"]*\/pub-Rtvr\/home\/poly\/([^"]+)"/g,
-		(whole, file: string) => {
-			const hit = Object.entries(SHARD_PHOTOS).find(([path]) =>
-				path.endsWith(`/${file}`),
-			);
-			return hit ? `href="${hit[1]}"` : whole;
-		},
-	);
-}
+const localPhotos = (svg: string) => withLocalPhotos(svg, SHARD_PHOTOS, "home/poly");
 
 const shardArt: Record<number, string> = Object.fromEntries(
 	Object.entries(
@@ -188,13 +115,15 @@ const shardArt: Record<number, string> = Object.fromEntries(
 			query: "?raw",
 			import: "default",
 		}),
-	).map(([path, svg]) => [Number(/poly_(\d+)\.svg$/.exec(path)![1]), withLocalPhotos(svg)]),
+	).map(([path, svg]) => [Number(/poly_(\d+)\.svg$/.exec(path)![1]), localPhotos(svg)]),
 );
 
 let shards = $state<Placed[]>([]);
 let headlineShards = $state<Placed[]>([]);
 let heroEl = $state<HTMLElement | null>(null);
 let headlineEl = $state<HTMLElement | null>(null);
+let cardEl = $state<HTMLElement | null>(null);
+let lockupEl = $state<HTMLElement | null>(null);
 
 let scrolled = $state(0);
 
@@ -224,14 +153,16 @@ const headlineScrolled = $derived(Math.max(0, scrolled - headlineOffset));
 
 let lastHeroTop = -1;
 function measure() {
-	if (heroEl && headlineEl) {
+	if (heroEl && headlineEl && cardEl && lockupEl) {
 		const vw = heroEl.clientWidth;
 		const heroH = heroEl.clientHeight;
 		const headH = headlineEl.clientHeight;
 		if (vw > 0 && heroH > 0 && headH > 0) {
+			// Plus the sections' 16px side padding, so the gutter lane is the bare strip
+			// outside the content and a phone shows no sliver beside the card.
 			[shards, headlineShards] = layoutPage(vw, [
-				{ height: heroH, specs: HOME },
-				{ height: headH, specs: HEADLINE },
+				{ height: heroH, clearW: cardEl.clientWidth + 32, specs: HOME },
+				{ height: headH, clearW: lockupEl.clientWidth + 32, specs: HEADLINE },
 			]);
 		}
 	}
@@ -292,8 +223,6 @@ $effect(() => {
 });
 </script>
 
-<svelte:window onpointerdown={dismissOnOutside} onkeydown={dismissOnEscape} />
-
 {#snippet polyShard(shard: Placed, scroll: number)}
 	{@const depth = depthOf(shard, widestShard)}
 	<div
@@ -314,7 +243,7 @@ $effect(() => {
 
 <!-- Missing asset falls through to --rtvr-missing-art. -->
 <div class="home-search-page" style="--art-sky: url({skyUrl}); --art-hill-pattern-webp: url({hillPatternWebp}); --art-hill-pattern-avif: url({hillPatternAvif}); --art-hill-fill-webp: url({hillFillWebp}); --art-hill-fill-avif: url({hillFillAvif}); --art-uppergrass-front-webp: url({upperGrassFrontWebp}); --art-uppergrass-front-avif: url({upperGrassFrontAvif}); --art-uppergrass-back-webp: url({upperGrassBackWebp}); --art-uppergrass-back-avif: url({upperGrassBackAvif});">
-	<section class="hero-section" class:has-results={results} bind:this={heroEl}>
+	<section class="hero-section" bind:this={heroEl}>
 		{#each shards as shard (shard.id)}
 			{@render polyShard(shard, scrolled)}
 		{/each}
@@ -326,7 +255,7 @@ $effect(() => {
 			<GrassTufts />
 		</div>
 
-		<div class="search-card">
+		<div class="search-card" bind:this={cardEl}>
 			<nav class="tabs" aria-label="Search by">
 				<a
 					href={routes.who ?? null}
@@ -354,67 +283,25 @@ $effect(() => {
 					ariaLabel="Search {noun}"
 					onsearch={submit}
 					{onactivate}
-					onkeynav={moveHighlight}
+					onkeynav={(dir) => list?.move(dir)}
 					listId={LIST_ID}
-					activeDescendant={highlighted >= 0 ? rowId(highlighted) : undefined}
+					{activeDescendant}
 				/>
 
-				<!-- TODO: swap the chrome for the design's drop-window SVG once exported; keep the list. -->
-				{#if dropdownOpen}
-					<ul class="search-dropdown" id={LIST_ID} role="listbox">
-						{#each filtered.rows as item, i (item.key)}
-							{@const href = hrefOf(item)}
-							{#snippet rowBody()}
-								<span class="row-name">{item.name}</span>
-								{#if item.hint}
-									<span class="row-hint">{item.hint}</span>
-								{/if}
-							{/snippet}
-							<li
-								id={rowId(i)}
-								role="option"
-								aria-selected={i === highlighted}
-							>
-								{#if href}
-									<a
-										{href}
-										class="dropdown-row"
-										class:highlighted={i === highlighted}
-										tabindex="-1"
-										onclick={(e) => pickRow(e, item)}
-									>
-										{@render rowBody()}
-									</a>
-								{:else}
-									<button
-										type="button"
-										class="dropdown-row"
-										class:highlighted={i === highlighted}
-										tabindex="-1"
-										onclick={() => selectItem(item)}
-									>
-										{@render rowBody()}
-									</button>
-								{/if}
-							</li>
-						{:else}
-							<li class="dropdown-empty" role="presentation">
-								{#if listLoading}
-									Loading {noun}…
-								{:else}
-									No {noun}
-									{query.trim() ? "match" : "loaded"}
-								{/if}
-							</li>
-						{/each}
-						{#if filtered.total > filtered.rows.length}
-							<li class="dropdown-more" role="presentation">
-								Showing {filtered.rows.length} of {filtered.total} — keep
-								typing to narrow
-							</li>
-						{/if}
-					</ul>
-				{/if}
+				<SearchDropdown
+					bind:this={list}
+					bind:open={dropdownOpen}
+					bind:activeDescendant
+					items={listItems}
+					{topKeys}
+					{query}
+					{listLoading}
+					{noun}
+					listId={LIST_ID}
+					{hrefOf}
+					within={searchWrapEl}
+					onpick={pick}
+				/>
 
 				{#if notice}
 					<p class="search-notice" role="status" aria-live="polite">{notice}</p>
@@ -425,15 +312,13 @@ $effect(() => {
 				<p class="search-caption">Search transparency rating</p>
 				<GlobeSpinIcon class="globe-icon" href={mapHref ?? routes.whoMap} />
 			</div>
-
-			{@render results?.()}
 		</div>
 	</section>
 
 	<div class="middle-divider" id={dividerId}>
 		<div class="middle-divider-photo" aria-hidden="true">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-			{@html withLocalPhotos(MiddleDividerRaw)}
+			{@html localPhotos(MiddleDividerRaw)}
 		</div>
 	</div>
 
@@ -444,7 +329,7 @@ $effect(() => {
 			{@render polyShard(shard, headlineScrolled)}
 		{/each}
 
-		<div class="headline">
+		<div class="headline" bind:this={lockupEl}>
 			<div class="headline-find" aria-hidden="true">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 				{@html FindRaw}
@@ -507,11 +392,6 @@ $effect(() => {
 		background-size: cover;
 		background-position: center top;
 		background-repeat: no-repeat;
-	}
-
-	/* The results card adds to the search card; the fold rule must clear it too. */
-	.hero-section.has-results {
-		--hero-chrome: calc(var(--hero-top) + 561px);
 	}
 
 	.headline-section {
@@ -671,13 +551,15 @@ $effect(() => {
 	/* Tabs tuck under the bar's top edge via negative margin, not absolute
 	   positioning — the row must keep its height in flow for the fold rule. */
 	.tabs {
-		/* Flat 10px, not scaled by --bar-scale, or it crops the shorter tab's label. */
-		--tab-tuck: 10px;
-		--tab-h-idle: clamp(34px, 4.4vw, 46px);
-		--tab-h-active: clamp(48px, 6.4vw, 66px);
+		/* Capped at 10px: scaled up it crops the shorter tab's label; on a phone it
+		   must shrink with the tab or the label vanishes under the bar. */
+		--tab-tuck: min(10px, calc(5 * var(--bar-scale)));
+		/* Bar units, like the caption: 46px and 66px tall when the bar is full width. */
+		--tab-h-idle: calc(22.75 * var(--bar-scale));
+		--tab-h-active: calc(32.6 * var(--bar-scale));
 		display: flex;
 		align-items: flex-end;
-		gap: 16px;
+		gap: calc(8 * var(--bar-scale));
 		/* No padding-bottom: it would add back what this margin removes. */
 		margin-bottom: calc(0px - var(--tab-tuck) - clamp(8px, 1.4vw, 16px));
 		position: relative;
@@ -688,84 +570,6 @@ $effect(() => {
 		position: relative;
 		width: 100%;
 		z-index: 1;
-	}
-
-	.search-dropdown {
-		position: absolute;
-		top: calc(100% + 4px);
-		left: 0;
-		right: 0;
-		max-height: min(40vh, 320px);
-		overflow-y: auto;
-		margin: 0;
-		padding: 6px;
-		list-style: none;
-		background: #000;
-		border: 3px solid var(--color-gold-bar);
-		border-radius: 2px;
-		z-index: 6;
-	}
-
-	.dropdown-row {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 12px;
-		width: 100%;
-		padding: 8px 10px;
-		background: none;
-		border: none;
-		border-radius: 2px;
-		cursor: pointer;
-		text-align: left;
-		font-family: inherit;
-		box-sizing: border-box;
-		text-decoration: none;
-	}
-
-	.dropdown-row:hover,
-	.dropdown-row:focus-visible,
-	.dropdown-row.highlighted {
-		background: rgb(250 215 2 / 0.14);
-	}
-
-	.search-dropdown li + li {
-		position: relative;
-	}
-	.search-dropdown li + li::before {
-		content: "";
-		position: absolute;
-		top: 0;
-		left: 10px;
-		right: 10px;
-		height: 1px;
-		background: #2e3342;
-	}
-
-	.row-name {
-		color: var(--rtvr-on-dark);
-		font-size: 14px;
-		line-height: 1.3;
-	}
-
-	.row-hint {
-		color: #8d93a6;
-		font-size: 12px;
-		flex-shrink: 0;
-	}
-
-	.dropdown-empty {
-		padding: 10px;
-		color: #8d93a6;
-		font-size: 13px;
-	}
-
-	.dropdown-more {
-		padding: 8px 10px;
-		color: #8d93a6;
-		font-size: 12px;
-		font-style: italic;
-		border-top: 1px solid rgba(141, 147, 166, 0.2);
 	}
 
 	.search-notice {
@@ -917,11 +721,11 @@ $effect(() => {
 	/* 550px is the Get Cache breakpoint, where the bar spans the screen. */
 	@media (max-width: 550px) {
 		.search-caption {
-			font-size: 18px;
+			font-size: max(13px, calc(14.3 * var(--bar-scale)));
 		}
 
 		.caption-row :global(.globe-icon) {
-			width: 56px;
+			width: max(40px, calc(44.5 * var(--bar-scale)));
 		}
 	}
 </style>

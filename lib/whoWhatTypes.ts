@@ -19,6 +19,8 @@ export type WhoWhatEndpoints = {
 	project?: (key: string) => string;
 	/** Search-hit analytics: GET top keys per tab, POST a landing. Absent → alphabetical, nothing logged. */
 	searchHits?: string;
+	/** Where the frame clips (the dog, the page animations) and their clips.json are served from. Absent → no clip plays. */
+	clipRoot?: string;
 };
 
 // The host's `error`: a standalone child has no @sveltejs/kit to import it from.
@@ -30,6 +32,8 @@ export type WhoWhatRoutes = {
 	who?: string;
 	what?: string;
 	whoMap?: string;
+	/** How the rating works; the rating page's info button. */
+	why?: string;
 	whoOrg?: (key: string) => string;
 	whatProject?: (key: string) => string;
 };
