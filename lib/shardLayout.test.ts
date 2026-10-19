@@ -205,12 +205,13 @@ describe("the authored rings", () => {
 		}
 	});
 
-	it("keeps every shard inside its section's height", () => {
+	it("keeps every shard inside its section's height, bar a hang off the top edge", () => {
 		for (const vw of WIDTHS) {
 			for (const { ring, h, clear } of sections(vw)) {
 				for (const p of place(ring, vw, h, clear)) {
 					const b = bounds(p);
-					expect(b.top).toBeGreaterThanOrEqual(-1);
+					// A shard may hang off the top as it does off a side; past a tenth it is lost under the nav.
+					expect(b.top).toBeGreaterThanOrEqual(-h * 0.1);
 					expect(b.bottom).toBeLessThanOrEqual(h + 1);
 				}
 			}
