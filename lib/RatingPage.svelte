@@ -344,7 +344,8 @@ $effect(() => {
 		--card-max: 576px;
 		--bar-scale: calc(min(100vw - 32px, var(--card-max)) / 284.70643);
 		position: relative;
-		z-index: 5;
+		/* Above the hero grid (5): the open list hangs over the header and must take the click. */
+		z-index: 7;
 		width: 100%;
 		max-width: var(--card-max);
 		display: flex;
@@ -433,6 +434,13 @@ $effect(() => {
 		align-items: flex-start;
 		gap: clamp(8px, 1.5vh, 18px);
 		padding-left: clamp(0px, 6vw, 96px);
+	}
+
+	/* Decorative: the pointer passes through to whatever is under it. */
+	.header-sticker,
+	.lockup,
+	.yellow-line {
+		pointer-events: none;
 	}
 
 	.header-sticker :global(svg) {
