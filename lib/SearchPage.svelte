@@ -195,6 +195,8 @@ let shards = $state<Placed[]>([]);
 let headlineShards = $state<Placed[]>([]);
 let heroEl = $state<HTMLElement | null>(null);
 let headlineEl = $state<HTMLElement | null>(null);
+let cardEl = $state<HTMLElement | null>(null);
+let lockupEl = $state<HTMLElement | null>(null);
 
 let scrolled = $state(0);
 
@@ -224,14 +226,16 @@ const headlineScrolled = $derived(Math.max(0, scrolled - headlineOffset));
 
 let lastHeroTop = -1;
 function measure() {
-	if (heroEl && headlineEl) {
+	if (heroEl && headlineEl && cardEl && lockupEl) {
 		const vw = heroEl.clientWidth;
 		const heroH = heroEl.clientHeight;
 		const headH = headlineEl.clientHeight;
 		if (vw > 0 && heroH > 0 && headH > 0) {
+			// Plus the sections' 16px side padding, so the gutter lane is the bare strip
+			// outside the content and a phone shows no sliver beside the card.
 			[shards, headlineShards] = layoutPage(vw, [
-				{ height: heroH, specs: HOME },
-				{ height: headH, specs: HEADLINE },
+				{ height: heroH, clearW: cardEl.clientWidth + 32, specs: HOME },
+				{ height: headH, clearW: lockupEl.clientWidth + 32, specs: HEADLINE },
 			]);
 		}
 	}
@@ -326,7 +330,7 @@ $effect(() => {
 			<GrassTufts />
 		</div>
 
-		<div class="search-card">
+		<div class="search-card" bind:this={cardEl}>
 			<nav class="tabs" aria-label="Search by">
 				<a
 					href={routes.who ?? null}
@@ -444,7 +448,7 @@ $effect(() => {
 			{@render polyShard(shard, headlineScrolled)}
 		{/each}
 
-		<div class="headline">
+		<div class="headline" bind:this={lockupEl}>
 			<div class="headline-find" aria-hidden="true">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 				{@html FindRaw}
