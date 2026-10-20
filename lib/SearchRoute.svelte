@@ -145,6 +145,7 @@ function submitSearch(q: string, t: "orgs" | "projects") {
 	{projects}
 	topKeys={topKeys[tab]}
 	{listLoading}
+	clipRoot={endpoints.clipRoot}
 	onsearch={submitSearch}
 	onpick={pickItem}
 	onactivate={activate}

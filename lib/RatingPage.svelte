@@ -217,6 +217,7 @@ $effect(() => {
 						listId={LIST_ID}
 						{hrefOf}
 						within={barEl}
+						{clipRoot}
 						onpick={pick}
 					/>
 					{#if notice}

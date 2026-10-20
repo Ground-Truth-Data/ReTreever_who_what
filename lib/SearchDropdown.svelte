@@ -2,6 +2,10 @@
 // The list under a search bar: the rows, their order, the keyboard highlight
 // and the dismissals. Owned once here, shown under the search page's bar and
 // the rating page's alike — the bar itself is only chrome and an input.
+import FrameClipPlayer from "$gc/FrameClipPlayer.svelte";
+import { frameUrls, loadClips, type ClipFacts } from "$gc/frameClips";
+import WindowRaw from "./ratingAssets/Rating_page_search_dropdown.svg?raw";
+import { WINDOW_BOX, windowBorderCss, windowSliceCss } from "./dropWindow";
 import type { SearchListItem } from "./searchTypes";
 
 let {
@@ -15,6 +19,7 @@ let {
 	hrefOf = () => undefined,
 	within = null,
 	activeDescendant = $bindable(undefined),
+	clipRoot = undefined,
 	onpick,
 }: {
 	items?: SearchListItem[];
@@ -31,6 +36,8 @@ let {
 	within?: HTMLElement | null;
 	/** The highlighted row's id, for the input's aria-activedescendant. */
 	activeDescendant?: string | undefined;
+	/** Where the frame clips are served from; absent, loading is the plain text. */
+	clipRoot?: string;
 	/** `go` false: a modified click, the row's own link navigates. */
 	onpick?: (item: SearchListItem, go: boolean) => void;
 } = $props();
@@ -97,74 +104,131 @@ function dismissOnEscape(e: KeyboardEvent) {
 		e.preventDefault();
 	}
 }
+
+const WINDOW_ART = `url("data:image/svg+xml,${encodeURIComponent(WindowRaw)}")`;
+const WINDOW_SLICE = windowSliceCss();
+const WINDOW_BORDER = windowBorderCss("var(--u)");
+
+const FETCH_CLIP = "fetch-search";
+let fetchClip = $state<ClipFacts | null>(null);
+
+// Loaded and preloaded on mount, so the first open plays at speed.
+$effect(() => {
+	if (!clipRoot) return;
+	let live = true;
+	loadClips(clipRoot).then((m) => {
+		if (!live) return;
+		fetchClip = m.clips[FETCH_CLIP] ?? null;
+		if (fetchClip) {
+			for (const u of frameUrls(clipRoot, FETCH_CLIP, fetchClip)) {
+				const img = new Image();
+				img.src = u;
+			}
+		}
+	});
+	return () => {
+		live = false;
+	};
+});
 </script>
 
 <svelte:window onpointerdown={dismissOnOutside} onkeydown={dismissOnEscape} />
 
-<!-- TODO: swap the chrome for the design's drop-window SVG once exported; keep the list. -->
 {#if open}
-	<ul class="search-dropdown" id={listId} role="listbox">
-		{#each filtered.rows as item, i (item.key)}
-			{@const href = hrefOf(item)}
-			{#snippet rowBody()}
-				<span class="row-name">{item.name}</span>
-				{#if item.hint}
-					<span class="row-hint">{item.hint}</span>
-				{/if}
-			{/snippet}
-			<li id={rowId(i)} role="option" aria-selected={i === highlighted}>
-				{#if href}
-					<a {href} class="dropdown-row" class:highlighted={i === highlighted} tabindex="-1" onclick={(e) => pickRow(e, item)}>
-						{@render rowBody()}
-					</a>
-				{:else}
-					<button type="button" class="dropdown-row" class:highlighted={i === highlighted} tabindex="-1" onclick={() => onpick?.(item, true)}>
-						{@render rowBody()}
-					</button>
-				{/if}
-			</li>
-		{:else}
-			<li class="dropdown-empty" role="presentation">
-				{#if listLoading}
-					Loading {noun}…
-				{:else}
-					No {noun}
-					{query.trim() ? "match" : "loaded"}
-				{/if}
-			</li>
-		{/each}
-		{#if filtered.total > filtered.rows.length}
-			<li class="dropdown-more" role="presentation">
-				Showing {filtered.rows.length} of {filtered.total} — keep typing to narrow
-			</li>
-		{/if}
-	</ul>
+	<div class="drop-window">
+		<ul
+			class="search-dropdown"
+			id={listId}
+			role="listbox"
+			aria-busy={listLoading}
+			style:--win-w={WINDOW_BOX.w}
+			style:--win-art={WINDOW_ART}
+			style:--win-slice={WINDOW_SLICE}
+			style:--win-border={WINDOW_BORDER}
+		>
+			{#each filtered.rows as item, i (item.key)}
+				{@const href = hrefOf(item)}
+				{#snippet rowBody()}
+					<span class="row-name">{item.name}</span>
+					{#if item.hint}
+						<span class="row-hint">{item.hint}</span>
+					{/if}
+				{/snippet}
+				<li id={rowId(i)} role="option" aria-selected={i === highlighted}>
+					{#if href}
+						<a {href} class="dropdown-row" class:highlighted={i === highlighted} tabindex="-1" onclick={(e) => pickRow(e, item)}>
+							{@render rowBody()}
+						</a>
+					{:else}
+						<button type="button" class="dropdown-row" class:highlighted={i === highlighted} tabindex="-1" onclick={() => onpick?.(item, true)}>
+							{@render rowBody()}
+						</button>
+					{/if}
+				</li>
+			{:else}
+				<li class="dropdown-empty" role="presentation">
+					{#if listLoading && clipRoot && fetchClip}
+						<span class="fetch-stage" aria-hidden="true" style:--clip-w="{fetchClip.widthRem}rem">
+							<FrameClipPlayer root={clipRoot} clip={FETCH_CLIP} facts={fetchClip} loop />
+						</span>
+						<span class="visually-hidden">Loading {noun}…</span>
+					{:else if listLoading}
+						Loading {noun}…
+					{:else}
+						No {noun}
+						{query.trim() ? "match" : "loaded"}
+					{/if}
+				</li>
+			{/each}
+			{#if filtered.total > filtered.rows.length}
+				<li class="dropdown-more" role="presentation">
+					Showing {filtered.rows.length} of {filtered.total} — keep typing to narrow
+				</li>
+			{/if}
+		</ul>
+	</div>
 {/if}
 
 <style>
-	.search-dropdown {
+	/* The container gives the list `cqw`, so every size below is a share of the
+	   bar's width — the window's viewBox unit — whatever the list's height. */
+	.drop-window {
 		position: absolute;
 		top: calc(100% + 4px);
 		left: 0;
 		right: 0;
+		z-index: 6;
+		container-type: inline-size;
+	}
+
+	/* Nine-slice of the drawn window: corners keep the designer's skew, the
+	   straight runs stretch to the rows. `fill` paints the black panel. The
+	   inline vars sit here, not on the container: a var() resolves where it is
+	   declared, and `--u` only exists on this element. */
+	.search-dropdown {
+		--u: calc(100cqw / var(--win-w));
+		--row-x: max(8px, calc(3.5 * var(--u)));
+		--row-y: max(7px, calc(2.6 * var(--u)));
+		box-sizing: border-box;
+		width: 100%;
 		max-height: min(40vh, 320px);
 		overflow-y: auto;
 		margin: 0;
-		padding: 6px;
+		padding: 0;
 		list-style: none;
 		background: #000;
-		border: 3px solid var(--color-gold-bar);
-		border-radius: 2px;
-		z-index: 6;
+		border-style: solid;
+		border-width: var(--win-border);
+		border-image: var(--win-art) var(--win-slice) fill;
 	}
 
 	.dropdown-row {
 		display: flex;
 		align-items: baseline;
 		justify-content: space-between;
-		gap: 12px;
+		gap: calc(5 * var(--u));
 		width: 100%;
-		padding: 8px 10px;
+		padding: var(--row-y) var(--row-x);
 		background: none;
 		border: none;
 		border-radius: 2px;
@@ -188,35 +252,71 @@ function dismissOnEscape(e: KeyboardEvent) {
 		content: "";
 		position: absolute;
 		top: 0;
-		left: 10px;
-		right: 10px;
+		left: var(--row-x);
+		right: var(--row-x);
 		height: 1px;
 		background: #2e3342;
 	}
 
+	/* Type in the window's units, floored where it would fall under 12px. */
 	.row-name {
 		color: var(--rtvr-on-dark);
-		font-size: 14px;
+		font-size: max(12px, calc(10 * var(--u)));
 		line-height: 1.3;
 	}
 
 	.row-hint {
 		color: #8d93a6;
-		font-size: 12px;
+		font-size: max(11px, calc(8 * var(--u)));
 		flex-shrink: 0;
 	}
 
 	.dropdown-empty {
-		padding: 10px;
+		padding: var(--row-y) var(--row-x);
 		color: #8d93a6;
-		font-size: 13px;
+		font-size: max(12px, calc(9 * var(--u)));
+	}
+
+	/* The dog crosses the middle of its 2732x2048 frame; the stage shows that
+	   window (x 640-2000, y 520-1320) at the clip's declared width. */
+	.fetch-stage {
+		--crop-x: 640;
+		--crop-y: 520;
+		--crop-w: 1360;
+		--crop-h: 800;
+		position: relative;
+		display: block;
+		width: calc(var(--clip-w) * var(--crop-w) / 2732);
+		max-width: 100%;
+		aspect-ratio: 1360 / 800;
+		margin: 0 auto;
+		overflow: hidden;
+	}
+
+	.fetch-stage :global(.frame-clip) {
+		position: absolute;
+		width: calc(100% * 2732 / var(--crop-w)) !important;
+		max-width: none;
+		left: calc(-100% * var(--crop-x) / var(--crop-w));
+		top: calc(-100% * var(--crop-y) / var(--crop-h));
 	}
 
 	.dropdown-more {
-		padding: 8px 10px;
+		padding: var(--row-y) var(--row-x);
 		color: #8d93a6;
-		font-size: 12px;
+		font-size: max(11px, calc(8 * var(--u)));
 		font-style: italic;
 		border-top: 1px solid rgba(141, 147, 166, 0.2);
+	}
+
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
 	}
 </style>
