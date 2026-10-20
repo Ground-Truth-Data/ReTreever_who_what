@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { WhoWhatEndpoints, WhoWhatRoutes } from "./whoWhatTypes";
+import type { WeedsTable, WhoWhatEndpoints, WhoWhatRoutes } from "./whoWhatTypes";
 import type { SearchResult } from "./resultLoad";
 import RatingPage from "./RatingPage.svelte";
 import { loadOrgList, loadProjectList, loadTopKeys, recordSearchHit } from "./searchLists";
@@ -44,6 +44,14 @@ function pickItem(item: SearchListItem, go: boolean) {
 	recordSearchHit(fetch, endpoints, tab, item.key);
 	if (!go) return;
 	const href = tab === "orgs" ? routes.whoOrg?.(item.key) : routes.whatProject?.(item.key);
+	if (href) curtain.wipe(href);
+}
+
+const weeds = $derived(endpoints.weeds);
+const weedsHref = $derived(weeds ? (table: WeedsTable) => weeds(tab, result.key, table) : undefined);
+
+function openProject(projectKey: string) {
+	const href = routes.whatProject?.(projectKey);
 	if (href) curtain.wipe(href);
 }
 
@@ -93,4 +101,6 @@ function search(q: string) {
 	onsearch={search}
 	onpick={pickItem}
 	onactivate={activate}
+	{weedsHref}
+	onopenproject={tab === "orgs" ? openProject : undefined}
 />
