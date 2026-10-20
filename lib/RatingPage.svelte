@@ -23,6 +23,7 @@ import WeedsSection from "./WeedsSection.svelte";
 import type { SearchResult } from "./resultLoad";
 import type { SearchListItem } from "./searchTypes";
 import { RATING, depthOf, layerOf, place, type Placed } from "./shardLayout";
+import { ratingState, type RatingState } from "./ratingState";
 import { withLocalPhotos } from "./shardPhotos";
 import { byArt, shardId } from "./shared/shardIndex";
 import type { WeedsTable, WhoWhatRoutes } from "./whoWhatTypes";
@@ -121,14 +122,16 @@ let lockupEl = $state<HTMLElement | null>(null);
 let shards = $state<Placed[]>([]);
 const widest = $derived(Math.max(1, ...shards.map((p) => p.w)));
 
-// The state line is the clip state's name until the wording is decided (RT 41 📣).
+// One string per state until the wording is decided (RT 41 📣).
+const STATE_LINES: Record<RatingState, string> = {
+	opaque: "Opaque data…",
+	partial: "Partial data…",
+	open: "Open data…",
+	transparent: "Transparent data…",
+};
 const stateLine = $derived.by(() => {
-	if (result.rating === null) return "Unscored";
-	const r = Math.round(result.rating);
-	if (r <= 29) return "Opaque data…";
-	if (r <= 59) return "Partial data…";
-	if (r <= 85) return "Open data…";
-	return "Transparent data…";
+	const state = ratingState(result.rating);
+	return state ? STATE_LINES[state] : "Unscored";
 });
 
 function measure() {
@@ -217,6 +220,7 @@ $effect(() => {
 						listId={LIST_ID}
 						{hrefOf}
 						within={barEl}
+						{clipRoot}
 						onpick={pick}
 					/>
 					{#if notice}

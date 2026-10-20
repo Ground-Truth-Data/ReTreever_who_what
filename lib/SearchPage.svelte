@@ -50,6 +50,7 @@ let {
 	onpick,
 	onactivate,
 	listLoading = false,
+	clipRoot = undefined,
 }: {
 	query?: string;
 	activeTab?: "orgs" | "projects";
@@ -67,6 +68,8 @@ let {
 	onpick?: (item: SearchListItem, tab: "orgs" | "projects", go: boolean) => void;
 	onactivate?: () => void;
 	listLoading?: boolean;
+	/** Where the frame clips are served from; the list's fetching clip needs it. */
+	clipRoot?: string;
 } = $props();
 
 const listItems = $derived(activeTab === "orgs" ? orgs : projects);
@@ -300,6 +303,7 @@ $effect(() => {
 					listId={LIST_ID}
 					{hrefOf}
 					within={searchWrapEl}
+					{clipRoot}
 					onpick={pick}
 				/>
 
