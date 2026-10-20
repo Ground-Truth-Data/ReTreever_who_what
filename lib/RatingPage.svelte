@@ -19,12 +19,13 @@ import GlobeSpinIcon from "./GlobeSpinIcon.svelte";
 import RatingNumber from "./RatingNumber.svelte";
 import SearchBar from "./SearchBar.svelte";
 import SearchDropdown from "./SearchDropdown.svelte";
+import WeedsSection from "./WeedsSection.svelte";
 import type { SearchResult } from "./resultLoad";
 import type { SearchListItem } from "./searchTypes";
 import { RATING, depthOf, layerOf, place, type Placed } from "./shardLayout";
 import { withLocalPhotos } from "./shardPhotos";
 import { byArt, shardId } from "./shared/shardIndex";
-import type { WhoWhatRoutes } from "./whoWhatTypes";
+import type { WeedsTable, WhoWhatRoutes } from "./whoWhatTypes";
 
 let {
 	tab,
@@ -38,6 +39,8 @@ let {
 	onsearch,
 	onpick,
 	onactivate,
+	weedsHref = undefined,
+	onopenproject = undefined,
 }: {
 	tab: "orgs" | "projects";
 	result: SearchResult;
@@ -50,6 +53,9 @@ let {
 	onsearch?: (query: string) => void;
 	onpick?: (item: SearchListItem, go: boolean) => void;
 	onactivate?: () => void;
+	/** The host's URL for one weeds table of this record; absent, no weeds. */
+	weedsHref?: (table: WeedsTable) => string;
+	onopenproject?: (projectKey: string) => void;
 } = $props();
 
 const noun = $derived(tab === "orgs" ? "organizations" : "projects");
@@ -278,6 +284,10 @@ $effect(() => {
 			{@html YellowLineRaw}
 		</div>
 	</section>
+
+	{#if weedsHref}
+		<WeedsSection {tab} href={weedsHref} {clipRoot} {onopenproject} />
+	{/if}
 </div>
 
 <style>

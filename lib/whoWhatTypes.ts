@@ -11,6 +11,30 @@ export function formatTransparencyScore(score: unknown): string {
 	return Number.isFinite(n) ? `${n.toFixed(1)}%` : "—";
 }
 
+/** The seven tables under a rating, in strip order. */
+export const WEEDS_TABLES = [
+	"projects",
+	"crop",
+	"planting",
+	"land",
+	"polymorphic",
+	"stakeholders",
+	"sources",
+] as const;
+export type WeedsTable = (typeof WEEDS_TABLES)[number];
+
+/** How a cell is drawn; the answer says, so the page never knows the schema. */
+export type WeedsKind = "text" | "number" | "date" | "link" | "score";
+export type WeedsColumn = { key: string; label: string; kind: WeedsKind };
+export type WeedsRow = Record<string, string | number | null>;
+/** One table's answer from the host: rows capped, `total` not. */
+export type WeedsAnswer = {
+	table: WeedsTable;
+	columns: WeedsColumn[];
+	rows: WeedsRow[];
+	total: number;
+};
+
 /** The host's API surface; an absent endpoint skips the fetch. */
 export type WhoWhatEndpoints = {
 	organizations?: string;
@@ -19,6 +43,8 @@ export type WhoWhatEndpoints = {
 	project?: (key: string) => string;
 	/** Search-hit analytics: GET top keys per tab, POST a landing. Absent → alphabetical, nothing logged. */
 	searchHits?: string;
+	/** One weeds table of a record. Absent → the weeds section does not render. */
+	weeds?: (tab: "orgs" | "projects", key: string, table: WeedsTable) => string;
 	/** Where the frame clips (the dog, the page animations) and their clips.json are served from. Absent → no clip plays. */
 	clipRoot?: string;
 };
