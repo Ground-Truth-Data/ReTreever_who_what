@@ -138,7 +138,7 @@ function barKeydown(e: KeyboardEvent) {
 			{:else}
 				<WeedsTable columns={answer.columns} {rows} {open} />
 				<p class="count" aria-live="polite">
-					{#if query}{rows.length} of {answer.rows.length} rows{:else if answer.total > answer.rows.length}First {answer.rows.length} of {answer.total} rows{:else}{answer.rows.length} {answer.rows.length === 1 ? "row" : "rows"}{/if}
+					{#if query}{rows.length} of {answer.rows.length} rows{:else if answer.more}{answer.rows.length} of more — the first {answer.rows.length} rows are shown{:else}{answer.rows.length} {answer.rows.length === 1 ? "row" : "rows"}{/if}
 				</p>
 			{/if}
 		{:else if failed[active]}

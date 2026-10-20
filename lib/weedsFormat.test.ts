@@ -32,10 +32,11 @@ describe("the weeds bar's filter", () => {
 		{ key: "when", label: "When", kind: "date" },
 		{ key: "url", label: "URL", kind: "link" },
 		{ key: "n", label: "N", kind: "number" },
+		{ key: "projectKey", label: "Key", kind: "key" },
 	];
 	const rows = [
-		{ name: "Teak", when: "2024-07-12T00:00:00.000Z", url: "https://ok.example/a/teak-plot", n: 1200 },
-		{ name: "Mangrove", when: null, url: null, n: null },
+		{ name: "Teak", when: "2024-07-12T00:00:00.000Z", url: "https://ok.example/a/teak-plot", n: 1200, projectKey: "m-teak-1" },
+		{ name: "Mangrove", when: null, url: null, n: null, projectKey: "m-mangrove-2" },
 	];
 
 	it("empty or blank text keeps every row", () => {
@@ -48,6 +49,11 @@ describe("the weeds bar's filter", () => {
 		expect(filterRows(rows, columns, "2024/7")).toHaveLength(1);
 		expect(filterRows(rows, columns, "1,200")).toHaveLength(1);
 		expect(filterRows(rows, columns, "nothing here")).toEqual([]);
+	});
+
+	it("a key column is not searched: a visitor cannot see it", () => {
+		expect(filterRows(rows, columns, "m-teak")).toEqual([]);
+		expect(filterRows(rows, columns, "mangrove").map((r) => r.name)).toEqual(["Mangrove"]);
 	});
 
 	it("a link matches on its host and on its full URL", () => {

@@ -23,16 +23,17 @@ export const WEEDS_TABLES = [
 ] as const;
 export type WeedsTable = (typeof WEEDS_TABLES)[number];
 
-/** How a cell is drawn; the answer says, so the page never knows the schema. */
-export type WeedsKind = "text" | "number" | "date" | "link" | "score";
+/** How a cell is drawn; the answer says, so the page never knows the schema. A `key` column is never drawn: it is what opens a row. */
+export type WeedsKind = "text" | "number" | "date" | "link" | "score" | "key";
 export type WeedsColumn = { key: string; label: string; kind: WeedsKind };
 export type WeedsRow = Record<string, string | number | null>;
-/** One table's answer from the host: rows capped, `total` not. */
+/** One table's answer from the host: `total` is `rows.length`; `more` says the cap cut it short. */
 export type WeedsAnswer = {
 	table: WeedsTable;
 	columns: WeedsColumn[];
 	rows: WeedsRow[];
 	total: number;
+	more: boolean;
 };
 
 /** The host's API surface; an absent endpoint skips the fetch. */

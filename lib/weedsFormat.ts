@@ -37,12 +37,13 @@ export function formatCell(value: string | number | null | undefined, kind: Weed
 	}
 }
 
-/** The weeds bar: keeps rows where any cell, as shown or as a link's full URL, contains the text. */
+/** The weeds bar: keeps rows where any drawn cell, as shown or as a link's full URL, contains the text. */
 export function filterRows(rows: WeedsRow[], columns: WeedsColumn[], query: string): WeedsRow[] {
 	const q = query.trim().toLowerCase();
 	if (!q) return rows;
 	return rows.filter((row) =>
 		columns.some((c) => {
+			if (c.kind === "key") return false;
 			const v = row[c.key];
 			if (v === null || v === undefined) return false;
 			if (formatCell(v, c.kind).toLowerCase().includes(q)) return true;

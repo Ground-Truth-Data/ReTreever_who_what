@@ -12,13 +12,15 @@ let {
 	/** The column whose cell opens the row, and what opening does. */
 	open?: { column: string; on: (row: WeedsRow) => void };
 } = $props();
+
+const drawn = $derived(columns.filter((c) => c.kind !== "key"));
 </script>
 
 <div class="weeds-table-wrap">
 	<table class="weeds-table">
 		<thead>
 			<tr>
-				{#each columns as c (c.key)}
+				{#each drawn as c (c.key)}
 					<th scope="col" class={c.kind}>{c.label}</th>
 				{/each}
 			</tr>
@@ -26,7 +28,7 @@ let {
 		<tbody>
 			{#each rows as row, i (i)}
 				<tr>
-					{#each columns as c (c.key)}
+					{#each drawn as c (c.key)}
 						{@const v = row[c.key]}
 						{@const shown = formatCell(v, c.kind)}
 						<td class={c.kind}>
