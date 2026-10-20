@@ -57,6 +57,7 @@ export type WhoWhatFail = (status: number, message: string) => never;
 export type WhoWhatRoutes = {
 	who?: string;
 	what?: string;
+	/** The map, from the search and rating pages' globe. */
 	whoMap?: string;
 	/** How the rating works; the rating page's info button. */
 	why?: string;
