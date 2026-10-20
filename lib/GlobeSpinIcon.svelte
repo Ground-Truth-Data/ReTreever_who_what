@@ -2,17 +2,18 @@
 import { cn } from "./cn";
 import globeSprite from "./assets/pub-Rtvr/animations/globe-spin-sprite.webp";
 
-let {
-	class: className = "",
-	// Not /retreeve/who/map: that prefix 301s into a full page load.
-	href = "/who/map",
-}: { class?: string; href?: string } = $props();
+let { class: className = "", href }: { class?: string; href?: string } = $props();
 </script>
 
-<!-- 3fps 6-frame 3x2 sprite. -->
-<a {href} aria-label="Explore the map" class={cn("globe-spin-link", className)}>
+<!-- 3fps 6-frame 3x2 sprite. The host names the map's route; without one the globe is decoration, not a link. -->
+<svelte:element
+	this={href ? "a" : "span"}
+	{href}
+	aria-label={href ? "Explore the map" : undefined}
+	class={cn("globe-spin-link", className)}
+>
 	<div class="globe-spin" style="--globe-sprite: url({globeSprite})"></div>
-</a>
+</svelte:element>
 
 <style>
 	.globe-spin-link {
