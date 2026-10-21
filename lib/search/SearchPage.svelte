@@ -45,7 +45,6 @@ let {
 	mapHref = undefined,
 	orgs = [],
 	projects = [],
-	topKeys = [],
 	onsearch,
 	onpick,
 	onactivate,
@@ -62,7 +61,6 @@ let {
 	routes?: WhoWhatRoutes;
 	orgs?: SearchListItem[];
 	projects?: SearchListItem[];
-	topKeys?: string[];
 	onsearch?: (query: string, tab: "orgs" | "projects") => void;
 	/** `go` false: a modified click, the row's own link navigates and the route only counts the pick. */
 	onpick?: (item: SearchListItem, tab: "orgs" | "projects", go: boolean) => void;
@@ -296,7 +294,6 @@ $effect(() => {
 					bind:open={dropdownOpen}
 					bind:activeDescendant
 					items={listItems}
-					{topKeys}
 					{query}
 					{listLoading}
 					{noun}

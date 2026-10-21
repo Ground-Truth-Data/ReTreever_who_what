@@ -3,12 +3,7 @@ import { untrack } from "svelte";
 import { curtain } from "../stage/curtain.svelte";
 import type { WhoWhatEndpoints, WhoWhatRoutes } from "../whoWhatTypes";
 import SearchPage from "./SearchPage.svelte";
-import {
-	loadOrgList,
-	loadProjectList,
-	loadTopKeys,
-	recordSearchHit,
-} from "./searchLists";
+import { loadOrgList, loadProjectList, recordSearchHit } from "./searchLists";
 import { resolveSearchKey } from "./searchResolve";
 import type { SearchListItem } from "./searchTypes";
 
@@ -31,7 +26,6 @@ let {
 
 let orgs = $state<SearchListItem[]>([]);
 let projects = $state<SearchListItem[]>([]);
-let topKeys = $state<{ orgs: string[]; projects: string[] }>({ orgs: [], projects: [] });
 let orgsLoaded = false;
 let projectsLoaded = false;
 let activated = false;
@@ -44,9 +38,6 @@ async function loadTab(which: "orgs" | "projects") {
 	else projectsLoaded = true;
 
 	listLoading = true;
-	loadTopKeys(fetch, endpoints, which).then((keys) => {
-		topKeys = { ...topKeys, [which]: keys };
-	});
 	try {
 		if (which === "orgs") orgs = await loadOrgList(fetch, endpoints);
 		else projects = await loadProjectList(fetch, endpoints);
@@ -143,7 +134,6 @@ function submitSearch(q: string, t: "orgs" | "projects") {
 	{routes}
 	{orgs}
 	{projects}
-	topKeys={topKeys[tab]}
 	{listLoading}
 	clipRoot={endpoints.clipRoot}
 	onsearch={submitSearch}
