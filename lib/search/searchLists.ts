@@ -1,4 +1,4 @@
-import type { WhoWhatEndpoints } from "../whoWhatTypes";
+import { toTransparencyScore, type WhoWhatEndpoints } from "../whoWhatTypes";
 import type { SearchListItem } from "./searchTypes";
 
 // Streamed, never awaited: these must never reject, an unhandled rejection crashes the page.
@@ -7,11 +7,23 @@ interface OrgListRow {
 	organizationKey: string;
 	organizationName: string;
 	primaryStakeholderCategoryName: string | null;
+	scoreOrgFinal: string | number | null;
 }
 
 interface ProjectListRow {
 	projectKey: string;
 	projectName: string;
+	scoreProject: string | number | null;
+}
+
+/** Best rating first, unscored last, ties by name; the API orders by name only. */
+function byRating(a: SearchListItem, b: SearchListItem): number {
+	if (a.rating !== b.rating) {
+		if (a.rating === null) return 1;
+		if (b.rating === null) return -1;
+		return b.rating - a.rating;
+	}
+	return a.name.localeCompare(b.name);
 }
 
 export async function loadOrgList(
@@ -20,7 +32,7 @@ export async function loadOrgList(
 ): Promise<SearchListItem[]> {
 	// Empty, not a fetch at "/undefined".
 	if (!endpoints.organizations) return [];
-	const endpoint = `${endpoints.organizations}?fields=organizationKey,organizationName,primaryStakeholderCategory`;
+	const endpoint = `${endpoints.organizations}?fields=organizationKey,organizationName,primaryStakeholderCategory,scoreOrgFinal`;
 
 	try {
 		const res = await fetch(endpoint);
@@ -31,11 +43,14 @@ export async function loadOrgList(
 			organizations: OrgListRow[];
 		};
 
-		return organizations.map((org) => ({
-			key: org.organizationKey,
-			name: org.organizationName,
-			hint: org.primaryStakeholderCategoryName,
-		}));
+		return organizations
+			.map((org) => ({
+				key: org.organizationKey,
+				name: org.organizationName,
+				hint: org.primaryStakeholderCategoryName,
+				rating: toTransparencyScore(org.scoreOrgFinal),
+			}))
+			.sort(byRating);
 	} catch (error) {
 		console.error("who: failed to load organizations list", error);
 		return [];
@@ -48,7 +63,7 @@ export async function loadProjectList(
 ): Promise<SearchListItem[]> {
 	if (!endpoints.projects) return [];
 	// scored: only projects whose detail views have a score.
-	const endpoint = `${endpoints.projects}?scored=true&fields=projectKey,projectName`;
+	const endpoint = `${endpoints.projects}?scored=true&fields=projectKey,projectName,scoreProject`;
 
 	try {
 		const res = await fetch(endpoint);
@@ -59,31 +74,15 @@ export async function loadProjectList(
 			projects: ProjectListRow[];
 		};
 
-		return projects.map((project) => ({
-			key: project.projectKey,
-			name: project.projectName,
-		}));
+		return projects
+			.map((project) => ({
+				key: project.projectKey,
+				name: project.projectName,
+				rating: toTransparencyScore(project.scoreProject),
+			}))
+			.sort(byRating);
 	} catch (error) {
 		console.error("what: failed to load projects list", error);
-		return [];
-	}
-}
-
-/** Most-searched keys for a tab, best first. Empty when the host has no analytics endpoint. */
-export async function loadTopKeys(
-	fetch: typeof globalThis.fetch,
-	endpoints: WhoWhatEndpoints,
-	tab: "orgs" | "projects",
-	limit = 5,
-): Promise<string[]> {
-	if (!endpoints.searchHits) return [];
-	try {
-		const res = await fetch(`${endpoints.searchHits}?tab=${tab}&limit=${limit}`);
-		if (!res.ok) throw new Error(`searchHits responded ${res.status}`);
-		const { keys } = (await res.json()) as { keys: string[] };
-		return Array.isArray(keys) ? keys : [];
-	} catch (error) {
-		console.error("search: failed to load top keys", error);
 		return [];
 	}
 }

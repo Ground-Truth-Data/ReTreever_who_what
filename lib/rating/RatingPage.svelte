@@ -35,7 +35,6 @@ let {
 	notice = null,
 	clipRoot = undefined,
 	items = [],
-	topKeys = [],
 	listLoading = false,
 	onsearch,
 	onpick,
@@ -49,7 +48,6 @@ let {
 	notice?: string | null;
 	clipRoot?: string;
 	items?: SearchListItem[];
-	topKeys?: string[];
 	listLoading?: boolean;
 	onsearch?: (query: string) => void;
 	onpick?: (item: SearchListItem, go: boolean) => void;
@@ -213,7 +211,6 @@ $effect(() => {
 						bind:open={dropdownOpen}
 						bind:activeDescendant
 						{items}
-						{topKeys}
 						query={query === result.name ? "" : query}
 						{listLoading}
 						{noun}

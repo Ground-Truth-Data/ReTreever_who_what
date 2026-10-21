@@ -2,7 +2,7 @@
 import type { WeedsTable, WhoWhatEndpoints, WhoWhatRoutes } from "../whoWhatTypes";
 import type { SearchResult } from "./resultLoad";
 import RatingPage from "./RatingPage.svelte";
-import { loadOrgList, loadProjectList, loadTopKeys, recordSearchHit } from "../search/searchLists";
+import { loadOrgList, loadProjectList, recordSearchHit } from "../search/searchLists";
 import { resolveSearchKey } from "../search/searchResolve";
 import type { SearchListItem } from "../search/searchTypes";
 import { curtain } from "../stage/curtain.svelte";
@@ -21,7 +21,6 @@ let {
 
 // The top bar searches again from the rating page; the list warms up in idle time.
 let items = $state<SearchListItem[]>([]);
-let topKeys = $state<string[]>([]);
 let loaded = false;
 let listLoading = $state(false);
 let notice = $state<string | null>(null);
@@ -30,9 +29,6 @@ async function activate() {
 	if (loaded) return;
 	loaded = true;
 	listLoading = true;
-	loadTopKeys(fetch, endpoints, tab).then((keys) => {
-		topKeys = keys;
-	});
 	try {
 		items = tab === "orgs" ? await loadOrgList(fetch, endpoints) : await loadProjectList(fetch, endpoints);
 	} finally {
@@ -95,7 +91,6 @@ function search(q: string) {
 	{routes}
 	{notice}
 	{items}
-	{topKeys}
 	{listLoading}
 	clipRoot={endpoints.clipRoot}
 	onsearch={search}

@@ -10,7 +10,6 @@ import type { SearchListItem } from "./searchTypes";
 
 let {
 	items = [],
-	topKeys = [],
 	query = "",
 	open = $bindable(false),
 	listLoading = false,
@@ -23,8 +22,6 @@ let {
 	onpick,
 }: {
 	items?: SearchListItem[];
-	/** Most-searched keys, shown first while the query is empty. */
-	topKeys?: string[];
 	query?: string;
 	open?: boolean;
 	listLoading?: boolean;
@@ -52,13 +49,7 @@ const filtered = $derived.by(() => {
 		const matches = searchIndex.filter((e) => e.hay.includes(q));
 		return { total: matches.length, rows: matches.slice(0, MAX_ROWS).map((e) => e.item) };
 	}
-	const byKey = new Map(items.map((item) => [item.key, item]));
-	const top = topKeys
-		.map((k) => byKey.get(k))
-		.filter((item): item is SearchListItem => item !== undefined);
-	const seen = new Set(top.map((item) => item.key));
-	const fill = items.filter((item) => !seen.has(item.key));
-	return { total: items.length, rows: [...top, ...fill].slice(0, TOP_ROWS) };
+	return { total: items.length, rows: items.slice(0, TOP_ROWS) };
 });
 
 let highlighted = $state(-1);

@@ -5,4 +5,6 @@ export interface SearchListItem {
 	name: string;
 	/** Secondary line, e.g. an org's stakeholder category name. */
 	hint?: string | null;
+	/** Transparency rating, 0–100; null when unscored. */
+	rating: number | null;
 }

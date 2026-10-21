@@ -3,13 +3,13 @@ import { normalizeQuery, resolveSearchKey } from "./searchResolve";
 import type { SearchListItem } from "./searchTypes";
 
 const ITEMS: SearchListItem[] = [
-	{ key: "c-12tree", name: "12Tree" },
+	{ key: "c-12tree", name: "12Tree", rating: null },
 	// Keys are already percent-encoded; returned verbatim, never re-encoded.
-	{ key: "a-active%20trees", name: "ACTIVE TREES" },
-	{ key: "x-green-1", name: "Green Land Group" },
-	{ key: "x-green-2", name: "Green Land Group" },
-	{ key: "y-tree-aid", name: "Tree Aid International" },
-	{ key: "z-tree-aid", name: "Tree Aid" },
+	{ key: "a-active%20trees", name: "ACTIVE TREES", rating: null },
+	{ key: "x-green-1", name: "Green Land Group", rating: null },
+	{ key: "x-green-2", name: "Green Land Group", rating: null },
+	{ key: "y-tree-aid", name: "Tree Aid International", rating: null },
+	{ key: "z-tree-aid", name: "Tree Aid", rating: null },
 ];
 
 describe("normalizeQuery", () => {
