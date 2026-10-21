@@ -1,6 +1,6 @@
 <script lang="ts">
 import type { load } from "./+page";
-import SearchRoute from "../../lib/SearchRoute.svelte";
+import SearchRoute from "../../lib/search/SearchRoute.svelte";
 
 let { data }: { data: ReturnType<typeof load> } = $props();
 

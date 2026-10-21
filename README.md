@@ -40,6 +40,21 @@ from disk.
 `lib/` is the one door to the host. Adding a host-facing member is a
 decision, not a formality.
 
+## Layout
+
+`lib/` is folders by what a file serves, with the host contract and one
+utility at the root:
+
+- `search/` — the `/who` and `/what` page: route, page, bar, dropdown, the
+  lists and the URL resolver, the grass.
+- `rating/` — one org or project: route, page, the number, the state (the one
+  place the four states are drawn), the loader, the dog.
+- `weeds/` — the tables under the rating hero.
+- `stage/` — scenery both pages share: the curtains, the globe icon, the shards.
+- `guards/` — the portability tests described below.
+- `assets/` — every piece of art the child imports; `svg/search` and
+  `svg/rating` hold the designer's cut SVGs.
+
 ## Public surface
 
 [`index.ts`](./index.ts) — everything a host may import. Anything not exported
