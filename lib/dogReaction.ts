@@ -1,19 +1,9 @@
-// Which dog clips play for a score. The states and their ranges come from
-// clips.json, measured beside the frames; nothing here restates a boundary.
+// Which dog clips play for a rating state. The state itself comes from
+// ratingState.ts; nothing here draws a boundary.
 
-import type { ClipManifest } from "$gc/frameClips";
+import type { RatingState } from "./ratingState";
 
-export type DogState = string;
-
-/** The state whose inclusive range holds the score; null when unscored. */
-export function stateFor(rating: number | null, states: ClipManifest["states"]): DogState | null {
-	if (rating === null || !Number.isFinite(rating)) return null;
-	const r = Math.round(rating);
-	for (const [name, [lo, hi]] of Object.entries(states)) {
-		if (r >= lo && r <= hi) return name;
-	}
-	return null;
-}
+export type DogState = RatingState;
 
 export type DogStep = { clip: string; loop: boolean };
 

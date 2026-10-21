@@ -5,7 +5,8 @@
 import { onDestroy } from "svelte";
 import FrameClipPlayer from "$gc/FrameClipPlayer.svelte";
 import { loadClips, type ClipManifest } from "$gc/frameClips";
-import { idleBlinkFor, sequenceFor, stateFor, type DogStep } from "./dogReaction";
+import { idleBlinkFor, sequenceFor, type DogStep } from "./dogReaction";
+import { ratingState } from "./ratingState";
 
 let {
 	rating,
@@ -21,7 +22,7 @@ let at = $state(0);
 let blink = $state<string | null>(null);
 let blinkTimer: ReturnType<typeof setTimeout> | undefined;
 
-const dogState = $derived(manifest ? stateFor(rating, manifest.states) : null);
+const dogState = $derived(ratingState(rating));
 const current = $derived(blink ? { clip: blink, loop: false } : steps[at]);
 
 $effect(() => {
