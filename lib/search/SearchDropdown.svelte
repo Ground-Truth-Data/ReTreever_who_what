@@ -2,9 +2,12 @@
 // The list under a search bar: the rows, their order, the keyboard highlight
 // and the dismissals. Owned once here, shown under the search page's bar and
 // the rating page's alike — the bar itself is only chrome and an input.
+import { tick } from "svelte";
 import FrameClipPlayer from "$gc/FrameClipPlayer.svelte";
 import { frameUrls, loadClips, type ClipFacts } from "$gc/frameClips";
 import WindowRaw from "../assets/svg/rating/Rating_page_search_dropdown.svg?raw";
+import { ratingState } from "../rating/ratingState";
+import { formatTransparencyScore } from "../whoWhatTypes";
 import { WINDOW_BOX, windowBorderCss, windowSliceCss } from "./dropWindow";
 import type { SearchListItem } from "./searchTypes";
 
@@ -41,24 +44,40 @@ let {
 
 const searchIndex = $derived(items.map((item) => ({ item, hay: item.name.toLowerCase() })));
 
-const MAX_ROWS = 50;
-const TOP_ROWS = 5;
-const filtered = $derived.by(() => {
+// Every row, in the order the list arrived (best rating first); a query only narrows it.
+const rows = $derived.by(() => {
 	const q = query.trim().toLowerCase();
-	if (q) {
-		const matches = searchIndex.filter((e) => e.hay.includes(q));
-		return { total: matches.length, rows: matches.slice(0, MAX_ROWS).map((e) => e.item) };
-	}
-	return { total: items.length, rows: items.slice(0, TOP_ROWS) };
+	return q ? searchIndex.filter((e) => e.hay.includes(q)).map((e) => e.item) : items;
 });
+
+// Thousands of projects: paint a window and grow it as the scroll nears its end.
+const WINDOW = 60;
+let shown = $state(WINDOW);
+const painted = $derived(rows.slice(0, shown));
+
+function watchEnd(node: HTMLElement) {
+	const io = new IntersectionObserver(
+		(entries) => {
+			if (!entries.some((e) => e.isIntersecting)) return;
+			shown += WINDOW;
+			// Re-observe: a sentinel still in view after the new rows paint would otherwise never report again.
+			io.unobserve(node);
+			io.observe(node);
+		},
+		{ root: node.parentElement, rootMargin: "240px 0px" },
+	);
+	io.observe(node);
+	return () => io.disconnect();
+}
 
 let highlighted = $state(-1);
 const rowId = (i: number) => `${listId}-row-${i}`;
 
 $effect(() => {
-	filtered.rows;
+	rows;
 	open;
 	highlighted = -1;
+	shown = WINDOW;
 });
 
 $effect(() => {
@@ -66,17 +85,19 @@ $effect(() => {
 });
 
 /** Arrow keys walk the rows while focus stays in the input. */
-export function move(dir: 1 | -1) {
-	const n = filtered.rows.length;
+export async function move(dir: 1 | -1) {
+	const n = rows.length;
 	if (n === 0) return;
 	highlighted = Math.min(n - 1, Math.max(-1, highlighted + dir));
+	if (highlighted >= shown) shown = highlighted + WINDOW;
+	await tick();
 	if (highlighted >= 0) document.getElementById(rowId(highlighted))?.scrollIntoView({ block: "nearest" });
 }
 
 /** The row Enter would take: the highlighted one, else the first; null when the list is closed or empty. */
 export function current(): SearchListItem | null {
-	if (!open || filtered.rows.length === 0) return null;
-	return filtered.rows[Math.max(0, highlighted)];
+	if (!open || rows.length === 0) return null;
+	return rows[Math.max(0, highlighted)];
 }
 
 function pickRow(e: MouseEvent, item: SearchListItem) {
@@ -137,15 +158,23 @@ $effect(() => {
 			style:--win-slice={WINDOW_SLICE}
 			style:--win-border={WINDOW_BORDER}
 		>
-			{#each filtered.rows as item, i (item.key)}
+			{#each painted as item, i (item.key)}
 				{@const href = hrefOf(item)}
 				{#snippet rowBody()}
 					<span class="row-name">{item.name}</span>
-					{#if item.hint}
-						<span class="row-hint">{item.hint}</span>
-					{/if}
+					<span class="row-finding">
+						{#if item.hint}
+							<span class="row-hint">{item.hint}</span>
+						{/if}
+						{#if item.rating === null}
+							<span class="row-state">Unscored</span>
+						{:else}
+							<span class="row-rating">{formatTransparencyScore(item.rating)}</span>
+							<span class="row-state">{ratingState(item.rating)}</span>
+						{/if}
+					</span>
 				{/snippet}
-				<li id={rowId(i)} role="option" aria-selected={i === highlighted}>
+				<li id={rowId(i)} role="option" aria-selected={i === highlighted} aria-setsize={rows.length} aria-posinset={i + 1}>
 					{#if href}
 						<a {href} class="dropdown-row" class:highlighted={i === highlighted} tabindex="-1" onclick={(e) => pickRow(e, item)}>
 							{@render rowBody()}
@@ -171,10 +200,8 @@ $effect(() => {
 					{/if}
 				</li>
 			{/each}
-			{#if filtered.total > filtered.rows.length}
-				<li class="dropdown-more" role="presentation">
-					Showing {filtered.rows.length} of {filtered.total} — keep typing to narrow
-				</li>
+			{#if shown < rows.length}
+				<li class="dropdown-sentinel" role="presentation" aria-hidden="true" {@attach watchEnd}></li>
 			{/if}
 		</ul>
 	</div>
@@ -254,12 +281,41 @@ $effect(() => {
 		color: var(--rtvr-on-dark);
 		font-size: max(12px, calc(10 * var(--u)));
 		line-height: 1.3;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
-	.row-hint {
+	/* The finding never wraps; the name gives way first. */
+	.row-finding {
+		display: flex;
+		align-items: baseline;
+		gap: calc(2.5 * var(--u));
+		flex-shrink: 0;
+		white-space: nowrap;
+	}
+
+	.row-hint,
+	.row-state {
 		color: #8d93a6;
 		font-size: max(11px, calc(8 * var(--u)));
-		flex-shrink: 0;
+	}
+
+	.row-state {
+		text-transform: capitalize;
+	}
+
+	.row-rating {
+		color: var(--rtvr-on-dark);
+		font-size: max(12px, calc(9 * var(--u)));
+		font-variant-numeric: tabular-nums;
+	}
+
+	@media (max-width: 600px) {
+		.row-hint {
+			display: none;
+		}
 	}
 
 	.dropdown-empty {
@@ -292,12 +348,11 @@ $effect(() => {
 		top: calc(-100% * var(--crop-y) / var(--crop-h));
 	}
 
-	.dropdown-more {
-		padding: var(--row-y) var(--row-x);
-		color: #8d93a6;
-		font-size: max(11px, calc(8 * var(--u)));
-		font-style: italic;
-		border-top: 1px solid rgba(141, 147, 166, 0.2);
+	.dropdown-sentinel {
+		height: 1px;
+	}
+	.search-dropdown li + .dropdown-sentinel::before {
+		display: none;
 	}
 
 	.visually-hidden {
