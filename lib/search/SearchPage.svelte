@@ -106,14 +106,14 @@ function pick(item: SearchListItem, go: boolean) {
 let searchWrapEl = $state<HTMLElement | null>(null);
 
 const SHARD_PHOTOS = import.meta.glob<string>(
-	"./assets/pub-Rtvr/home/poly/*.webp",
+	"../assets/pub-Rtvr/home/poly/*.webp",
 	{ eager: true, query: "?url", import: "default" },
 );
 const localPhotos = (svg: string) => withLocalPhotos(svg, SHARD_PHOTOS, "home/poly");
 
 const shardArt: Record<number, string> = Object.fromEntries(
 	Object.entries(
-		import.meta.glob<string>("./homeAssets/poly/Search_page_SP_poly_*.svg", {
+		import.meta.glob<string>("../assets/svg/search/poly/Search_page_SP_poly_*.svg", {
 			eager: true,
 			query: "?raw",
 			import: "default",

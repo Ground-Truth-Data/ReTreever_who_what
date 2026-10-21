@@ -91,7 +91,7 @@ function pick(item: SearchListItem, go: boolean) {
 	onpick?.(item, go);
 }
 
-const PHOTOS = import.meta.glob<string>("./assets/pub-Rtvr/rating/poly/*.webp", {
+const PHOTOS = import.meta.glob<string>("../assets/pub-Rtvr/rating/poly/*.webp", {
 	eager: true,
 	query: "?url",
 	import: "default",
@@ -99,7 +99,7 @@ const PHOTOS = import.meta.glob<string>("./assets/pub-Rtvr/rating/poly/*.webp", 
 
 const shardArt: Record<number, string> = Object.fromEntries(
 	Object.entries(
-		import.meta.glob<string>("./ratingAssets/poly/Rating_page_RP_poly_*.svg", {
+		import.meta.glob<string>("../assets/svg/rating/poly/Rating_page_RP_poly_*.svg", {
 			eager: true,
 			query: "?raw",
 			import: "default",

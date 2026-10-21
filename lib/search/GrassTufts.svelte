@@ -49,7 +49,7 @@ const CLUMPS: { n: number; h: number }[] = [
 
 // import.meta.glob, never an assembled URL: a host path 404s outside the host.
 const TUFT_URLS = import.meta.glob<string>(
-	"./assets/pub-Rtvr/home/tufts/*.webp",
+	"../assets/pub-Rtvr/home/tufts/*.webp",
 	{ eager: true, query: "?url", import: "default" },
 );
 

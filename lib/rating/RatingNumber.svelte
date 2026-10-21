@@ -4,7 +4,7 @@
 // never rows), so a row of them keeps the baseline without any alignment math.
 import { formatTransparencyScore } from "../whoWhatTypes";
 
-const GLYPHS = import.meta.glob<string>("./assets/pub-Rtvr/rating/numbers/*.webp", {
+const GLYPHS = import.meta.glob<string>("../assets/pub-Rtvr/rating/numbers/*.webp", {
 	eager: true,
 	query: "?url",
 	import: "default",
