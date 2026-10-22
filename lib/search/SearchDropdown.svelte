@@ -6,8 +6,6 @@ import { tick } from "svelte";
 import FrameClipPlayer from "$gc/FrameClipPlayer.svelte";
 import { frameUrls, loadClips, type ClipFacts } from "$gc/frameClips";
 import WindowRaw from "../assets/svg/rating/Rating_page_search_dropdown.svg?raw";
-import { ratingState } from "../rating/ratingState";
-import { formatTransparencyScore } from "../whoWhatTypes";
 import { WINDOW_BOX, windowBorderCss, windowSliceCss } from "./dropWindow";
 import type { SearchListItem } from "./searchTypes";
 
@@ -166,12 +164,6 @@ $effect(() => {
 						{#if item.hint}
 							<span class="row-hint">{item.hint}</span>
 						{/if}
-						<!-- {#if item.rating === null}
-							<span class="row-state">Unscored</span>
-						{:else}
-							<span class="row-rating">{formatTransparencyScore(item.rating)}</span>
-							<span class="row-state">{ratingState(item.rating)}</span>
-						{/if} -->
 					</span>
 				{/snippet}
 				<li id={rowId(i)} role="option" aria-selected={i === highlighted} aria-setsize={rows.length} aria-posinset={i + 1}>
