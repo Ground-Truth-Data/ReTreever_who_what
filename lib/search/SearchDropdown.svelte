@@ -166,12 +166,12 @@ $effect(() => {
 						{#if item.hint}
 							<span class="row-hint">{item.hint}</span>
 						{/if}
-						{#if item.rating === null}
+						<!-- {#if item.rating === null}
 							<span class="row-state">Unscored</span>
 						{:else}
 							<span class="row-rating">{formatTransparencyScore(item.rating)}</span>
 							<span class="row-state">{ratingState(item.rating)}</span>
-						{/if}
+						{/if} -->
 					</span>
 				{/snippet}
 				<li id={rowId(i)} role="option" aria-selected={i === highlighted} aria-setsize={rows.length} aria-posinset={i + 1}>
