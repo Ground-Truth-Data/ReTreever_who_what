@@ -6,8 +6,6 @@ import { tick } from "svelte";
 import FrameClipPlayer from "$gc/FrameClipPlayer.svelte";
 import { frameUrls, loadClips, type ClipFacts } from "$gc/frameClips";
 import WindowRaw from "../assets/svg/rating/Rating_page_search_dropdown.svg?raw";
-import { ratingState } from "../rating/ratingState";
-import { formatTransparencyScore } from "../whoWhatTypes";
 import { WINDOW_BOX, windowBorderCss, windowSliceCss } from "./dropWindow";
 import type { SearchListItem } from "./searchTypes";
 
