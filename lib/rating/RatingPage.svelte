@@ -27,7 +27,7 @@ import type { WeedsTable, WhoWhatRoutes } from "../whoWhatTypes";
 
 let {
 	tab,
-	result,
+	record,
 	routes = {},
 	notice = null,
 	clipRoot = undefined,
@@ -40,7 +40,8 @@ let {
 	onopenproject = undefined,
 }: {
 	tab: "orgs" | "projects";
-	result: SearchResult;
+	/** Null while the host streams it: the shell paints and the dog is the loading state. */
+	record: SearchResult | null;
 	routes?: WhoWhatRoutes;
 	notice?: string | null;
 	clipRoot?: string;
@@ -64,7 +65,7 @@ let barEl = $state<HTMLElement | null>(null);
 const hrefOf = (item: SearchListItem) =>
 	tab === "orgs" ? routes.whoOrg?.(item.key) : routes.whatProject?.(item.key);
 
-// The bar arrives filled with this record's name; opened untouched, the list
+// The bar carries this record's name once it lands; opened untouched, the list
 // offers the most-searched records rather than one match for the page itself.
 
 function submit(q: string) {
@@ -86,7 +87,23 @@ function pick(item: SearchListItem, go: boolean) {
 	onpick?.(item, go);
 }
 
-let query = $state(result.name);
+let query = $state(record?.name ?? "");
+$effect(() => {
+	if (record) query = record.name;
+});
+
+// The number waits for the dog to stand, and the dog waits for the number:
+// armed half a beat after the reveal, so the turn reads as a reaction.
+let dogStanding = $state(false);
+let armed = $state(false);
+const revealed = $derived(record !== null && dogStanding);
+$effect(() => {
+	if (!revealed) return;
+	const beat = setTimeout(() => {
+		armed = true;
+	}, 500);
+	return () => clearTimeout(beat);
+});
 
 // One string per state until the wording is decided (RT 41 📣).
 const STATE_LINES: Record<RatingState, string> = {
@@ -96,7 +113,7 @@ const STATE_LINES: Record<RatingState, string> = {
 	transparent: "Transparent data…",
 };
 const stateLine = $derived.by(() => {
-	const state = ratingState(result.rating);
+	const state = record ? ratingState(record.rating) : null;
 	return state ? STATE_LINES[state] : "Unscored";
 });
 </script>
@@ -133,7 +150,7 @@ const stateLine = $derived.by(() => {
 						bind:open={dropdownOpen}
 						bind:activeDescendant
 						{items}
-						query={query === result.name ? "" : query}
+						query={query === record?.name ? "" : query}
 						{listLoading}
 						{noun}
 						listId={LIST_ID}
@@ -156,21 +173,23 @@ const stateLine = $derived.by(() => {
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html HeaderRaw}
 				</div>
-				<h1 class="name">
-					<span class="name-text">{result.name};</span>
-					<span class="state-line">{stateLine}</span>
-				</h1>
-				{#if result.rating !== null}
-					<div class="number">
-						<RatingNumber rating={result.rating} />
-					</div>
+				{#if record}
+					<h1 class="name">
+						<span class="name-text">{record.name};</span>
+						<span class="state-line">{stateLine}</span>
+					</h1>
+					{#if record.rating !== null}
+						<div class="number" class:revealed>
+							<RatingNumber rating={record.rating} />
+						</div>
+					{/if}
 				{/if}
 				<div class="boxes">
-					{#if result.rank !== null}
-						<div class="box percentile">
+					{#if record && record.rank !== null}
+						<div class="box percentile" class:revealed>
 							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 							{@html PercentileBoxRaw}
-							<span class="box-value">{result.rank}</span>
+							<span class="box-value">{record.rank}</span>
 						</div>
 					{/if}
 					<a class="box info" href={routes.why ?? null} aria-label="How the rating works">
@@ -180,7 +199,7 @@ const stateLine = $derived.by(() => {
 				</div>
 			</div>
 			<div class="dog-column">
-				<DogStage rating={result.rating} {clipRoot} />
+				<DogStage rating={record?.rating ?? null} {armed} {clipRoot} onstanding={() => (dogStanding = true)} />
 			</div>
 		</div>
 
@@ -391,6 +410,44 @@ const stateLine = $derived.by(() => {
 
 	.number {
 		margin: clamp(4px, 1vh, 12px) 0;
+	}
+
+	/* In the DOM from the moment the record lands, shown once the dog stands:
+	   hidden keeps the layout, so the reveal rises in without a shift. */
+	.number,
+	.percentile {
+		opacity: 0;
+		visibility: hidden;
+		transform: translateY(8px);
+		transition:
+			opacity 260ms ease-out,
+			transform 260ms ease-out,
+			visibility 0s linear 260ms;
+	}
+
+	.number.revealed,
+	.percentile.revealed {
+		opacity: 1;
+		visibility: visible;
+		transform: none;
+		transition-delay: 0s;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.number,
+		.percentile {
+			transform: none;
+		}
+	}
+
+	/* No script, no dog: a crawler or a reader without JS gets the number as the HTML carries it. */
+	@media (scripting: none) {
+		.number,
+		.percentile {
+			opacity: 1;
+			visibility: visible;
+			transform: none;
+		}
 	}
 
 	.boxes {

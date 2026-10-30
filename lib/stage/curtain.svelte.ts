@@ -27,7 +27,7 @@ export const curtain = {
 		token += 1;
 		void preloadData(to);
 	},
-	/** Frame 7 of 14: the curtains are fully shut. Resolves once the new page is in. */
+	/** The curtains are shut: swap the page behind them. Resolves once the new page is in. */
 	async midpoint() {
 		if (href) await goto(href);
 	},

@@ -14,10 +14,28 @@ let {
 	endpoints = {},
 }: {
 	tab: "orgs" | "projects";
-	result: SearchResult;
+	/** A value on a server render; a promise when the host streams it under the curtains. */
+	result: SearchResult | Promise<SearchResult>;
 	routes?: WhoWhatRoutes;
 	endpoints?: WhoWhatEndpoints;
 } = $props();
+
+// Tagged with the promise it answers, so a new navigation's pending record
+// never reads as the previous one's. A rejection is the host's to handle.
+let streamed = $state.raw<{ of: Promise<SearchResult>; value: SearchResult } | null>(null);
+const record = $derived(
+	result instanceof Promise ? (streamed?.of === result ? streamed.value : null) : result,
+);
+$effect(() => {
+	if (!(result instanceof Promise)) return;
+	const of = result;
+	of.then(
+		(value) => {
+			if (of === result) streamed = { of, value };
+		},
+		() => {},
+	);
+});
 
 // The top bar searches again from the rating page; the list warms up in idle time.
 let items = $state<SearchListItem[]>([]);
@@ -43,8 +61,11 @@ function pickItem(item: SearchListItem, go: boolean) {
 	if (href) curtain.wipe(href);
 }
 
-const weeds = $derived(endpoints.weeds);
-const weedsHref = $derived(weeds ? (table: WeedsTable) => weeds(tab, result.key, table) : undefined);
+const weedsHref = $derived.by(() => {
+	const weeds = endpoints.weeds;
+	const key = record?.key;
+	return weeds && key ? (table: WeedsTable) => weeds(tab, key, table) : undefined;
+});
 
 function openProject(projectKey: string) {
 	const href = routes.whatProject?.(projectKey);
@@ -82,20 +103,25 @@ function search(q: string) {
 </script>
 
 <svelte:head>
-	<title>{result.name} | ReTreever</title>
+	{#if record}
+		<title>{record.name} | ReTreever</title>
+	{/if}
 </svelte:head>
 
-<RatingPage
-	{tab}
-	{result}
-	{routes}
-	{notice}
-	{items}
-	{listLoading}
-	clipRoot={endpoints.clipRoot}
-	onsearch={search}
-	onpick={pickItem}
-	onactivate={activate}
-	{weedsHref}
-	onopenproject={tab === "orgs" ? openProject : undefined}
-/>
+<!-- Keyed per navigation: a rating-to-rating pick starts the bar, the dog and the reveal over. -->
+{#key result}
+	<RatingPage
+		{tab}
+		{record}
+		{routes}
+		{notice}
+		{items}
+		{listLoading}
+		clipRoot={endpoints.clipRoot}
+		onsearch={search}
+		onpick={pickItem}
+		onactivate={activate}
+		{weedsHref}
+		onopenproject={tab === "orgs" ? openProject : undefined}
+	/>
+{/key}

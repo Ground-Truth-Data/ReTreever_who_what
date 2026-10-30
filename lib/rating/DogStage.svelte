@@ -1,44 +1,74 @@
 <script lang="ts">
-// The dog reacts to the score: walks on, turns in the score's state, settles,
-// then blinks now and then. Clips come from the host's clipRoot; absent, the
-// stage stays empty.
+// The dog walks on and stands watching; once the number is up it turns in the
+// score's state, settles, then blinks now and then. Clips come from the host's
+// clipRoot; absent, the stage stays empty — the number never waits on a clip.
 import { onDestroy } from "svelte";
 import FrameClipPlayer from "$gc/FrameClipPlayer.svelte";
 import { loadClips, type ClipManifest } from "$gc/frameClips";
-import { idleBlinkFor, sequenceFor, type DogStep } from "./dogReaction";
+import { entranceFor, idleBlinkFor, reactionFor, standingFor, type DogStep } from "./dogReaction";
 import { ratingState } from "./ratingState";
 
 let {
 	rating,
+	armed,
 	clipRoot = undefined,
+	onstanding = undefined,
 }: {
 	rating: number | null;
+	/** The number is up: react now. */
+	armed: boolean;
 	clipRoot?: string;
+	/** The dog is on stage and watching — or there is no dog to wait for. */
+	onstanding?: () => void;
 } = $props();
 
 let manifest = $state<ClipManifest | null>(null);
 let steps = $state<DogStep[]>([]);
 let at = $state(0);
 let blink = $state<string | null>(null);
+let standing = $state(false);
+let reacted = false;
 let blinkTimer: ReturnType<typeof setTimeout> | undefined;
 
 const dogState = $derived(ratingState(rating));
 const current = $derived(blink ? { clip: blink, loop: false } : steps[at]);
 
+function stand(clips: Record<string, unknown> = {}) {
+	steps = standingFor(clips);
+	at = 0;
+	standing = true;
+	onstanding?.();
+}
+
 $effect(() => {
-	if (!clipRoot) return;
+	if (!clipRoot) {
+		stand();
+		return;
+	}
 	let live = true;
-	loadClips(clipRoot).then((m) => {
-		if (live) manifest = m;
-	});
+	loadClips(clipRoot).then(
+		(m) => {
+			if (!live) return;
+			manifest = m;
+			const entrance = entranceFor(m.clips);
+			if (entrance.length) steps = entrance;
+			else stand(m.clips);
+		},
+		() => {
+			if (live) stand();
+		},
+	);
 	return () => {
 		live = false;
 	};
 });
 
 $effect(() => {
-	if (!manifest) return;
-	steps = sequenceFor(dogState, manifest.clips);
+	if (!armed || !standing || reacted || !manifest || dogState === null) return;
+	const reaction = reactionFor(dogState, manifest.clips);
+	if (!reaction.length) return;
+	reacted = true;
+	steps = reaction;
 	at = 0;
 	blink = null;
 });
@@ -60,6 +90,10 @@ function stepDone() {
 	}
 	if (at + 1 < steps.length) {
 		at += 1;
+		return;
+	}
+	if (!standing) {
+		stand(manifest?.clips);
 		return;
 	}
 	scheduleBlink();

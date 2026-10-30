@@ -1,7 +1,8 @@
 <script lang="ts">
-// The tree curtains over the whole viewport: shut by frame 7 of 14, when the
-// page behind them swaps, open again by the last frame, which is empty. Mounted
-// once by a layout above both pages, so it outlives the navigation it hides.
+// The tree curtains over the whole viewport: one clip per wipe, shut at its
+// midpoint, when the page behind them swaps, open again by the last frame,
+// which is empty. Mounted once by a layout above both pages, so it outlives
+// the navigation it hides.
 import FrameClipPlayer from "$gc/FrameClipPlayer.svelte";
 import { frameUrls, loadClips, type ClipFacts } from "$gc/frameClips";
 import { CURTAIN_CLIP, curtain } from "./curtain.svelte";
@@ -31,16 +32,14 @@ $effect(() => {
 
 const mid = $derived(facts ? Math.ceil(facts.frameCount / 2) : 0);
 
-// Two halves: the curtains close, hold shut on the midpoint frame until the
-// new page is in, then open. A dev server's load takes longer than seven frames.
-let phase = $state<"close" | "open">("close");
-let wipeToken = $state(-1);
-$effect(() => {
-	if (curtain.token !== wipeToken) {
-		wipeToken = curtain.token;
-		phase = "close";
-	}
-});
+// The swap is fired, never awaited: the record streams, so the new page is one
+// round trip away and lands under the shut frames. The clip never holds.
+let swappedToken = -1;
+function atFrame(frame: number) {
+	if (frame < mid || swappedToken === curtain.token) return;
+	swappedToken = curtain.token;
+	void curtain.midpoint();
+}
 
 // No clips to draw (standalone, or the manifest not here yet): the page still swaps.
 $effect(() => {
@@ -48,21 +47,12 @@ $effect(() => {
 		void curtain.midpoint().then(() => curtain.done());
 	}
 });
-
-async function shut() {
-	await curtain.midpoint();
-	phase = "open";
-}
 </script>
 
 {#if curtain.href && clipRoot && facts}
-	{#key `${curtain.token}:${phase}`}
+	{#key curtain.token}
 		<div class="curtain-layer" aria-hidden="true">
-			{#if phase === "close"}
-				<FrameClipPlayer root={clipRoot} clip={CURTAIN_CLIP} {facts} to={mid} onDone={shut} />
-			{:else}
-				<FrameClipPlayer root={clipRoot} clip={CURTAIN_CLIP} {facts} from={mid} onDone={() => curtain.done()} />
-			{/if}
+			<FrameClipPlayer root={clipRoot} clip={CURTAIN_CLIP} {facts} onFrame={atFrame} onDone={() => curtain.done()} />
 		</div>
 	{/key}
 {/if}
