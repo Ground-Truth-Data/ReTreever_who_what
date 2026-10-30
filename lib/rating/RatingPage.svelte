@@ -96,7 +96,19 @@ $effect(() => {
 // armed half a beat after the reveal, so the turn reads as a reaction.
 let dogStanding = $state(false);
 let armed = $state(false);
-const revealed = $derived(record !== null && dogStanding);
+let revealed = $state(false);
+// Two frames after both are true: when the record lands last, the number mounts
+// in that same flush, and a class flipped before its hidden state has painted
+// would skip the rise-in.
+$effect(() => {
+	if (record === null || !dogStanding) return;
+	let raf = requestAnimationFrame(() => {
+		raf = requestAnimationFrame(() => {
+			revealed = true;
+		});
+	});
+	return () => cancelAnimationFrame(raf);
+});
 $effect(() => {
 	if (!revealed) return;
 	const beat = setTimeout(() => {

@@ -27,6 +27,8 @@ let steps = $state<DogStep[]>([]);
 let at = $state(0);
 let blink = $state<string | null>(null);
 let standing = $state(false);
+// The last step has played out: a remount after a blink shows its final frame, not a replay.
+let settled = $state(false);
 let reacted = false;
 let blinkTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -68,6 +70,7 @@ $effect(() => {
 	const reaction = reactionFor(dogState, manifest.clips);
 	if (!reaction.length) return;
 	reacted = true;
+	settled = false;
 	steps = reaction;
 	at = 0;
 	blink = null;
@@ -96,6 +99,7 @@ function stepDone() {
 		stand(manifest?.clips);
 		return;
 	}
+	settled = true;
 	scheduleBlink();
 }
 
@@ -110,6 +114,7 @@ onDestroy(() => clearTimeout(blinkTimer));
 				clip={current.clip}
 				facts={manifest.clips[current.clip]}
 				loop={current.loop}
+				from={settled && !blink ? manifest.clips[current.clip].frameCount : 1}
 				onDone={stepDone}
 			/>
 		{/key}
