@@ -21,17 +21,8 @@ import upperGrassFrontWebp from "../assets/pub-Rtvr/home/uppergrass_front.webp";
 import upperGrassFrontAvif from "../assets/pub-Rtvr/home/uppergrass_front.avif";
 import upperGrassBackWebp from "../assets/pub-Rtvr/home/uppergrass_back.webp";
 import upperGrassBackAvif from "../assets/pub-Rtvr/home/uppergrass_back.avif";
-import {
-	HEADLINE,
-	HOME,
-	depthOf,
-	layerOf,
-	layoutPage,
-	parallaxY,
-	type Placed,
-} from "../stage/shardLayout";
-import { byArt, shard, shardId } from "../stage/shardIndex";
-import { withLocalPhotos } from "../stage/shardPhotos";
+import { shard, shardId } from "../stage/shardIndex";
+import { withLocalPhotos } from "../stage/svgPhotos";
 import type { WhoWhatRoutes } from "../whoWhatTypes";
 import type { SearchListItem } from "./searchTypes";
 
@@ -103,87 +94,30 @@ function pick(item: SearchListItem, go: boolean) {
 
 let searchWrapEl = $state<HTMLElement | null>(null);
 
-const SHARD_PHOTOS = import.meta.glob<string>(
+const PHOTOS = import.meta.glob<string>(
 	"../assets/pub-Rtvr/home/poly/*.webp",
 	{ eager: true, query: "?url", import: "default" },
 );
-const localPhotos = (svg: string) => withLocalPhotos(svg, SHARD_PHOTOS, "home/poly");
+const localPhotos = (svg: string) => withLocalPhotos(svg, PHOTOS, "home/poly");
 
-const shardArt: Record<number, string> = Object.fromEntries(
-	Object.entries(
-		import.meta.glob<string>("../assets/svg/search/poly/Search_page_SP_poly_*.svg", {
-			eager: true,
-			query: "?raw",
-			import: "default",
-		}),
-	).map(([path, svg]) => [Number(/poly_(\d+)\.svg$/.exec(path)![1]), localPhotos(svg)]),
-);
-
-let shards = $state<Placed[]>([]);
-let headlineShards = $state<Placed[]>([]);
 let heroEl = $state<HTMLElement | null>(null);
-let headlineEl = $state<HTMLElement | null>(null);
-let cardEl = $state<HTMLElement | null>(null);
-let lockupEl = $state<HTMLElement | null>(null);
 
-let scrolled = $state(0);
-
-// One depth reference across BOTH sections, or the headline ring's widest shard
-// drifts like a foreground piece while sitting behind one.
-const widestShard = $derived(
-	Math.max(
-		1,
-		...shards.map((p) => p.w),
-		...headlineShards.map((p) => p.w),
-	),
-);
-
-const searchShards = byArt("search");
-
-// Resolved here: `{#each shards as shard}` shadows the imported shard() below.
 const dividerId = shardId(shard(26));
 
-const idForArt = (art: number) => {
-	const entry = searchShards.get(art);
-	return entry ? shardId(entry) : `search_shard-UNREGISTERED-art${art}`;
-};
-
-let headlineOffset = $state(0);
-
-const headlineScrolled = $derived(Math.max(0, scrolled - headlineOffset));
-
+// The fold rule in CSS needs the hero's page offset, which only the DOM knows.
 let lastHeroTop = -1;
 function measure() {
-	if (heroEl && headlineEl && cardEl && lockupEl) {
-		const vw = heroEl.clientWidth;
-		const heroH = heroEl.clientHeight;
-		const headH = headlineEl.clientHeight;
-		if (vw > 0 && heroH > 0 && headH > 0) {
-			// Plus the sections' 16px side padding, so the gutter lane is the bare strip
-			// outside the content and a phone shows no sliver beside the card.
-			[shards, headlineShards] = layoutPage(vw, [
-				{ height: heroH, clearW: cardEl.clientWidth + 32, specs: HOME },
-				{ height: headH, clearW: lockupEl.clientWidth + 32, specs: HEADLINE },
-			]);
-		}
-	}
-	if (heroEl) {
-		const top = Math.round(heroEl.getBoundingClientRect().top + window.scrollY);
-		if (top !== lastHeroTop) {
-			lastHeroTop = top;
-			heroEl.style.setProperty("--hero-top", `${top}px`);
-		}
-	}
-	if (headlineEl) {
-		const top = headlineEl.getBoundingClientRect().top + window.scrollY;
-		headlineOffset = Math.max(0, top - window.innerHeight);
+	if (!heroEl) return;
+	const top = Math.round(heroEl.getBoundingClientRect().top + window.scrollY);
+	if (top !== lastHeroTop) {
+		lastHeroTop = top;
+		heroEl.style.setProperty("--hero-top", `${top}px`);
 	}
 }
 
 $effect(() => {
-	if (!heroEl && !headlineEl) return;
+	if (!heroEl) return;
 	measure();
-	// One solve per frame: a synchronous callback could feed itself via heroEl.
 	let raf = 0;
 	const schedule = () => {
 		if (raf) return;
@@ -193,8 +127,7 @@ $effect(() => {
 		});
 	};
 	const ro = new ResizeObserver(schedule);
-	if (heroEl) ro.observe(heroEl);
-	if (headlineEl) ro.observe(headlineEl);
+	ro.observe(heroEl);
 	window.addEventListener("resize", schedule);
 
 	return () => {
@@ -203,52 +136,11 @@ $effect(() => {
 		window.removeEventListener("resize", schedule);
 	};
 });
-
-// Own effect: the layout effect re-runs on every solve and would tear the
-// scroll listener down each time. Not gated on prefers-reduced-motion — Chris
-// runs Reduce Motion on and would never see it.
-$effect(() => {
-	let ticking = false;
-	const onScroll = () => {
-		if (ticking) return;
-		ticking = true;
-		requestAnimationFrame(() => {
-			scrolled = window.scrollY;
-			ticking = false;
-		});
-	};
-	window.addEventListener("scroll", onScroll, { passive: true });
-	scrolled = window.scrollY;
-
-	return () => window.removeEventListener("scroll", onScroll);
-});
 </script>
-
-{#snippet polyShard(shard: Placed, scroll: number)}
-	{@const depth = depthOf(shard, widestShard)}
-	<div
-		id={idForArt(shard.id)}
-		class="bg-poly"
-		aria-hidden="true"
-		style:left="{shard.x}px"
-		style:top="{shard.y}px"
-		style:width="{shard.w}px"
-		style:--depth={depth}
-		style:--layer={layerOf(depth)}
-		style:transform="translateY({parallaxY(depth, scroll)}px) rotate({shard.rot ?? 0}deg)"
-	>
-		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-		{@html shardArt[shard.id]}
-	</div>
-{/snippet}
 
 <!-- Missing asset falls through to --rtvr-missing-art. -->
 <div class="home-search-page" style="--art-sky: url({skyUrl}); --art-hill-pattern-webp: url({hillPatternWebp}); --art-hill-pattern-avif: url({hillPatternAvif}); --art-hill-fill-webp: url({hillFillWebp}); --art-hill-fill-avif: url({hillFillAvif}); --art-uppergrass-front-webp: url({upperGrassFrontWebp}); --art-uppergrass-front-avif: url({upperGrassFrontAvif}); --art-uppergrass-back-webp: url({upperGrassBackWebp}); --art-uppergrass-back-avif: url({upperGrassBackAvif});">
 	<section class="hero-section" bind:this={heroEl}>
-		{#each shards as shard (shard.id)}
-			{@render polyShard(shard, scrolled)}
-		{/each}
-
 		<div class="greenery hero-greenery" aria-hidden="true"></div>
 		<!-- Back to front: black wash, green wash, dog, then tufts (he passes BEHIND some). -->
 		<div class="wildflower-band" aria-hidden="true">
@@ -256,7 +148,7 @@ $effect(() => {
 			<GrassTufts />
 		</div>
 
-		<div class="search-card" bind:this={cardEl}>
+		<div class="search-card">
 			<nav class="tabs" aria-label="Search by">
 				<a
 					href={routes.who ?? null}
@@ -323,14 +215,10 @@ $effect(() => {
 		</div>
 	</div>
 
-	<section class="headline-section" bind:this={headlineEl}>
+	<section class="headline-section">
 		<div class="greenery headline-greenery" aria-hidden="true"></div>
 
-		{#each headlineShards as shard (shard.id)}
-			{@render polyShard(shard, headlineScrolled)}
-		{/each}
-
-		<div class="headline" bind:this={lockupEl}>
+		<div class="headline">
 			<div class="headline-find" aria-hidden="true">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 				{@html FindRaw}
@@ -486,40 +374,6 @@ $effect(() => {
 			var(--art-uppergrass-back-avif, var(--rtvr-missing-art)) type("image/avif"),
 			var(--art-uppergrass-back-webp, var(--rtvr-missing-art)) type("image/webp")
 		);
-	}
-
-	/* Position/width are inline from shardLayout.ts; transform carries ONLY
-	   parallax and rotation, so left/top always equal the config. */
-	.bg-poly {
-		position: absolute;
-		pointer-events: none;
-		color: var(--color-gold-shard);
-		/* --layer is 0..-2: z-index would round a fractional calc into a hard
-		   cut, so it's an offset instead — nearest band stays under grass (3). */
-		z-index: calc(2 + var(--layer, 0));
-		will-change: transform;
-	}
-
-	/* Three shadows from one light source up-left; keep alphas ASCENDING outward
-	   and the near blur ≥ 6px, or a crisp near shadow reads as a black outline. */
-	.bg-poly :global(svg) {
-		--lift: calc(0.55 + (var(--depth, 0.5) * 0.75));
-		width: 100%;
-		height: auto;
-		display: block;
-		filter:
-			drop-shadow(
-				calc(2px * var(--lift)) calc(3px * var(--lift))
-				calc(7px * var(--lift)) rgb(12 8 1 / 0.22)
-			)
-			drop-shadow(
-				calc(7px * var(--lift)) calc(10px * var(--lift))
-				calc(16px * var(--lift)) rgb(12 8 1 / 0.34)
-			)
-			drop-shadow(
-				calc(18px * var(--lift)) calc(24px * var(--lift))
-				calc(40px * var(--lift)) rgb(12 8 1 / 0.46)
-			);
 	}
 
 	.visually-hidden {

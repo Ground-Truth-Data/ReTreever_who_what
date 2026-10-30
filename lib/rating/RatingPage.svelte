@@ -22,10 +22,7 @@ import SearchDropdown from "../search/SearchDropdown.svelte";
 import WeedsSection from "../weeds/WeedsSection.svelte";
 import type { SearchResult } from "./resultLoad";
 import type { SearchListItem } from "../search/searchTypes";
-import { RATING, depthOf, layerOf, place, type Placed } from "../stage/shardLayout";
 import { ratingState, type RatingState } from "./ratingState";
-import { withLocalPhotos } from "../stage/shardPhotos";
-import { byArt, shardId } from "../stage/shardIndex";
 import type { WeedsTable, WhoWhatRoutes } from "../whoWhatTypes";
 
 let {
@@ -89,36 +86,7 @@ function pick(item: SearchListItem, go: boolean) {
 	onpick?.(item, go);
 }
 
-const PHOTOS = import.meta.glob<string>("../assets/pub-Rtvr/rating/poly/*.webp", {
-	eager: true,
-	query: "?url",
-	import: "default",
-});
-
-const shardArt: Record<number, string> = Object.fromEntries(
-	Object.entries(
-		import.meta.glob<string>("../assets/svg/rating/poly/Rating_page_RP_poly_*.svg", {
-			eager: true,
-			query: "?raw",
-			import: "default",
-		}),
-	).map(([path, svg]) => [
-		Number(/poly_(\d+)\.svg$/.exec(path)![1]),
-		withLocalPhotos(svg, PHOTOS, "rating/poly"),
-	]),
-);
-
-const ratingShards = byArt("rating");
-const idForArt = (art: number) => {
-	const entry = ratingShards.get(art);
-	return entry ? shardId(entry) : `rating_shard-UNREGISTERED-art${art}`;
-};
-
 let query = $state(result.name);
-let heroEl = $state<HTMLElement | null>(null);
-let lockupEl = $state<HTMLElement | null>(null);
-let shards = $state<Placed[]>([]);
-const widest = $derived(Math.max(1, ...shards.map((p) => p.w)));
 
 // One string per state until the wording is decided (RT 41 📣).
 const STATE_LINES: Record<RatingState, string> = {
@@ -131,56 +99,10 @@ const stateLine = $derived.by(() => {
 	const state = ratingState(result.rating);
 	return state ? STATE_LINES[state] : "Unscored";
 });
-
-function measure() {
-	if (!heroEl || !lockupEl) return;
-	const vw = heroEl.clientWidth;
-	const h = heroEl.clientHeight;
-	if (vw > 0 && h > 0) shards = place(RATING, vw, h, lockupEl.clientWidth + 32);
-}
-
-$effect(() => {
-	if (!heroEl) return;
-	measure();
-	let raf = 0;
-	const schedule = () => {
-		if (raf) return;
-		raf = requestAnimationFrame(() => {
-			raf = 0;
-			measure();
-		});
-	};
-	const ro = new ResizeObserver(schedule);
-	ro.observe(heroEl);
-	window.addEventListener("resize", schedule);
-	return () => {
-		if (raf) cancelAnimationFrame(raf);
-		ro.disconnect();
-		window.removeEventListener("resize", schedule);
-	};
-});
 </script>
 
 <div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl});">
-	<section class="rating-hero" bind:this={heroEl}>
-		{#each shards as shard (shard.id)}
-			{@const depth = depthOf(shard, widest)}
-			<div
-				id={idForArt(shard.id)}
-				class="bg-poly"
-				aria-hidden="true"
-				style:left="{shard.x}px"
-				style:top="{shard.y}px"
-				style:width="{shard.w}px"
-				style:--depth={depth}
-				style:--layer={layerOf(depth)}
-				style:transform="rotate({shard.rot ?? 0}deg)"
-			>
-				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				{@html shardArt[shard.id]}
-			</div>
-		{/each}
-
+	<section class="rating-hero">
 		<div class="bar-block">
 			<nav class="tabs" aria-label="Search by">
 				<a href={routes.who ?? null} class="tab-sticker" aria-current={tab === "orgs" ? "page" : undefined}>
@@ -262,7 +184,7 @@ $effect(() => {
 			</div>
 		</div>
 
-		<div class="lockup" bind:this={lockupEl} aria-hidden="true">
+		<div class="lockup" aria-hidden="true">
 			<div class="lockup-row">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 				<div class="sticker truth">{@html TruthIsInRaw}</div>
@@ -306,7 +228,6 @@ $effect(() => {
 		width: 100%;
 		box-sizing: border-box;
 		min-height: calc(100vh - 5rem);
-		/* Top padding is the strip shard's lane: it sits above the tabs, not behind them. */
 		padding: clamp(64px, 12vh, 140px) var(--pad) clamp(32px, 5vh, 72px);
 		display: flex;
 		flex-direction: column;
@@ -329,24 +250,6 @@ $effect(() => {
 		opacity: 0.05;
 		pointer-events: none;
 		z-index: 0;
-	}
-
-	.bg-poly {
-		position: absolute;
-		pointer-events: none;
-		color: var(--color-gold-shard);
-		z-index: calc(2 + var(--layer, 0));
-	}
-
-	.bg-poly :global(svg) {
-		--lift: calc(0.55 + (var(--depth, 0.5) * 0.75));
-		width: 100%;
-		height: auto;
-		display: block;
-		filter:
-			drop-shadow(calc(2px * var(--lift)) calc(3px * var(--lift)) calc(7px * var(--lift)) rgb(12 8 1 / 0.22))
-			drop-shadow(calc(7px * var(--lift)) calc(10px * var(--lift)) calc(16px * var(--lift)) rgb(12 8 1 / 0.34))
-			drop-shadow(calc(18px * var(--lift)) calc(24px * var(--lift)) calc(40px * var(--lift)) rgb(12 8 1 / 0.46));
 	}
 
 	/* The search page's block: tabs tucked under the bar's top edge, the bar at
