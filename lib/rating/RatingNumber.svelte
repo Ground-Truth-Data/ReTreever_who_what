@@ -15,13 +15,20 @@ function glyphUrl(ch: string): string | undefined {
 	return Object.entries(GLYPHS).find(([path]) => path.endsWith(`/${file}`))?.[1];
 }
 
-let { rating }: { rating: number } = $props();
+let {
+	rating,
+	settled = true,
+}: {
+	rating: number;
+	/** False holds the period back; it fades in when this flips. The label carries the full score throughout. */
+	settled?: boolean;
+} = $props();
 
 const text = $derived(rating.toFixed(1));
 const chars = $derived(text.split(""));
 </script>
 
-<span class="rating-number" role="img" aria-label={formatTransparencyScore(rating)}>
+<span class="rating-number" class:unsettled={!settled} role="img" aria-label={formatTransparencyScore(rating)}>
 	{#each chars as ch, i (i)}
 		<img class="glyph" class:period={ch === "."} src={glyphUrl(ch)} alt="" draggable="false" />
 	{/each}
@@ -47,5 +54,13 @@ const chars = $derived(text.split(""));
 		display: block;
 		user-select: none;
 		-webkit-user-drag: none;
+	}
+
+	.period {
+		transition: opacity 160ms ease-out;
+	}
+
+	.unsettled .period {
+		opacity: 0;
 	}
 </style>

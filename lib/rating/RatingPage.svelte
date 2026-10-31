@@ -91,18 +91,40 @@ $effect(() => {
 	if (record) query = record.name;
 });
 
-// The number waits for the dog to stand, and the dog waits for the number:
-// armed half a beat after the reveal, so the turn reads as a reaction.
+// The number waits for the dog to stand, lands big over the hero and settles
+// into place, then its period lands; the dog turns half a beat after that.
 let dogStanding = $state(false);
 let armed = $state(false);
 let revealed = $state(false);
+let periodIn = $state(false);
+let heroEl = $state<HTMLElement | null>(null);
+let numberEl = $state<HTMLElement | null>(null);
+
+const LAND_SCALE = 2.1;
+const SETTLE_MS = 420;
+
+// The offsets that put the scaled number's centre on the hero's centre. The
+// translate runs before the scale in the number's own units, so the screen
+// distance is divided by the scale. Measured at the reveal, when the glyph
+// images have their widths.
+function aimLanding() {
+	if (!heroEl || !numberEl) return;
+	const h = heroEl.getBoundingClientRect();
+	const n = numberEl.getBoundingClientRect();
+	const dx = h.left + h.width / 2 - (n.left + n.width / 2);
+	const dy = h.top + h.height / 2 - (n.top + n.height / 2);
+	numberEl.style.setProperty("--land-x", `${dx / LAND_SCALE}px`);
+	numberEl.style.setProperty("--land-y", `${dy / LAND_SCALE}px`);
+}
+
 // Two frames after both are true: when the record lands last, the number mounts
 // in that same flush, and a class flipped before its hidden state has painted
-// would skip the rise-in.
+// would skip the landing.
 $effect(() => {
 	if (record === null || !dogStanding) return;
 	let raf = requestAnimationFrame(() => {
 		raf = requestAnimationFrame(() => {
+			aimLanding();
 			revealed = true;
 		});
 	});
@@ -110,6 +132,13 @@ $effect(() => {
 });
 $effect(() => {
 	if (!revealed) return;
+	const settle = setTimeout(() => {
+		periodIn = true;
+	}, SETTLE_MS);
+	return () => clearTimeout(settle);
+});
+$effect(() => {
+	if (!periodIn) return;
 	const beat = setTimeout(() => {
 		armed = true;
 	}, 500);
@@ -130,7 +159,7 @@ const stateLine = $derived.by(() => {
 </script>
 
 <div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl});">
-	<section class="rating-hero">
+	<section class="rating-hero" bind:this={heroEl}>
 		<Greenery />
 		<div class="hero-top">
 			<div class="header-sticker" aria-hidden="true">
@@ -193,8 +222,8 @@ const stateLine = $derived.by(() => {
 						<span class="state-line">{stateLine}</span>
 					</h1>
 					{#if record.rating !== null}
-						<div class="number" class:revealed>
-							<RatingNumber rating={record.rating} />
+						<div class="number" class:revealed bind:this={numberEl}>
+							<RatingNumber rating={record.rating} settled={periodIn} />
 						</div>
 					{/if}
 				{/if}
@@ -441,26 +470,40 @@ const stateLine = $derived.by(() => {
 	}
 
 	/* In the DOM from the moment the record lands, shown once the dog stands:
-	   hidden keeps the layout, so the reveal rises in without a shift. */
+	   hidden keeps the layout, so the reveal lands without a shift. */
 	.number {
 		opacity: 0;
 		visibility: hidden;
-		transform: translateY(8px);
+		transform-origin: center;
 		transition:
 			opacity 260ms ease-out,
-			transform 260ms ease-out,
 			visibility 0s linear 260ms;
 	}
 
 	.number.revealed {
 		opacity: 1;
 		visibility: visible;
-		transform: none;
 		transition-delay: 0s;
 	}
 
-	@media (prefers-reduced-motion: reduce) {
-		.number {
+	/* Lands at twice its size over the hero's centre and settles into place;
+	   the offsets are set inline at the reveal. Reduced motion keeps the fade. */
+	@media (prefers-reduced-motion: no-preference) {
+		.number.revealed {
+			animation: land 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+		}
+	}
+
+	@keyframes land {
+		from {
+			opacity: 0;
+			transform: scale(2.1) translate(var(--land-x, 0px), var(--land-y, 0px));
+		}
+		28.6% {
+			opacity: 1;
+		}
+		to {
+			opacity: 1;
 			transform: none;
 		}
 	}
