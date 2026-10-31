@@ -148,9 +148,14 @@ $effect(() => {
 		width: calc(var(--tab-h) * 1.5 * var(--vw) / var(--vh));
 	}
 
+	/* The sticker's svg is taller than the tab. Clipped here, not only at the
+	   button, or Chromium counts it as scroll room and a wheel over the strip
+	   scrolls the tabs' tops away. */
 	.art {
 		display: block;
 		width: 100%;
+		height: 100%;
+		overflow: clip;
 	}
 
 	.art :global(svg) {
