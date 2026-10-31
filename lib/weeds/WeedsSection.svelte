@@ -54,7 +54,8 @@ async function load(table: WeedsTableName) {
 		const { [table]: _gone, ...rest } = failed;
 		failed = rest;
 	} catch (cause) {
-		console.error("weeds: could not load", cause);
+		// A fetch the browser cut short because the page is leaving is not a failure worth a line.
+		if (!leaving) console.error("weeds: could not load", cause);
 		failed = { ...failed, [table]: true };
 		inFlight.delete(table);
 	} finally {
@@ -140,6 +141,7 @@ $effect(() => {
 // rows are there before the scroll lights a tab. The lit tab's own load in
 // select() runs beside the queue, so it never waits its turn.
 let live = true;
+let leaving = false;
 async function fillTheRest() {
 	for (const table of WEEDS_TABLES) {
 		if (!live) return;
@@ -150,8 +152,13 @@ $effect(() => {
 	const start = () => void load("projects").then(fillTheRest);
 	const idle = window.requestIdleCallback?.(start, { timeout: 2000 });
 	const timer = idle === undefined ? setTimeout(start, 200) : undefined;
+	const onLeave = () => {
+		leaving = true;
+	};
+	window.addEventListener("pagehide", onLeave);
 	return () => {
 		live = false;
+		window.removeEventListener("pagehide", onLeave);
 		if (idle !== undefined) window.cancelIdleCallback?.(idle);
 		if (timer) clearTimeout(timer);
 	};
