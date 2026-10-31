@@ -65,10 +65,16 @@ function keydown(e: KeyboardEvent, t: WeedsTable) {
 	e.preventDefault();
 }
 
-// On a phone the strip scrolls sideways; the lit tab comes into view.
+// On a phone the strip scrolls sideways; the lit tab comes into view. The
+// strip alone moves: scrollIntoView would also scroll the page to the strip.
 $effect(() => {
-	const el = stripEl?.querySelector(`#${tabId(active)}`) as HTMLElement | null;
-	el?.scrollIntoView({ block: "nearest", inline: "nearest" });
+	const strip = stripEl;
+	const el = strip?.querySelector(`#${tabId(active)}`) as HTMLElement | null;
+	if (!strip || !el) return;
+	const s = strip.getBoundingClientRect();
+	const r = el.getBoundingClientRect();
+	if (r.left < s.left) strip.scrollBy({ left: r.left - s.left });
+	else if (r.right > s.right) strip.scrollBy({ left: r.right - s.right });
 });
 </script>
 
