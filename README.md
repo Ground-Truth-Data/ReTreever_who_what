@@ -50,8 +50,9 @@ utility at the root:
 - `rating/` — one org or project: route, page, the number, the state (the one
   place the four states are drawn), the loader, the dog.
 - `weeds/` — the tables under the rating hero.
-- `stage/` — scenery both pages share: the curtains, the globe icon, the shard
-  id register the why page and the divider still use.
+- `stage/` — scenery both pages share: the curtains, the greenery (the crest
+  and grass band every hero ends in, with its tufts), the globe icon, the
+  shard id register the why page and the divider still use.
 - `guards/` — the portability tests described below.
 - `assets/` — every piece of art the child imports; `svg/search` and
   `svg/rating` hold the designer's cut SVGs.

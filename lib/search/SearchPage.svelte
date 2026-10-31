@@ -6,21 +6,15 @@ import OrgsUnselectedRaw from "../assets/svg/search/Search_page_Orgs_Unselected.
 import ProjectsSelectedRaw from "../assets/svg/search/Search_page_Projects_Selected.svg?raw";
 import ProjectsUnselectedRaw from "../assets/svg/search/Search_page_Projects_Unselected.svg?raw";
 import GrassMascot from "./GrassMascot.svelte";
-import GrassTufts from "./GrassTufts.svelte";
+import Greenery from "../stage/Greenery.svelte";
 import GlobeSpinIcon from "../stage/GlobeSpinIcon.svelte";
 import SearchBar from "./SearchBar.svelte";
 import SearchDropdown from "./SearchDropdown.svelte";
 import MiddleDividerRaw from "../assets/svg/search/poly/Search_page_Middle_Divider.svg?raw";
 
 import skyUrl from "../assets/golden_sky_background.webp";
-import hillPatternWebp from "../assets/hill_pattern.webp";
-import hillPatternAvif from "../assets/hill_pattern.avif";
 import hillFillWebp from "../assets/pub-Rtvr/home/hill_fill.webp";
 import hillFillAvif from "../assets/pub-Rtvr/home/hill_fill.avif";
-import upperGrassFrontWebp from "../assets/pub-Rtvr/home/uppergrass_front.webp";
-import upperGrassFrontAvif from "../assets/pub-Rtvr/home/uppergrass_front.avif";
-import upperGrassBackWebp from "../assets/pub-Rtvr/home/uppergrass_back.webp";
-import upperGrassBackAvif from "../assets/pub-Rtvr/home/uppergrass_back.avif";
 import { shard, shardId } from "../stage/shardIndex";
 import { withLocalPhotos } from "../stage/svgPhotos";
 import type { WhoWhatRoutes } from "../whoWhatTypes";
@@ -139,14 +133,11 @@ $effect(() => {
 </script>
 
 <!-- Missing asset falls through to --rtvr-missing-art. -->
-<div class="home-search-page" style="--art-sky: url({skyUrl}); --art-hill-pattern-webp: url({hillPatternWebp}); --art-hill-pattern-avif: url({hillPatternAvif}); --art-hill-fill-webp: url({hillFillWebp}); --art-hill-fill-avif: url({hillFillAvif}); --art-uppergrass-front-webp: url({upperGrassFrontWebp}); --art-uppergrass-front-avif: url({upperGrassFrontAvif}); --art-uppergrass-back-webp: url({upperGrassBackWebp}); --art-uppergrass-back-avif: url({upperGrassBackAvif});">
+<div class="home-search-page" style="--art-sky: url({skyUrl}); --art-hill-fill-webp: url({hillFillWebp}); --art-hill-fill-avif: url({hillFillAvif});">
 	<section class="hero-section" bind:this={heroEl}>
-		<div class="greenery hero-greenery" aria-hidden="true"></div>
-		<!-- Back to front: black wash, green wash, dog, then tufts (he passes BEHIND some). -->
-		<div class="wildflower-band" aria-hidden="true">
+		<Greenery>
 			<GrassMascot ground="grass" />
-			<GrassTufts />
-		</div>
+		</Greenery>
 
 		<div class="search-card">
 			<nav class="tabs" aria-label="Search by">
@@ -216,7 +207,7 @@ $effect(() => {
 	</div>
 
 	<section class="headline-section">
-		<div class="greenery headline-greenery" aria-hidden="true"></div>
+		<div class="headline-greenery" aria-hidden="true"></div>
 
 		<div class="headline">
 			<div class="headline-find" aria-hidden="true">
@@ -290,33 +281,14 @@ $effect(() => {
 		background: #0b1109;
 	}
 
-	/* Each background: plain WebP, then image-set() with AVIF first — Safari <
-	   16.4 drops the image-set line and keeps the WebP. */
-	.greenery {
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background-repeat: no-repeat;
-		z-index: 0;
-	}
-
-	/* 100% auto keeps the crest's drawn proportion; the file always exceeds the box. */
-	.hero-greenery {
-		top: auto;
-		height: var(--greenery-h);
-		background-image: var(--art-hill-pattern-webp, var(--rtvr-missing-art));
-		background-image: image-set(
-			var(--art-hill-pattern-avif, var(--rtvr-missing-art)) type("image/avif"),
-			var(--art-hill-pattern-webp, var(--rtvr-missing-art)) type("image/webp")
-		);
-		background-size: 100% auto;
-		background-position: top center;
-	}
-
-	/* Cropped below the crest's trough so no glow shows under the divider. */
+	/* Cropped below the crest's trough so no glow shows under the divider. Plain
+	   WebP, then image-set() with AVIF first — Safari < 16.4 drops the image-set
+	   line and keeps the WebP. */
 	.headline-greenery {
-		top: 0;
+		position: absolute;
+		inset: 0;
+		z-index: 0;
+		background-repeat: no-repeat;
 		background-image: var(--art-hill-fill-webp, var(--rtvr-missing-art));
 		background-image: image-set(
 			var(--art-hill-fill-avif, var(--rtvr-missing-art)) type("image/avif"),
@@ -324,56 +296,6 @@ $effect(() => {
 		);
 		background-size: cover;
 		background-position: top center;
-	}
-
-	/* No bottom mask: the blade bases dissolve into the page on their own. */
-	.wildflower-band {
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		height: var(--upper-band);
-		pointer-events: none;
-		z-index: 3;
-	}
-
-	/* Numbered: ::after paints above ordinary children by default and would
-	   otherwise cover the dog and tufts. */
-	.wildflower-band::before,
-	.wildflower-band::after {
-		content: "";
-		position: absolute;
-		inset: 0;
-		background-size: 100% 100%;
-		background-position: center bottom;
-		background-repeat: no-repeat;
-	}
-
-	.wildflower-band :global(.mascot-track) {
-		z-index: 2;
-	}
-
-	.wildflower-band :global(.tuft-layer) {
-		z-index: 3;
-	}
-
-	/* Black silhouette BEHIND green: the dog stacks between the two pseudos. */
-	.wildflower-band::before {
-		z-index: 0;
-		background-image: var(--art-uppergrass-front-webp, var(--rtvr-missing-art));
-		background-image: image-set(
-			var(--art-uppergrass-front-avif, var(--rtvr-missing-art)) type("image/avif"),
-			var(--art-uppergrass-front-webp, var(--rtvr-missing-art)) type("image/webp")
-		);
-	}
-
-	.wildflower-band::after {
-		z-index: 1;
-		background-image: var(--art-uppergrass-back-webp, var(--rtvr-missing-art));
-		background-image: image-set(
-			var(--art-uppergrass-back-avif, var(--rtvr-missing-art)) type("image/avif"),
-			var(--art-uppergrass-back-webp, var(--rtvr-missing-art)) type("image/webp")
-		);
 	}
 
 	.visually-hidden {
