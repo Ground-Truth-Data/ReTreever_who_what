@@ -61,7 +61,7 @@ let { children, ridge = false }: { children?: Snippet; ridge?: boolean } = $prop
 	   own size and position, so the range moves with the hill it hides behind. */
 	.ridge > span {
 		position: absolute;
-		inset: 0;
+		inset: 0 -12%;
 		background: var(--rtvr-ink, #171d31);
 		-webkit-mask-image: var(--art-hill-pattern-webp);
 		mask-image: var(--art-hill-pattern-webp);
@@ -74,22 +74,27 @@ let { children, ridge = false }: { children?: Snippet; ridge?: boolean } = $prop
 		transform-origin: 50% 100%;
 	}
 
+	/* A thin band: the far lobes and the lip are the blue, the near body the ink
+	   in front of them, so only their tops show as a blue edge above the crest. */
+	.ridge > .far,
+	.ridge > .rim {
+		background: var(--rtvr-ridge, #143a68);
+	}
+
 	.ridge > .far.left {
-		transform: translate(-22%, -9%) scaleX(1.3);
+		transform: translate(-6%, -3.5%) scaleX(1.04);
 	}
 
 	.ridge > .far.right {
-		transform: translate(26%, -6%) scaleX(1.2);
+		transform: translate(7%, -2.5%) scaleX(1.03);
 	}
 
-	/* The lighter lip along the near range's top: the same shape two steps bigger. */
 	.ridge > .rim {
-		background: color-mix(in srgb, var(--rtvr-ink, #171d31) 82%, white);
-		transform: translateY(-3.2%) scale(1.012, 1.04);
+		transform: translateY(-2%) scale(1.006, 1.025);
 	}
 
 	.ridge > .near {
-		transform: translateY(-2.2%) scale(1.012, 1.03);
+		transform: translateY(-1%) scale(1.004, 1.012);
 	}
 
 	/* Each background: plain WebP, then image-set() with AVIF first — Safari <
