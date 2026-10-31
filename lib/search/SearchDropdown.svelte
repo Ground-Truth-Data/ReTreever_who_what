@@ -128,24 +128,44 @@ const WINDOW_BORDER = windowBorderCss("var(--u)");
 
 const FETCH_CLIP = "fetch-search";
 let fetchClip = $state<ClipFacts | null>(null);
+let wanted = $state(false);
 
-// Loaded and preloaded on mount, so the first open plays at speed.
 $effect(() => {
 	if (!clipRoot) return;
 	let live = true;
 	loadClips(clipRoot).then((m) => {
-		if (!live) return;
-		fetchClip = m.clips[FETCH_CLIP] ?? null;
-		if (fetchClip) {
-			for (const u of frameUrls(clipRoot, FETCH_CLIP, fetchClip)) {
-				const img = new Image();
-				img.src = u;
-			}
-		}
+		if (live) fetchClip = m.clips[FETCH_CLIP] ?? null;
 	});
 	return () => {
 		live = false;
 	};
+});
+
+// The frames wait for a reach toward the bar, not the page's load: on the
+// rating page they would race the dog's. Warm before the open so it plays at speed.
+$effect(() => {
+	const el = within;
+	if (!el || wanted) return;
+	const want = () => (wanted = true);
+	const events = ["pointerenter", "pointerdown", "focusin"] as const;
+	for (const e of events) el.addEventListener(e, want, { passive: true });
+	return () => {
+		for (const e of events) el.removeEventListener(e, want);
+	};
+});
+
+$effect(() => {
+	if (open) wanted = true;
+});
+
+let warmed = false;
+$effect(() => {
+	if (!wanted || warmed || !clipRoot || !fetchClip) return;
+	warmed = true;
+	for (const u of frameUrls(clipRoot, FETCH_CLIP, fetchClip)) {
+		const img = new Image();
+		img.src = u;
+	}
 });
 </script>
 
