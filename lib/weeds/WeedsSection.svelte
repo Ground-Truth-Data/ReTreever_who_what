@@ -240,6 +240,12 @@ function barKeydown(e: KeyboardEvent) {
 		position: relative;
 		z-index: 6;
 		width: 100%;
+		box-sizing: border-box;
+		/* The page sets this when a tally stands at the right edge: the stage
+		   gives it the column and leans only half that way, so it still reads
+		   as the page's centre under the lockup. */
+		padding-right: var(--stage-room, 0px);
+		padding-left: calc(var(--stage-room, 0px) / 2);
 		/* A new tab's table changes the stage's height; left to anchor on the
 		   run below it, the browser would scroll the page by that growth, and
 		   the scroll would read the next tab from it. */

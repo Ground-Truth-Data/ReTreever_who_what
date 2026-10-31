@@ -284,7 +284,7 @@ const stateLine = $derived.by(() => {
 		</div>
 	</section>
 
-	<div class="underground" bind:this={undergroundEl}>
+	<div class="underground" class:has-tally={tally !== null} bind:this={undergroundEl}>
 	<section class="soil-band">
 		<div class="lockup" aria-hidden="true">
 			<div class="lockup-row">
@@ -608,6 +608,14 @@ const stateLine = $derived.by(() => {
 			var(--art-soil) top center / var(--soil-w) auto repeat-x,
 			var(--art-soil-deep) center calc(var(--soil-w) * 712 / 1972) / var(--soil-w) auto repeat,
 			#0b1109;
+	}
+
+	/* The tally stands in the right margin from 1100px up (WeedsTally's own
+	   breakpoint); the weeds track keeps that column free. */
+	@media (min-width: 1100px) {
+		.underground.has-tally {
+			--stage-room: 300px;
+		}
 	}
 
 	.soil-band {
