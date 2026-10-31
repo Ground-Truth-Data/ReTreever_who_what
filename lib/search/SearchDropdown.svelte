@@ -69,7 +69,9 @@ function watchEnd(node: HTMLElement) {
 }
 
 let highlighted = $state(-1);
-const rowId = (i: number) => `${listId}-row-${i}`;
+export function rowId(i: number): string {
+	return `${listId}-row-${i}`;
+}
 
 $effect(() => {
 	rows;
@@ -83,10 +85,15 @@ $effect(() => {
 });
 
 /** Arrow keys walk the rows while focus stays in the input. */
-export async function move(dir: 1 | -1) {
+export function move(dir: 1 | -1) {
+	return highlight(highlighted + dir);
+}
+
+/** The row at `index` lit, below 0 none; focus stays where it is. */
+export async function highlight(index: number) {
 	const n = rows.length;
 	if (n === 0) return;
-	highlighted = Math.min(n - 1, Math.max(-1, highlighted + dir));
+	highlighted = Math.min(n - 1, Math.max(-1, index));
 	if (highlighted >= shown) shown = highlighted + WINDOW;
 	await tick();
 	if (highlighted >= 0) document.getElementById(rowId(highlighted))?.scrollIntoView({ block: "nearest" });

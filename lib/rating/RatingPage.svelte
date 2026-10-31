@@ -15,6 +15,7 @@ import soilDeepUrl from "../assets/pub-Rtvr/rating/soil-deep.webp";
 import skyUrl from "../assets/golden_sky_background.webp";
 import pineUrl from "../assets/pub-Rtvr/rating/poly/rp-pine.webp";
 import DogStage from "./DogStage.svelte";
+import LessonHand from "../stage/LessonHand.svelte";
 import NumberFollower from "./NumberFollower.svelte";
 import GlobeSpinIcon from "../stage/GlobeSpinIcon.svelte";
 import Greenery from "../stage/Greenery.svelte";
@@ -27,7 +28,7 @@ import WeedsTally from "../weeds/WeedsTally.svelte";
 import type { SearchResult } from "./resultLoad";
 import type { SearchListItem } from "../search/searchTypes";
 import { ratingState, type RatingState } from "./ratingState";
-import type { ScoreTally, WeedsTable, WhoWhatRoutes } from "../whoWhatTypes";
+import { WEEDS_TABLES, type ScoreTally, type WeedsTable, type WhoWhatRoutes } from "../whoWhatTypes";
 
 let {
 	tab,
@@ -247,6 +248,25 @@ $effect(() => {
 	return () => clearTimeout(beat);
 });
 
+let dog = $state<DogStage | null>(null);
+let weeds = $state<WeedsSection | null>(null);
+const lessonDoors = {
+	scored: () => record?.rating !== null,
+	number: () => numberEl,
+	dog: () => pageEl?.querySelector<HTMLElement>(".dog-stage") ?? null,
+	nudge: () => dog?.nudge(),
+	weedsPin: () => weeds?.stagePin() ?? null,
+	litTable: () => weeds?.litTable() ?? WEEDS_TABLES[0],
+	tab: (t: WeedsTable) => document.getElementById(`weeds-tab-${t}`),
+	lessonPick: (t: WeedsTable) => weeds?.lessonPick(t) ?? Promise.resolve(),
+	tally: () => pageEl?.querySelector<HTMLElement>(innerWidth >= 1100 ? ".tally.corner .big" : ".tally.strip .pct") ?? null,
+};
+const lessonFacts = () => ({
+	focusWithin: !!barEl?.contains(document.activeElement) || !!pageEl?.querySelector(".weeds-bar")?.contains(document.activeElement),
+	dropdownOpen,
+	pageReady: record !== null && dogStanding && (record.rating === null || revealed),
+});
+
 // One string per state until the wording is decided (RT 41 📣).
 const STATE_LINES: Record<RatingState, string> = {
 	opaque: "Opaque data…",
@@ -269,7 +289,7 @@ const stateLine = $derived.by(() => {
 	<section class="rating-hero" bind:this={heroEl}>
 		<Greenery>
 			<div class="dog-column">
-				<DogStage rating={record?.rating ?? null} {armed} {clipRoot} onstanding={() => (dogStanding = true)} />
+				<DogStage bind:this={dog} rating={record?.rating ?? null} {armed} {clipRoot} onstanding={() => (dogStanding = true)} />
 			</div>
 		</Greenery>
 		<div class="hero-top">
@@ -369,12 +389,13 @@ const stateLine = $derived.by(() => {
 	</section>
 
 	{#if weedsHref}
-		<WeedsSection {tab} href={weedsHref} {clipRoot} {onopenproject} onactive={(i) => (litIndex = i)} />
+		<WeedsSection bind:this={weeds} {tab} href={weedsHref} {clipRoot} {onopenproject} onactive={(i) => (litIndex = i)} />
 		{#if tally}
 			<WeedsTally {tally} {litIndex} visible={tallyVisible} />
 		{/if}
 	{/if}
 	</div>
+	<LessonHand name="rating" facts={lessonFacts} rating={lessonDoors} />
 </div>
 
 <style>

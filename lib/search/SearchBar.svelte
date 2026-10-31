@@ -44,11 +44,30 @@ function handleKeydown(e: KeyboardEvent) {
 
 let inputEl = $state<HTMLInputElement | null>(null);
 
-function clear() {
+function clearByButton() {
 	value = "";
 	dropdownOpen = true;
 	onactivate?.();
 	inputEl?.focus();
+}
+
+// A lesson types without focus; its clear also ends any typing still in flight.
+let typing = 0;
+
+export async function typeIn(text: string, msPerChar: number): Promise<void> {
+	const mine = ++typing;
+	for (let i = 1; i <= text.length; i++) {
+		if (i > 1) await new Promise((r) => setTimeout(r, msPerChar));
+		if (typing !== mine) return;
+		value = text.slice(0, i);
+		dropdownOpen = true;
+	}
+}
+
+export function clear(): void {
+	typing++;
+	value = "";
+	dropdownOpen = false;
 }
 
 function handleSubmit(event: SubmitEvent) {
@@ -161,7 +180,7 @@ function handleSubmit(event: SubmitEvent) {
 						class="clear"
 						form={id}
 						aria-label="Clear search"
-						onclick={clear}
+						onclick={clearByButton}
 					>
 						<svg viewBox="0 0 10 10" aria-hidden="true">
 							<path d="M2 2 8 8M8 2 2 8" />

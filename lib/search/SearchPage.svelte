@@ -10,6 +10,7 @@ import Greenery from "../stage/Greenery.svelte";
 import GlobeSpinIcon from "../stage/GlobeSpinIcon.svelte";
 import SearchBar from "./SearchBar.svelte";
 import SearchDropdown from "./SearchDropdown.svelte";
+import LessonHand from "../stage/LessonHand.svelte";
 import MiddleDividerRaw from "../assets/svg/search/poly/Search_page_Middle_Divider.svg?raw";
 
 import skyUrl from "../assets/golden_sky_background.webp";
@@ -59,7 +60,12 @@ const listItems = $derived(activeTab === "orgs" ? orgs : projects);
 const noun = $derived(activeTab === "orgs" ? "organizations" : "projects");
 
 const LIST_ID = "home-search-list";
+let bar = $state<SearchBar | null>(null);
 let list = $state<SearchDropdown | null>(null);
+let tabsEl = $state<HTMLElement | null>(null);
+// The lesson lights the other tab without navigating; null is the page's own.
+let litOverride = $state<number | null>(null);
+const litTab = $derived(litOverride ?? (activeTab === "orgs" ? 0 : 1));
 let activeDescendant = $state<string | undefined>(undefined);
 
 function submit(q: string) {
@@ -95,6 +101,23 @@ const PHOTOS = import.meta.glob<string>(
 const localPhotos = (svg: string) => withLocalPhotos(svg, PHOTOS, "home/poly");
 
 let heroEl = $state<HTMLElement | null>(null);
+
+const lessonDoors = {
+	tabs: () => (tabsEl ? [...tabsEl.querySelectorAll<HTMLElement>(".tab-sticker")] : []),
+	litTab: () => litTab,
+	setLitTab: (i: number | null) => (litOverride = i),
+	input: () => searchWrapEl?.querySelector<HTMLElement>(".search-input") ?? null,
+	row: (i: number) => (list ? document.getElementById(list.rowId(i)) : null),
+	globe: () => heroEl?.querySelector<HTMLElement>(".globe-icon") ?? null,
+	typeIn: (text: string, ms: number) => bar?.typeIn(text, ms) ?? Promise.resolve(),
+	clear: () => bar?.clear(),
+	highlight: (i: number) => void list?.highlight(i),
+};
+const lessonFacts = () => ({
+	focusWithin: !!searchWrapEl?.contains(document.activeElement),
+	dropdownOpen,
+	pageReady: listItems.length > 0,
+});
 
 const dividerId = shardId(shard(26));
 
@@ -140,27 +163,28 @@ $effect(() => {
 		</Greenery>
 
 		<div class="search-card">
-			<nav class="tabs" aria-label="Search by">
+			<nav class="tabs" aria-label="Search by" bind:this={tabsEl}>
 				<a
 					href={routes.who ?? null}
 					class="tab-sticker"
-					aria-current={activeTab === "orgs" ? "page" : undefined}
+					aria-current={litTab === 0 ? "page" : undefined}
 				>
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html activeTab === "orgs" ? OrgsSelectedRaw : OrgsUnselectedRaw}
+					{@html litTab === 0 ? OrgsSelectedRaw : OrgsUnselectedRaw}
 				</a>
 				<a
 					href={routes.what ?? null}
 					class="tab-sticker"
-					aria-current={activeTab === "projects" ? "page" : undefined}
+					aria-current={litTab === 1 ? "page" : undefined}
 				>
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html activeTab === "projects" ? ProjectsSelectedRaw : ProjectsUnselectedRaw}
+					{@html litTab === 1 ? ProjectsSelectedRaw : ProjectsUnselectedRaw}
 				</a>
 			</nav>
 
 			<div class="search-bar-wrap" bind:this={searchWrapEl}>
 				<SearchBar
+					bind:this={bar}
 					bind:value={query}
 					bind:dropdownOpen
 					placeholder="Search {noun}…"
@@ -205,6 +229,8 @@ $effect(() => {
 			{@html localPhotos(MiddleDividerRaw)}
 		</div>
 	</div>
+
+	<LessonHand name="search" facts={lessonFacts} search={lessonDoors} />
 
 	<section class="headline-section">
 		<div class="headline-greenery" aria-hidden="true"></div>

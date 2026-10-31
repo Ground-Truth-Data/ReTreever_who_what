@@ -54,7 +54,9 @@ utility at the root:
   `tallyMath.ts` the running sums the tally beside them counts.
 - `stage/` — scenery both pages share: the curtains, the greenery (the crest
   and grass band every hero ends in, with its tufts), the globe icon, the
-  shard id register the why page and the divider still use.
+  shard id register the why page and the divider still use, and the teaching
+  hand's lessons (`lessons.svelte.ts` decides when one plays, `LessonHand.svelte`
+  plays it with rapper's `$gc/TeachingHand.svelte`).
 - `guards/` — the portability tests described below.
 - `assets/` — every piece of art the child imports; `svg/search` and
   `svg/rating` hold the designer's cut SVGs.

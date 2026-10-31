@@ -91,6 +91,24 @@ function pick(table: WeedsTableName) {
 	window.scrollTo({ top, behavior: instant ? "instant" : "smooth" });
 }
 
+/** The lesson's pick: resolves once the smooth scroll has landed, or given up. */
+export function lessonPick(table: WeedsTableName): Promise<void> {
+	pick(table);
+	return new Promise((resolve) => {
+		const poll = () => (landing && performance.now() < landing.until ? requestAnimationFrame(poll) : resolve());
+		poll();
+	});
+}
+
+export function litTable(): WeedsTableName {
+	return active;
+}
+
+/** The page y at which the stage pins under the nav. */
+export function stagePin(): number | null {
+	return trackEl ? pinTop(trackEl) : null;
+}
+
 // Progress 0 is where the stage pins, so index 0 lands exactly under the nav
 // and the last index is the point the stage unpins.
 function pinTop(track: HTMLElement) {

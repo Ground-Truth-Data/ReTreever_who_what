@@ -112,6 +112,13 @@ function stepDone() {
 	scheduleBlink();
 }
 
+/** One idle blink now, when the dog stands settled and nothing is mid-play. */
+export function nudge(): void {
+	if (!standing || !settled || blink || !manifest) return;
+	clearTimeout(blinkTimer);
+	blink = idleBlinkFor(dogState, manifest.clips);
+}
+
 onDestroy(() => clearTimeout(blinkTimer));
 </script>
 
