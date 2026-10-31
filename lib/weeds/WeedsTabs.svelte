@@ -13,7 +13,6 @@ import StakeholdersSelectedRaw from "../assets/svg/rating/Rating_page_stakeholde
 import StakeholdersUnselectedRaw from "../assets/svg/rating/Rating_page_stakeholders_unselected.svg?raw";
 import SourcesSelectedRaw from "../assets/svg/rating/Rating_page_sources_Selected.svg?raw";
 import SourcesUnselectedRaw from "../assets/svg/rating/Rating_page_sources_unselected.svg?raw";
-import clumpsUrl from "../assets/pub-Rtvr/rating/weeds-clumps.webp";
 import { WEEDS_TABLES, type WeedsTable } from "../whoWhatTypes";
 
 let {
@@ -78,12 +77,7 @@ $effect(() => {
 });
 </script>
 
-<div class="strip-frame" style="--art-clumps: url({clumpsUrl});">
-	<div class="clumps" aria-hidden="true">
-		<span class="clump a"></span>
-		<span class="clump b"></span>
-		<span class="clump c"></span>
-	</div>
+<div class="strip-frame">
 	<div class="strip" role="tablist" aria-label="The weeds" bind:this={stripEl}>
 		{#each WEEDS_TABLES as t (t)}
 			{@const s = STICKERS[t]}
@@ -116,54 +110,6 @@ $effect(() => {
 	.strip-frame {
 		position: relative;
 		width: 100%;
-	}
-
-	/* Three clumps peek over the strip's top edge, cropped from one sheet (1400×1049). */
-	.clumps {
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: calc(100% - var(--tab-h) * 0.35);
-		height: calc(var(--tab-h) * 1.6);
-		pointer-events: none;
-		z-index: 0;
-		overflow: hidden;
-	}
-
-	/* One sheet pixel is --tab-h / 150, so a 300px clump stands two tabs tall. */
-	.clump {
-		position: absolute;
-		bottom: 0;
-		background-image: var(--art-clumps, var(--rtvr-missing-art));
-		background-repeat: no-repeat;
-		background-size: calc(var(--tab-h) * 1400 / 150) auto;
-		width: calc(var(--tab-h) * var(--cw) / 150);
-		height: calc(var(--tab-h) * var(--ch) / 150);
-		background-position: calc(var(--tab-h) * var(--cx) / -150) calc(var(--tab-h) * var(--cy) / -150);
-	}
-
-	.clump.a {
-		--cx: 120;
-		--cy: 320;
-		--cw: 300;
-		--ch: 315;
-		left: 4%;
-	}
-
-	.clump.b {
-		--cx: 690;
-		--cy: 60;
-		--cw: 440;
-		--ch: 275;
-		left: 42%;
-	}
-
-	.clump.c {
-		--cx: 950;
-		--cy: 305;
-		--cw: 360;
-		--ch: 330;
-		right: 3%;
 	}
 
 	.strip {
