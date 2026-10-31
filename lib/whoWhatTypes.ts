@@ -36,6 +36,21 @@ export type WeedsAnswer = {
 	more: boolean;
 };
 
+/** How a stored score adds up, from the host's `/score` route: the seven tables in `WEEDS_TABLES` order, then an org's mean and claims. */
+export type ScoreTally = {
+	kind: "project" | "org";
+	/** False → every number below is null and no tally is drawn. */
+	scored: boolean;
+	/** 0–100 to one decimal, the hero's number. */
+	rating: number | null;
+	/** The stored totals, never recomputed. */
+	pointsScored: number | null;
+	pointsAvailable: number | null;
+	tables: { table: WeedsTable; awarded: number; available: number }[];
+	/** An org's step from the tables to its number; `projects` 0 means the score was not broken down. */
+	org?: { projects: number; mean: number | null; claimed: number | null; planted: number | null; undisclosed: number | null };
+};
+
 /** The host's API surface; an absent endpoint skips the fetch. */
 export type WhoWhatEndpoints = {
 	organizations?: string;
@@ -46,6 +61,8 @@ export type WhoWhatEndpoints = {
 	searchHits?: string;
 	/** One weeds table of a record. Absent → the weeds section does not render. */
 	weeds?: (tab: "orgs" | "projects", key: string, table: WeedsTable) => string;
+	/** How a record's score adds up. Absent → no tally beside the weeds. */
+	score?: (tab: "orgs" | "projects", key: string) => string;
 	/** Where the frame clips (the dog, the page animations) and their clips.json are served from. Absent → no clip plays. */
 	clipRoot?: string;
 };

@@ -16,19 +16,23 @@ function glyphUrl(ch: string): string | undefined {
 }
 
 let {
-	rating,
+	rating = undefined,
+	text = undefined,
 	settled = true,
 }: {
-	rating: number;
+	rating?: number;
+	/** Digits and at most one period, drawn as given; wins over `rating` and is the label. */
+	text?: string;
 	/** False holds the period back; it fades in when this flips. The label carries the full score throughout. */
 	settled?: boolean;
 } = $props();
 
-const text = $derived(rating.toFixed(1));
-const chars = $derived(text.split(""));
+const shown = $derived(text ?? (rating ?? 0).toFixed(1));
+const chars = $derived(shown.split("").filter((ch) => ch === "." || (ch >= "0" && ch <= "9")));
+const label = $derived(text ?? formatTransparencyScore(rating));
 </script>
 
-<span class="rating-number" class:unsettled={!settled} role="img" aria-label={formatTransparencyScore(rating)}>
+<span class="rating-number" class:unsettled={!settled} role="img" aria-label={label}>
 	{#each chars as ch, i (i)}
 		<img class="glyph" class:period={ch === "."} src={glyphUrl(ch)} alt="" draggable="false" />
 	{/each}
@@ -38,11 +42,11 @@ const chars = $derived(text.split(""));
 	.rating-number {
 		display: inline-flex;
 		align-items: flex-end;
-		/* Glyph height is the one knob; widths follow each glyph's own columns. */
-		--glyph-h: clamp(96px, 14vw, 210px);
-		height: var(--glyph-h);
+		/* Glyph height is the one knob, set by whoever mounts it; widths follow each glyph's own columns. */
+		--size: var(--glyph-h, clamp(96px, 14vw, 210px));
+		height: var(--size);
 		/* The strokes are hand-drawn with air around them; pull the glyphs together. */
-		gap: calc(var(--glyph-h) * -0.06);
+		gap: calc(var(--size) * -0.06);
 		filter:
 			drop-shadow(2px 3px 2px rgb(12 8 1 / 0.45))
 			drop-shadow(8px 12px 16px rgb(12 8 1 / 0.3));
