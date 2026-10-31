@@ -160,7 +160,11 @@ const stateLine = $derived.by(() => {
 
 <div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl});">
 	<section class="rating-hero" bind:this={heroEl}>
-		<Greenery ridge />
+		<Greenery ridge>
+			<div class="dog-column">
+				<DogStage rating={record?.rating ?? null} {armed} {clipRoot} onstanding={() => (dogStanding = true)} />
+			</div>
+		</Greenery>
 		<div class="hero-top">
 			<div class="header-sticker" aria-hidden="true">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -228,9 +232,6 @@ const stateLine = $derived.by(() => {
 					{/if}
 				{/if}
 			</div>
-			<div class="dog-column">
-				<DogStage rating={record?.rating ?? null} {armed} {clipRoot} onstanding={() => (dogStanding = true)} />
-			</div>
 		</div>
 	</section>
 
@@ -280,6 +281,8 @@ const stateLine = $derived.by(() => {
 		--art: min(100vw, 1200px);
 		--greenery-h: clamp(170px, calc(var(--art) * 0.3), 36vh);
 		--upper-band: calc(var(--greenery-h) * 0.87);
+		--stage-w: clamp(200px, 34vw, 480px);
+		--stage-h: calc(var(--stage-w) * 900 / 940);
 		position: relative;
 		width: 100%;
 		box-sizing: border-box;
@@ -517,11 +520,15 @@ const stateLine = $derived.by(() => {
 		}
 	}
 
+	/* The dog sits in the grass band, between its green wash and the tufts, so
+	   the paws and the planted sapling stand in the grass. Its paws are 65.5%
+	   down the stage; they land 72% down the band. */
 	.dog-column {
-		display: grid;
-		justify-items: center;
-		align-items: end;
-		min-width: 0;
+		position: absolute;
+		right: clamp(12px, 8vw, 140px);
+		bottom: calc(var(--upper-band) * 0.72 - var(--stage-h) * 0.655);
+		width: var(--stage-w);
+		z-index: 2;
 	}
 
 	.soil-band {
@@ -602,6 +609,12 @@ const stateLine = $derived.by(() => {
 		.state-line {
 			align-self: center;
 		}
+	}
 
+	/* One column: the number sits above the dog's head, which rises over the crest. */
+	@media (max-width: 720px) {
+		.rating-hero {
+			padding-bottom: calc(var(--upper-band) * 0.72 + var(--stage-h) * 0.61 + 12px);
+		}
 	}
 </style>

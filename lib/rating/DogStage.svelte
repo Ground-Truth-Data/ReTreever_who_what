@@ -4,7 +4,7 @@
 // clipRoot; absent, the stage stays empty — the number never waits on a clip.
 import { onDestroy } from "svelte";
 import FrameClipPlayer from "$gc/FrameClipPlayer.svelte";
-import { loadClips, type ClipManifest } from "$gc/frameClips";
+import { frameUrl, loadClips, type ClipManifest } from "$gc/frameClips";
 import { entranceFor, idleBlinkFor, reactionFor, standingFor, type DogStep } from "./dogReaction";
 import { ratingState } from "./ratingState";
 
@@ -27,6 +27,9 @@ let steps = $state<DogStep[]>([]);
 let at = $state(0);
 let blink = $state<string | null>(null);
 let standing = $state(false);
+// The entrance ends with the sapling set down beside the dog; no other clip
+// draws it, so its patch of the entrance's last frame stays on stage underneath.
+let planted = $state(false);
 // The last step has played out: a remount after a blink shows its final frame, not a replay.
 let settled = $state(false);
 let reacted = false;
@@ -34,6 +37,11 @@ let blinkTimer: ReturnType<typeof setTimeout> | undefined;
 
 const dogState = $derived(ratingState(rating));
 const current = $derived(blink ? { clip: blink, loop: false } : steps[at]);
+const ENTRANCE = "dog-entrance";
+const saplingSrc = $derived.by(() => {
+	const facts = manifest?.clips[ENTRANCE];
+	return clipRoot && facts ? frameUrl(clipRoot, ENTRANCE, facts, facts.frameCount) : null;
+});
 
 function stand(clips: Record<string, unknown> = {}) {
 	steps = standingFor(clips);
@@ -96,6 +104,7 @@ function stepDone() {
 		return;
 	}
 	if (!standing) {
+		planted = steps[at]?.clip === ENTRANCE;
 		stand(manifest?.clips);
 		return;
 	}
@@ -107,6 +116,9 @@ onDestroy(() => clearTimeout(blinkTimer));
 </script>
 
 <div class="dog-stage" aria-hidden="true">
+	{#if planted && saplingSrc}
+		<img class="sapling" src={saplingSrc} alt="" draggable="false" />
+	{/if}
 	{#if manifest && clipRoot && current}
 		{#key `${current.clip}:${at}:${blink}`}
 			<FrameClipPlayer
@@ -133,13 +145,20 @@ onDestroy(() => clearTimeout(blinkTimer));
 		--win-w: 940;
 		--win-h: 900;
 		position: relative;
-		width: min(30rem, 80vw);
+		width: 100%;
 		aspect-ratio: 940 / 900;
 		overflow: hidden;
 		pointer-events: none;
 	}
 
-	.dog-stage :global(.frame-clip) {
+	/* The sapling's box in the shared frame: x 1484-1610, y 885-1285 of 2732x2048.
+	   It sits under the player, so a paw that reaches it draws over it. */
+	.sapling {
+		clip-path: inset(43.2% 41.1% 37.3% 54.3%);
+	}
+
+	.dog-stage :global(.frame-clip),
+	.sapling {
 		position: absolute;
 		width: calc(100% * 2732 / var(--win-w)) !important;
 		max-width: none;
