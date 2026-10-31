@@ -46,6 +46,8 @@ export type ScoreTally = {
 	/** The stored totals, never recomputed. */
 	pointsScored: number | null;
 	pointsAvailable: number | null;
+	/** Trees the record has published: a project's planting rows summed, an org's stored sum. Null when unknown. */
+	planted: number | null;
 	tables: { table: WeedsTable; awarded: number; available: number }[];
 	/** An org's step from the tables to its number; `projects` 0 means the score was not broken down. */
 	org?: { projects: number; mean: number | null; claimed: number | null; planted: number | null; undisclosed: number | null };

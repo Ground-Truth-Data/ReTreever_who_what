@@ -18,6 +18,7 @@ import DogStage from "./DogStage.svelte";
 import GlobeSpinIcon from "../stage/GlobeSpinIcon.svelte";
 import Greenery from "../stage/Greenery.svelte";
 import RatingNumber from "./RatingNumber.svelte";
+import TreesPlanted from "./TreesPlanted.svelte";
 import SearchBar from "../search/SearchBar.svelte";
 import SearchDropdown from "../search/SearchDropdown.svelte";
 import WeedsSection from "../weeds/WeedsSection.svelte";
@@ -279,6 +280,7 @@ const stateLine = $derived.by(() => {
 							<RatingNumber rating={record.rating} settled={periodIn} />
 						</div>
 					{/if}
+					<TreesPlanted value={tally?.planted} {revealed} />
 				{/if}
 			</div>
 		</div>
