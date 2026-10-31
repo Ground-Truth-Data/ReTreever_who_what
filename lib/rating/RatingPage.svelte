@@ -105,11 +105,12 @@ $effect(() => {
 	};
 });
 
-// The follower rides in a track laid over the page from its top to the
-// lockup's foot, so sticky pins it under the nav and the browser releases it
-// at "Dig in deeper". The track's height is the one measured thing; the
-// follower shows once the real number has gone under the nav, and turns
-// light once its own top is past the hero's foot.
+// The follower rides in a track laid over the page from its top to just
+// above the lockup, so sticky pins it under the nav and the browser lets it
+// go before "Truth is in the weeds" arrives: the lockup and the tally take
+// over. The track's height is the one measured thing; the follower shows
+// once the real number has gone under the nav, and turns light once its own
+// top is past the crest of the hills, which is where the dark begins.
 let pageEl = $state<HTMLElement | null>(null);
 let bandEl = $state<HTMLElement | null>(null);
 let following = $state(false);
@@ -130,15 +131,17 @@ $effect(() => {
 	};
 	const read = () => {
 		raf = 0;
-		const head = band.getBoundingClientRect().bottom - page.getBoundingClientRect().top;
+		const body = page.querySelector(".follower .body")?.getBoundingClientRect().height ?? 0;
+		const head = band.getBoundingClientRect().top - page.getBoundingClientRect().top - body;
 		if (Math.abs(head - lastHead) >= 1) {
 			lastHead = head;
 			page.style.setProperty("--dig-head-h", `${Math.round(head)}px`);
 		}
 		const nav = navBottom();
 		following = shown && number !== null && number.getBoundingClientRect().bottom <= nav;
-		const followerTop = Math.min(nav + 12, band.getBoundingClientRect().bottom);
-		overSoil = followerTop >= soil.getBoundingClientRect().top;
+		const followerTop = Math.min(nav + 12, band.getBoundingClientRect().top - body);
+		const dark = page.querySelector(".crest") ?? soil;
+		overSoil = followerTop >= dark.getBoundingClientRect().top;
 	};
 	const onScroll = () => {
 		if (!raf) raf = requestAnimationFrame(read);
