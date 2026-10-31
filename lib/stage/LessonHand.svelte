@@ -105,6 +105,10 @@ export function cancel(): void {
 export async function play(): Promise<void> {
 	const h = hand;
 	if (!h || curtain.href !== null || reduced()) return;
+	// A reader who pressed the sticker has found it; the cue has nothing left to show this visit.
+	// Before begin(): the teardown cancels a cue in flight, and must not cancel this run.
+	disarm?.();
+	disarm = null;
 	const { mine, step, wait } = begin();
 	running = true;
 	unwatch = watchInput(window, CANCELS, cancel);
@@ -250,9 +254,14 @@ async function ratingLesson(h: TeachingHand, d: RatingDoors, step: Step, wait: W
 	await step(h.fadeOut());
 }
 
+let disarm: (() => void) | null = null;
 $effect(() => {
 	if (!hand) return;
-	return armLesson(name, { ready: () => !running && ready(), play: cue, cancel });
+	disarm = armLesson(name, { ready: () => !running && ready(), play: cue, cancel });
+	return () => {
+		disarm?.();
+		disarm = null;
+	};
 });
 
 // A wipe or a route change ends the lesson at once; the page under the hand is leaving.
