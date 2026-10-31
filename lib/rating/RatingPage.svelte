@@ -10,7 +10,7 @@ import DigInRaw from "../assets/svg/rating/Rating_page_Dig_in.svg?raw";
 import DeeperRaw from "../assets/svg/rating/Rating_page_deeper_period.svg?raw";
 import ShovelRaw from "../assets/svg/rating/Rating_page_shovel.svg?raw";
 import YellowLineRaw from "../assets/svg/rating/Rating_page_bottom_yellow_line.svg?raw";
-import rootsUrl from "../assets/svg/rating/Rating_page_roots.svg";
+import soilUrl from "../assets/pub-Rtvr/rating/soil-roots.webp";
 import skyUrl from "../assets/golden_sky_background.webp";
 import pineUrl from "../assets/pub-Rtvr/rating/poly/rp-pine.webp";
 import DogStage from "./DogStage.svelte";
@@ -159,7 +159,7 @@ const stateLine = $derived.by(() => {
 });
 </script>
 
-<div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl}); --art-roots: url({rootsUrl});">
+<div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl}); --art-soil: url({soilUrl});">
 	<section class="rating-hero" bind:this={heroEl}>
 		<Greenery ridge>
 			<div class="dog-column">
@@ -236,6 +236,7 @@ const stateLine = $derived.by(() => {
 		</div>
 	</section>
 
+	<div class="underground">
 	<section class="soil-band">
 		<div class="yellow-line" aria-hidden="true">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -263,6 +264,7 @@ const stateLine = $derived.by(() => {
 	{#if weedsHref}
 		<WeedsSection {tab} href={weedsHref} {clipRoot} {onopenproject} />
 	{/if}
+	</div>
 </div>
 
 <style>
@@ -532,18 +534,24 @@ const stateLine = $derived.by(() => {
 		z-index: 2;
 	}
 
-	/* Roots hang from the grass above and fade into the soil before the lockup;
-	   the strip tiles sideways at the band's height, so no root is cut at an edge. */
+	/* Below the grass the page is underground: soil, roots and stones run
+	   full-bleed under the lockup and the weeds. The tile is the art and its
+	   mirror side by side, so it repeats without a seam; a wash of the page's
+	   dark keeps the stickers and the tabs legible on it. */
+	.underground {
+		position: relative;
+		background:
+			linear-gradient(rgb(11 17 9 / 0.3), rgb(11 17 9 / 0.3)),
+			var(--art-soil) top center / clamp(1200px, 200%, 2600px) auto repeat,
+			#0b1109;
+	}
+
 	.soil-band {
 		position: relative;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		padding: clamp(28px, 5vh, 56px) var(--pad) clamp(18px, 3vh, 36px);
-		background:
-			linear-gradient(to bottom, rgb(11 17 9 / 0) 30%, #0b1109 95%),
-			var(--art-roots) top center / auto 100% repeat-x,
-			#0b1109;
 	}
 
 	.lockup {
