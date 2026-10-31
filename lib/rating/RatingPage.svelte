@@ -4,8 +4,6 @@ import OrgsSelectedRaw from "../assets/svg/rating/Rating_page_orgs_selected.svg?
 import OrgsUnselectedRaw from "../assets/svg/rating/Rating_page_orgs_unselected.svg?raw";
 import ProjectsSelectedRaw from "../assets/svg/rating/Rating_page_projects_Selected.svg?raw";
 import ProjectsUnselectedRaw from "../assets/svg/rating/Rating_page_projects_unselected.svg?raw";
-import PercentileBoxRaw from "../assets/svg/rating/Rating_page_percentile_box.svg?raw";
-import InfoButtonRaw from "../assets/svg/rating/Rating_page_info_button.svg?raw";
 import TruthIsInRaw from "../assets/svg/rating/Rating_page_Truth_is_in.svg?raw";
 import TheWeedsRaw from "../assets/svg/rating/Rating_page_the_weeds_dot_dot_dot.svg?raw";
 import DigInRaw from "../assets/svg/rating/Rating_page_Dig_in.svg?raw";
@@ -196,19 +194,6 @@ const stateLine = $derived.by(() => {
 						</div>
 					{/if}
 				{/if}
-				<div class="boxes">
-					{#if record && record.rank !== null}
-						<div class="box percentile" class:revealed>
-							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-							{@html PercentileBoxRaw}
-							<span class="box-value">{record.rank}</span>
-						</div>
-					{/if}
-					<a class="box info" href={routes.why ?? null} aria-label="How the rating works">
-						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-						{@html InfoButtonRaw}
-					</a>
-				</div>
 			</div>
 			<div class="dog-column">
 				<DogStage rating={record?.rating ?? null} {armed} {clipRoot} onstanding={() => (dogStanding = true)} />
@@ -426,8 +411,7 @@ const stateLine = $derived.by(() => {
 
 	/* In the DOM from the moment the record lands, shown once the dog stands:
 	   hidden keeps the layout, so the reveal rises in without a shift. */
-	.number,
-	.percentile {
+	.number {
 		opacity: 0;
 		visibility: hidden;
 		transform: translateY(8px);
@@ -437,8 +421,7 @@ const stateLine = $derived.by(() => {
 			visibility 0s linear 260ms;
 	}
 
-	.number.revealed,
-	.percentile.revealed {
+	.number.revealed {
 		opacity: 1;
 		visibility: visible;
 		transform: none;
@@ -446,55 +429,18 @@ const stateLine = $derived.by(() => {
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.number,
-		.percentile {
+		.number {
 			transform: none;
 		}
 	}
 
 	/* No script, no dog: a crawler or a reader without JS gets the number as the HTML carries it. */
 	@media (scripting: none) {
-		.number,
-		.percentile {
+		.number {
 			opacity: 1;
 			visibility: visible;
 			transform: none;
 		}
-	}
-
-	.boxes {
-		display: flex;
-		align-items: stretch;
-		gap: clamp(10px, 1.5vw, 20px);
-	}
-
-	.box {
-		position: relative;
-		display: block;
-		height: clamp(56px, 6.5vw, 92px);
-		filter: drop-shadow(2px 3px 6px rgb(12 8 1 / 0.4));
-	}
-
-	.box :global(svg) {
-		height: 100%;
-		width: auto;
-		display: block;
-	}
-
-	/* The sticker's label sits in its top third; the value fills the rest. */
-	.box-value {
-		position: absolute;
-		left: 0;
-		right: 0;
-		top: 38%;
-		bottom: 0;
-		display: grid;
-		place-items: center;
-		color: var(--rtvr-on-dark);
-		font-family: var(--rt-font-web);
-		font-weight: 700;
-		font-size: clamp(22px, 2.6vw, 38px);
-		pointer-events: none;
 	}
 
 	.dog-column {

@@ -60,8 +60,6 @@ export type WhoWhatRoutes = {
 	what?: string;
 	/** The map, from the search and rating pages' globe. */
 	whoMap?: string;
-	/** How the rating works; the rating page's info button. */
-	why?: string;
 	whoOrg?: (key: string) => string;
 	whatProject?: (key: string) => string;
 };
