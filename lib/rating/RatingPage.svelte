@@ -130,59 +130,61 @@ const stateLine = $derived.by(() => {
 
 <div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl});">
 	<section class="rating-hero">
-		<div class="bar-block">
-			<nav class="tabs" aria-label="Search by">
-				<a href={routes.who ?? null} class="tab-sticker" aria-current={tab === "orgs" ? "page" : undefined}>
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html tab === "orgs" ? OrgsSelectedRaw : OrgsUnselectedRaw}
-				</a>
-				<a href={routes.what ?? null} class="tab-sticker" aria-current={tab === "projects" ? "page" : undefined}>
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html tab === "projects" ? ProjectsSelectedRaw : ProjectsUnselectedRaw}
-				</a>
-			</nav>
-			<div class="bar-row">
-				<div class="bar" bind:this={barEl}>
-					<SearchBar
-						bind:value={query}
-						bind:dropdownOpen
-						id="rating-search"
-						placeholder="Search {noun}…"
-						ariaLabel="Search {noun}"
-						onsearch={submit}
-						{onactivate}
-						onkeynav={(dir) => list?.move(dir)}
-						listId={LIST_ID}
-						{activeDescendant}
-					/>
-					<SearchDropdown
-						bind:this={list}
-						bind:open={dropdownOpen}
-						bind:activeDescendant
-						{items}
-						query={query === record?.name ? "" : query}
-						{listLoading}
-						{noun}
-						listId={LIST_ID}
-						{hrefOf}
-						within={barEl}
-						{clipRoot}
-						onpick={pick}
-					/>
-					{#if notice}
-						<p class="search-notice" role="status" aria-live="polite">{notice}</p>
-					{/if}
+		<div class="hero-top">
+			<div class="header-sticker" aria-hidden="true">
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+				{@html HeaderRaw}
+			</div>
+			<div class="bar-block">
+				<nav class="tabs" aria-label="Search by">
+					<a href={routes.who ?? null} class="tab-sticker" aria-current={tab === "orgs" ? "page" : undefined}>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html tab === "orgs" ? OrgsSelectedRaw : OrgsUnselectedRaw}
+					</a>
+					<a href={routes.what ?? null} class="tab-sticker" aria-current={tab === "projects" ? "page" : undefined}>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html tab === "projects" ? ProjectsSelectedRaw : ProjectsUnselectedRaw}
+					</a>
+				</nav>
+				<div class="bar-row">
+					<div class="bar" bind:this={barEl}>
+						<SearchBar
+							bind:value={query}
+							bind:dropdownOpen
+							id="rating-search"
+							placeholder="Search {noun}…"
+							ariaLabel="Search {noun}"
+							onsearch={submit}
+							{onactivate}
+							onkeynav={(dir) => list?.move(dir)}
+							listId={LIST_ID}
+							{activeDescendant}
+						/>
+						<SearchDropdown
+							bind:this={list}
+							bind:open={dropdownOpen}
+							bind:activeDescendant
+							{items}
+							query={query === record?.name ? "" : query}
+							{listLoading}
+							{noun}
+							listId={LIST_ID}
+							{hrefOf}
+							within={barEl}
+							{clipRoot}
+							onpick={pick}
+						/>
+						{#if notice}
+							<p class="search-notice" role="status" aria-live="polite">{notice}</p>
+						{/if}
+					</div>
+					<GlobeSpinIcon class="globe-icon" href={routes.whoMap} />
 				</div>
-				<GlobeSpinIcon class="globe-icon" href={routes.whoMap} />
 			</div>
 		</div>
 
 		<div class="hero-grid">
 			<div class="score-column">
-				<div class="header-sticker" aria-hidden="true">
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html HeaderRaw}
-				</div>
 				{#if record}
 					<h1 class="name">
 						<span class="name-text">{record.name};</span>
@@ -244,11 +246,11 @@ const stateLine = $derived.by(() => {
 		width: 100%;
 		box-sizing: border-box;
 		min-height: calc(100vh - 5rem);
-		padding: clamp(64px, 12vh, 140px) var(--pad) clamp(32px, 5vh, 72px);
+		padding: clamp(20px, 4vh, 48px) var(--pad) clamp(32px, 5vh, 72px);
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: clamp(16px, 2.5vh, 32px);
+		gap: clamp(20px, 4vh, 48px);
 		background-color: #cc9f47;
 		background-image: var(--art-sky, var(--rtvr-missing-art));
 		background-size: cover;
@@ -268,15 +270,30 @@ const stateLine = $derived.by(() => {
 		z-index: 0;
 	}
 
+	/* The comp's top row: the header left, the bar block right, on one line so
+	   the score and the dog get the height below. Narrow, the bar drops under. */
+	.hero-top {
+		position: relative;
+		/* Above the hero grid (5): the open list hangs over the name and must take the click. */
+		z-index: 7;
+		width: 100%;
+		max-width: 1180px;
+		box-sizing: border-box;
+		padding-left: clamp(0px, 6vw, 96px);
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: clamp(12px, 2vh, 24px) clamp(16px, 3vw, 48px);
+	}
+
 	/* The search page's block: tabs tucked under the bar's top edge, the bar at
 	   the card's width, every size in the bar's own units so they track it. */
 	.bar-block {
 		--card-max: 576px;
 		--bar-scale: calc(min(100vw - 32px, var(--card-max)) / 284.70643);
 		position: relative;
-		/* Above the hero grid (5): the open list hangs over the header and must take the click. */
-		z-index: 7;
-		width: 100%;
+		flex: 1 1 320px;
 		max-width: var(--card-max);
 		display: flex;
 		flex-direction: column;
@@ -373,8 +390,12 @@ const stateLine = $derived.by(() => {
 		pointer-events: none;
 	}
 
+	.header-sticker {
+		flex: 0 0 auto;
+	}
+
 	.header-sticker :global(svg) {
-		height: clamp(56px, 9vw, 130px);
+		height: clamp(56px, 8vw, 118px);
 		width: auto;
 		display: block;
 		filter: drop-shadow(1px 2px 3px rgb(12 8 1 / 0.35));
