@@ -1,9 +1,12 @@
-// The lesson's rules: the budget (once a day, five days, blocked storage),
-// the ready checks, the stillness clock and the cancel on the first input.
+// @vitest-environment happy-dom
+// The cue's rules: the budget (once a day, five days, blocked storage), the
+// ready checks, the clock that only a decision restarts, the cancel, and the
+// help sticker's press that no watcher sees.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	armLesson,
 	budgetAllows,
+	CANCELS,
 	devHook,
 	isReady,
 	MAX_DAYS,
@@ -13,6 +16,7 @@ import {
 	STILL_MS,
 	storeKey,
 	today,
+	watchInput,
 	writeBudget,
 } from "./lessons.svelte";
 
@@ -93,7 +97,7 @@ describe("armLesson", () => {
 		return { deps, target, teardown, store };
 	}
 
-	it("plays once after six seconds still, spends the day first, and never twice in a page load", async () => {
+	it("plays the cue once after six seconds without a decision, spends the day first, and never twice in a page load", async () => {
 		const { deps, target, store } = arm();
 		vi.advanceTimersByTime(STILL_MS - 1);
 		expect(deps.play).not.toHaveBeenCalled();
@@ -106,14 +110,52 @@ describe("armLesson", () => {
 		expect(deps.play).toHaveBeenCalledOnce();
 	});
 
-	it("any input resets the clock; a pointer move under 8 px does not", () => {
+	it("a pointerdown restarts the clock; a pointermove, however far, does not", () => {
 		const { deps, target } = arm();
 		vi.advanceTimersByTime(STILL_MS - 500);
-		target.dispatchEvent(move(100, 100));
+		target.dispatchEvent(new Event("pointerdown"));
 		vi.advanceTimersByTime(STILL_MS - 500);
-		target.dispatchEvent(move(104, 104));
-		vi.advanceTimersByTime(600);
+		expect(deps.play).not.toHaveBeenCalled();
+		target.dispatchEvent(move(100, 100));
+		target.dispatchEvent(move(400, 300));
+		vi.advanceTimersByTime(500);
 		expect(deps.play).toHaveBeenCalledOnce();
+	});
+
+	it("a second landing the same day plays no cue", () => {
+		const store = memory();
+		const first = arm({}, store);
+		vi.advanceTimersByTime(STILL_MS);
+		expect(first.deps.play).toHaveBeenCalledOnce();
+		first.teardown();
+		const second = arm({}, store);
+		vi.advanceTimersByTime(STILL_MS * 3);
+		expect(second.deps.play).not.toHaveBeenCalled();
+		second.teardown();
+	});
+
+	it("the help sticker's own press reaches no watcher: neither the clock nor the cancel", () => {
+		const sticker = document.createElement("button");
+		sticker.className = "help-sticker";
+		const inner = document.createElement("span");
+		sticker.append(inner);
+		document.body.append(sticker);
+		const { deps } = arm({ target: window });
+		vi.advanceTimersByTime(STILL_MS - 500);
+		inner.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+		vi.advanceTimersByTime(500);
+		expect(deps.play).toHaveBeenCalledOnce();
+		inner.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+		inner.dispatchEvent(new Event("keydown", { bubbles: true }));
+		expect(deps.cancel).not.toHaveBeenCalled();
+		const seen = vi.fn();
+		const unwatch = watchInput(window, CANCELS, seen);
+		sticker.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+		expect(seen).not.toHaveBeenCalled();
+		document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+		expect(seen).toHaveBeenCalledOnce();
+		unwatch();
+		sticker.remove();
 	});
 
 	it("re-checks a busy page every two seconds and plays when it clears", () => {
@@ -126,10 +168,11 @@ describe("armLesson", () => {
 		expect(deps.play).toHaveBeenCalledOnce();
 	});
 
-	it("the first input during a lesson cancels it, but the lesson's own scroll does not", () => {
+	it("a decision during the cue cancels it; a scroll or a pointermove does not", () => {
 		const { deps, target } = arm();
 		vi.advanceTimersByTime(STILL_MS);
 		target.dispatchEvent(new Event("scroll"));
+		target.dispatchEvent(move(500, 500));
 		expect(deps.cancel).not.toHaveBeenCalled();
 		target.dispatchEvent(new Event("wheel"));
 		expect(deps.cancel).toHaveBeenCalledOnce();

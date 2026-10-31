@@ -11,6 +11,7 @@ import GlobeSpinIcon from "../stage/GlobeSpinIcon.svelte";
 import SearchBar from "./SearchBar.svelte";
 import SearchDropdown from "./SearchDropdown.svelte";
 import LessonHand from "../stage/LessonHand.svelte";
+import HelpSticker from "../stage/HelpSticker.svelte";
 import MiddleDividerRaw from "../assets/svg/search/poly/Search_page_Middle_Divider.svg?raw";
 
 import skyUrl from "../assets/golden_sky_background.webp";
@@ -101,6 +102,9 @@ const PHOTOS = import.meta.glob<string>(
 const localPhotos = (svg: string) => withLocalPhotos(svg, PHOTOS, "home/poly");
 
 let heroEl = $state<HTMLElement | null>(null);
+let lessonHand = $state<LessonHand | null>(null);
+const lessonPlaying = $derived(lessonHand?.playing() ?? false);
+const pressHelp = () => (lessonPlaying ? lessonHand?.cancel() : void lessonHand?.play());
 
 const lessonDoors = {
 	tabs: () => (tabsEl ? [...tabsEl.querySelectorAll<HTMLElement>(".tab-sticker")] : []),
@@ -219,6 +223,7 @@ $effect(() => {
 			<div class="caption-row">
 				<p class="search-caption">Search transparency rating</p>
 				<GlobeSpinIcon class="globe-icon" href={mapHref ?? routes.whoMap} />
+				<HelpSticker playing={lessonPlaying} onpress={pressHelp} />
 			</div>
 		</div>
 	</section>
@@ -230,7 +235,7 @@ $effect(() => {
 		</div>
 	</div>
 
-	<LessonHand name="search" facts={lessonFacts} search={lessonDoors} />
+	<LessonHand bind:this={lessonHand} name="search" facts={lessonFacts} search={lessonDoors} />
 
 	<section class="headline-section">
 		<div class="headline-greenery" aria-hidden="true"></div>
@@ -468,6 +473,11 @@ $effect(() => {
 			drop-shadow(9px 12px 18px rgb(12 8 1 / 0.38));
 	}
 
+	/* As tall as the globe: its width on the sprite's 213:160 frame. */
+	.caption-row :global(.help-sticker) {
+		height: calc(74 * var(--bar-scale) * 160 / 213);
+	}
+
 	/* Wider than the viewport so both jagged ends are cut by the page edge. */
 	.middle-divider {
 		position: relative;
@@ -529,6 +539,10 @@ $effect(() => {
 
 		.caption-row :global(.globe-icon) {
 			width: max(40px, calc(44.5 * var(--bar-scale)));
+		}
+
+		.caption-row :global(.help-sticker) {
+			height: calc(max(40px, calc(44.5 * var(--bar-scale))) * 160 / 213);
 		}
 	}
 </style>

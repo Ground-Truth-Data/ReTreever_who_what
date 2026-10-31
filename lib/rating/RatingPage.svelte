@@ -16,6 +16,7 @@ import skyUrl from "../assets/golden_sky_background.webp";
 import pineUrl from "../assets/pub-Rtvr/rating/poly/rp-pine.webp";
 import DogStage from "./DogStage.svelte";
 import LessonHand from "../stage/LessonHand.svelte";
+import HelpSticker from "../stage/HelpSticker.svelte";
 import NumberFollower from "./NumberFollower.svelte";
 import GlobeSpinIcon from "../stage/GlobeSpinIcon.svelte";
 import Greenery from "../stage/Greenery.svelte";
@@ -250,6 +251,9 @@ $effect(() => {
 
 let dog = $state<DogStage | null>(null);
 let weeds = $state<WeedsSection | null>(null);
+let lessonHand = $state<LessonHand | null>(null);
+const lessonPlaying = $derived(lessonHand?.playing() ?? false);
+const pressHelp = () => (lessonPlaying ? lessonHand?.cancel() : void lessonHand?.play());
 const lessonDoors = {
 	scored: () => record?.rating !== null,
 	number: () => numberEl,
@@ -341,6 +345,7 @@ const stateLine = $derived.by(() => {
 						{/if}
 					</div>
 					<GlobeSpinIcon class="globe-icon" href={routes.whoMap} />
+					<HelpSticker playing={lessonPlaying} onpress={pressHelp} />
 				</div>
 			</div>
 		</div>
@@ -395,7 +400,7 @@ const stateLine = $derived.by(() => {
 		{/if}
 	{/if}
 	</div>
-	<LessonHand name="rating" facts={lessonFacts} rating={lessonDoors} />
+	<LessonHand bind:this={lessonHand} name="rating" facts={lessonFacts} rating={lessonDoors} />
 </div>
 
 <style>
@@ -524,7 +529,7 @@ const stateLine = $derived.by(() => {
 		z-index: 1;
 		width: 100%;
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
+		grid-template-columns: minmax(0, 1fr) auto auto;
 		align-items: center;
 		gap: calc(10 * var(--bar-scale));
 	}
@@ -553,6 +558,11 @@ const stateLine = $derived.by(() => {
 	.bar-row :global(.globe-icon) {
 		width: calc(30 * var(--bar-scale));
 		flex-shrink: 0;
+	}
+
+	/* As tall as the globe: its width on the sprite's 213:160 frame. */
+	.bar-row :global(.help-sticker) {
+		height: calc(30 * var(--bar-scale) * 160 / 213);
 	}
 
 	.hero-grid {

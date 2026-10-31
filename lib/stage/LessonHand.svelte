@@ -1,13 +1,14 @@
 <script lang="ts">
-// The teaching hand on a who/what page: mounted on <body>, armed by the
-// scheduler, playing one of two wordless lessons. The hand is never a control
-// and draws nothing but itself; every target is measured at the step it is
-// reached, so a shift mid-lesson lands the fingertip where the element is now.
+// The teaching hand on a who/what page: mounted on <body>, playing one of two
+// wordless lessons when the help sticker is pressed, and the two-second cue
+// that taps the sticker when a stranger sits still. The hand is never a
+// control and draws nothing but itself; every target is measured at the step
+// it is reached, so a shift mid-lesson lands the fingertip where the element is now.
 import TeachingHand from "$gc/TeachingHand.svelte";
 import { handPortal } from "$gc/handPortal";
 import { WEEDS_TABLES } from "../whoWhatTypes";
 import { curtain } from "./curtain.svelte";
-import { armLesson, isReady, watchInput, type LessonName, type RatingDoors, type ReadyFacts, type SearchDoors } from "./lessons.svelte";
+import { armLesson, CANCELS, isReady, watchInput, type LessonName, type RatingDoors, type ReadyFacts, type SearchDoors } from "./lessons.svelte";
 
 let {
 	name,
@@ -24,12 +25,22 @@ let {
 
 let hand = $state<TeachingHand | null>(null);
 let run = 0;
-let running = false;
+// The hand is mid-cue or mid-lesson; `running` is the lesson alone, the sticker's pressed state.
+let active = false;
+let running = $state(false);
 let unwatch: (() => void) | null = null;
 let restore: (() => void) | null = null;
 
 const STOP = Symbol("lesson cancelled");
 type Point = [number, number];
+type Step = <T>(p: Promise<T> | T) => Promise<T>;
+type Wait = (ms: number) => Promise<void>;
+
+export function playing(): boolean {
+	return running;
+}
+
+const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // A target's fingertip point, or null when it is not on screen: such a step is skipped, never scrolled to.
 function at(el: HTMLElement | null | undefined, fx: number, fy: number): Point | null {
@@ -41,15 +52,41 @@ function at(el: HTMLElement | null | undefined, fx: number, fy: number): Point |
 
 function ready(): boolean {
 	return isReady({
-		reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
+		reducedMotion: reduced(),
 		curtainHref: curtain.href,
 		visibility: document.visibilityState,
 		...facts(),
 	});
 }
 
-function cancel(): void {
-	if (!running) return;
+// Every await checks the run is still this one; a cancel in between throws STOP out of the script.
+function begin(): { mine: number; step: Step; wait: Wait } {
+	cancel();
+	const mine = ++run;
+	active = true;
+	async function step<T>(p: Promise<T> | T): Promise<T> {
+		const v = await p;
+		if (run !== mine) throw STOP;
+		return v;
+	}
+	const wait = (ms: number) => step(new Promise<void>((r) => setTimeout(r, ms)));
+	return { mine, step, wait };
+}
+
+function end(h: TeachingHand, mine: number): void {
+	if (run !== mine) return;
+	h.cancel();
+	active = false;
+	running = false;
+	unwatch?.();
+	unwatch = null;
+	restore?.();
+	restore = null;
+}
+
+export function cancel(): void {
+	if (!active) return;
+	active = false;
 	running = false;
 	const mine = ++run;
 	unwatch?.();
@@ -64,39 +101,40 @@ function cancel(): void {
 	});
 }
 
-async function play(): Promise<void> {
+/** The page's full lesson, as often as the sticker is pressed; no budget. */
+export async function play(): Promise<void> {
 	const h = hand;
-	if (!h) return;
-	cancel();
-	const mine = ++run;
+	if (!h || curtain.href !== null || reduced()) return;
+	const { mine, step, wait } = begin();
 	running = true;
-	unwatch = watchInput(window, (e) => {
-		if (e.type !== "scroll") cancel();
-	});
-	async function step<T>(p: Promise<T> | T): Promise<T> {
-		const v = await p;
-		if (run !== mine) throw STOP;
-		return v;
-	}
-	const wait = (ms: number) => step(new Promise<void>((r) => setTimeout(r, ms)));
+	unwatch = watchInput(window, CANCELS, cancel);
 	try {
 		if (name === "search" && search) await searchLesson(h, search, step, wait);
 		else if (name === "rating" && rating) await ratingLesson(h, rating, step, wait);
-		if (run === mine) {
-			h.cancel();
-			running = false;
-			unwatch?.();
-			unwatch = null;
-			restore?.();
-			restore = null;
-		}
+		end(h, mine);
 	} catch (e) {
 		if (e !== STOP) throw e;
 	}
 }
 
-type Step = <T>(p: Promise<T> | T) => Promise<T>;
-type Wait = (ms: number) => Promise<void>;
+// The hand rises from below the sticker, taps it once and goes: "help lives here".
+async function cue(): Promise<void> {
+	const h = hand;
+	const sticker = at(document.querySelector<HTMLElement>(".help-sticker"), 0.5, 0.5);
+	if (!h || !sticker) return;
+	const { mine, step, wait } = begin();
+	try {
+		h.place(sticker[0], innerHeight + 60);
+		await step(h.fadeIn());
+		await step(h.moveTo(sticker[0], sticker[1], { curve: 24, duration: 0.9 }));
+		await step(h.tap());
+		await wait(400);
+		await step(h.fadeOut());
+		end(h, mine);
+	} catch (e) {
+		if (e !== STOP) throw e;
+	}
+}
 
 async function searchLesson(h: TeachingHand, d: SearchDoors, step: Step, wait: Wait) {
 	restore = () => {
@@ -214,7 +252,7 @@ async function ratingLesson(h: TeachingHand, d: RatingDoors, step: Step, wait: W
 
 $effect(() => {
 	if (!hand) return;
-	return armLesson(name, { ready, play, cancel });
+	return armLesson(name, { ready: () => !running && ready(), play: cue, cancel });
 });
 
 // A wipe or a route change ends the lesson at once; the page under the hand is leaving.

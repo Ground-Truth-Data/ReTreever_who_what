@@ -1,6 +1,7 @@
 // When the teaching hand plays on a who/what page: after the reader sits
-// still, within a budget of days, while the page is ready; and the cancel
-// that the first input brings. The hand and the scripts are LessonHand's.
+// still, within a budget of days, while the page is ready, the cue that
+// points at the help sticker; and the cancel the first decision brings.
+// The hand, the cue and the lessons are LessonHand's.
 import type { WeedsTable } from "../whoWhatTypes";
 
 export type LessonName = "search" | "rating";
@@ -9,7 +10,6 @@ export type LessonStore = { days: string[] };
 export const STILL_MS = 6000;
 export const RECHECK_MS = 2000;
 export const MAX_DAYS = 5;
-export const MOVE_PX = 8;
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 
@@ -86,34 +86,30 @@ export function isReady(f: ReadyFacts): boolean {
 	return !f.reducedMotion && f.curtainHref === null && f.visibility === "visible" && !f.focusWithin && !f.dropdownOpen && f.pageReady;
 }
 
-const INPUTS = ["pointerdown", "pointermove", "wheel", "touchstart", "keydown", "scroll"] as const;
+/** A decision: what restarts the clock. A pointermove is a reader looking, not deciding. */
+export const DECISIONS = ["pointerdown", "touchstart", "keydown", "wheel", "scroll"] as const;
+/** What cancels the hand mid-play; a scroll stays out because the rating lesson scrolls itself. */
+export const CANCELS = ["pointerdown", "touchstart", "keydown", "wheel"] as const;
 
-/** Every input that counts as the reader moving; a pointermove only past MOVE_PX since the last. */
-export function watchInput(target: EventTarget, onInput: (e: Event) => void): () => void {
-	let lastX = Number.NaN;
-	let lastY = Number.NaN;
+/** The listed inputs on `target`, except one aimed at the help sticker: that press is the sticker's own. */
+export function watchInput(target: EventTarget, types: readonly string[], onInput: (e: Event) => void): () => void {
 	const handle = (e: Event) => {
-		if (e.type === "pointermove") {
-			const { clientX, clientY } = e as PointerEvent;
-			const moved = Number.isNaN(lastX) || Math.hypot(clientX - lastX, clientY - lastY) >= MOVE_PX;
-			lastX = clientX;
-			lastY = clientY;
-			if (!moved) return;
-		}
+		const el = e.target as { closest?: (s: string) => unknown } | null;
+		if (typeof el?.closest === "function" && el.closest(".help-sticker")) return;
 		onInput(e);
 	};
 	// The page's own scroll does not bubble up from elements, so the window's is the reader's.
-	for (const type of INPUTS) target.addEventListener(type, handle, { passive: true, capture: type !== "scroll" });
+	for (const type of types) target.addEventListener(type, handle, { passive: true, capture: type !== "scroll" });
 	return () => {
-		for (const type of INPUTS) target.removeEventListener(type, handle, { capture: type !== "scroll" });
+		for (const type of types) target.removeEventListener(type, handle, { capture: type !== "scroll" });
 	};
 }
 
 export type LessonDeps = {
 	ready: () => boolean;
-	/** Plays the lesson; resolves when it ends on its own. */
+	/** Plays the cue; resolves when it ends on its own. */
 	play: () => Promise<void>;
-	/** Stops the hand and restores the page. */
+	/** Stops the hand. */
 	cancel: () => void;
 	target?: EventTarget;
 	store?: StorageLike | null;
@@ -121,9 +117,9 @@ export type LessonDeps = {
 };
 
 /**
- * Arms one lesson on a page: plays once per page load after STILL_MS of no
- * input, when the budget and the page allow. A lesson's own scroll is not
- * the reader's, so during play only a pointer, wheel, touch or key cancels.
+ * Arms the cue on a page: plays once per page load after STILL_MS without a
+ * decision, when the budget and the page allow. The budget is the cue's;
+ * the sticker's lesson never touches it.
  */
 export function armLesson(name: LessonName, deps: LessonDeps): () => void {
 	const target = deps.target ?? window;
@@ -172,9 +168,9 @@ export function armLesson(name: LessonName, deps: LessonDeps): () => void {
 		playing = false;
 		deps.cancel();
 	};
-	const unwatch = watchInput(target, (e) => {
+	const unwatch = watchInput(target, DECISIONS, (e) => {
 		if (playing) {
-			if (e.type !== "scroll") stop();
+			if ((CANCELS as readonly string[]).includes(e.type)) stop();
 			return;
 		}
 		restart();
