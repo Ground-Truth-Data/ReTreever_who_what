@@ -161,7 +161,7 @@ const stateLine = $derived.by(() => {
 
 <div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl}); --art-soil: url({soilUrl});">
 	<section class="rating-hero" bind:this={heroEl}>
-		<Greenery ridge>
+		<Greenery>
 			<div class="dog-column">
 				<DogStage rating={record?.rating ?? null} {armed} {clipRoot} onstanding={() => (dogStanding = true)} />
 			</div>
