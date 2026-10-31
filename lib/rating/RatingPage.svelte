@@ -195,8 +195,9 @@ $effect(() => {
 	if (record) query = record.name;
 });
 
-// The number waits for the dog to stand, lands big over the hero and settles
-// into place, then its period lands; the dog turns half a beat after that.
+// The number waits for the dog to stand, then the dog brings it: it is born
+// small at the dog's mouth, lobs across to its place growing to full size, and
+// its period lands; the dog turns half a beat after that.
 let dogStanding = $state(false);
 let armed = $state(false);
 let revealed = $state(false);
@@ -204,21 +205,32 @@ let periodIn = $state(false);
 let heroEl = $state<HTMLElement | null>(null);
 let numberEl = $state<HTMLElement | null>(null);
 
-const LAND_SCALE = 2.1;
-const SETTLE_MS = 420;
+// The mouth, as a fraction of the dog stage: the point the lesson hand taps.
+const MOUTH_X = 0.42;
+const MOUTH_Y = 0.5;
 
-// The offsets that put the scaled number's centre on the hero's centre. The
-// translate runs before the scale in the number's own units, so the screen
-// distance is divided by the scale. Measured at the reveal, when the glyph
-// images have their widths.
+// The screen offset from the number's centre to the dog's mouth, or to the
+// hero's centre when there is no dog on stage. Measured at the reveal, when
+// the glyph images have their widths; the lob keyframe reads it.
 function aimLanding() {
-	if (!heroEl || !numberEl) return;
-	const h = heroEl.getBoundingClientRect();
+	if (!numberEl) return;
+	const stage = pageEl?.querySelector<HTMLElement>(".dog-stage");
+	const from = stage ?? heroEl;
+	if (!from) return;
+	const f = from.getBoundingClientRect();
+	const fx = f.left + f.width * (stage ? MOUTH_X : 0.5);
+	const fy = f.top + f.height * (stage ? MOUTH_Y : 0.5);
 	const n = numberEl.getBoundingClientRect();
-	const dx = h.left + h.width / 2 - (n.left + n.width / 2);
-	const dy = h.top + h.height / 2 - (n.top + n.height / 2);
-	numberEl.style.setProperty("--land-x", `${dx / LAND_SCALE}px`);
-	numberEl.style.setProperty("--land-y", `${dy / LAND_SCALE}px`);
+	numberEl.style.setProperty("--lob-x", `${fx - (n.left + n.width / 2)}px`);
+	numberEl.style.setProperty("--lob-y", `${fy - (n.top + n.height / 2)}px`);
+}
+
+// The period lands when the lob has: the keyframe's duration, which reduced
+// motion sets to zero.
+function lobMs(): number {
+	if (!numberEl) return 0;
+	const d = getComputedStyle(numberEl).animationDuration;
+	return d.endsWith("ms") ? parseFloat(d) : parseFloat(d) * 1000;
 }
 
 // Two frames after both are true: when the record lands last, the number mounts
@@ -238,7 +250,7 @@ $effect(() => {
 	if (!revealed) return;
 	const settle = setTimeout(() => {
 		periodIn = true;
-	}, SETTLE_MS);
+	}, lobMs() || 260);
 	return () => clearTimeout(settle);
 });
 $effect(() => {
@@ -649,25 +661,50 @@ const stateLine = $derived.by(() => {
 		transition-delay: 0s;
 	}
 
-	/* Lands at twice its size over the hero's centre and settles into place;
-	   the offsets are set inline at the reveal. Reduced motion keeps the fade. */
+	/* Born at the dog's mouth at a fraction of its size, it crosses to its place
+	   growing to full size while the glyphs hop in an arc on the way; the
+	   offsets are set inline at the reveal. Reduced motion keeps the fade. */
+	.number {
+		--from: var(--lob-from, 0.4);
+		--rise: var(--lob-rise, 110px);
+		--ms: var(--lob-ms, 600ms);
+	}
+
 	@media (prefers-reduced-motion: no-preference) {
 		.number.revealed {
-			animation: land 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+			animation: lob var(--ms) cubic-bezier(0.2, 0.7, 0.2, 1) both;
+		}
+
+		.number.revealed :global(.rating-number) {
+			animation: hop var(--ms) both;
 		}
 	}
 
-	@keyframes land {
+	@keyframes lob {
 		from {
 			opacity: 0;
-			transform: scale(2.1) translate(var(--land-x, 0px), var(--land-y, 0px));
+			transform: translate(var(--lob-x, 0px), var(--lob-y, 0px)) scale(var(--from));
 		}
-		28.6% {
+		12% {
 			opacity: 1;
 		}
 		to {
 			opacity: 1;
 			transform: none;
+		}
+	}
+
+	@keyframes hop {
+		from {
+			transform: translateY(0);
+			animation-timing-function: ease-out;
+		}
+		45% {
+			transform: translateY(calc(-1 * var(--rise)));
+			animation-timing-function: ease-in;
+		}
+		to {
+			transform: translateY(0);
 		}
 	}
 
