@@ -160,7 +160,7 @@ const stateLine = $derived.by(() => {
 
 <div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl});">
 	<section class="rating-hero" bind:this={heroEl}>
-		<Greenery />
+		<Greenery ridge />
 		<div class="hero-top">
 			<div class="header-sticker" aria-hidden="true">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->

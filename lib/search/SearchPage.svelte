@@ -451,7 +451,7 @@ $effect(() => {
 		aspect-ratio: 1254.0259 / 94.484817;
 		overflow: visible;
 		z-index: 3;
-		background: #171d31;
+		background: var(--rtvr-ink, #171d31);
 	}
 
 	/* The divider is shard 26; its gold outline inherits from here. */
