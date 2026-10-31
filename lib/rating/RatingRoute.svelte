@@ -38,6 +38,8 @@ $effect(() => {
 	);
 });
 
+// The host's endpoints are fixed for the page's life; the dog reads its root once.
+// svelte-ignore state_referenced_locally
 setStageClipRoot(endpoints.stageClipRoot);
 
 // The top bar searches again from the rating page; the list warms up in idle time.
