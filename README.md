@@ -48,7 +48,8 @@ utility at the root:
 - `search/` — the `/who` and `/what` page: route, page, bar, dropdown, the
   lists and the URL resolver, the grass.
 - `rating/` — one org or project: route, page, the number, the state (the one
-  place the four states are drawn), the loader, the dog.
+  place the four states are drawn), the loader, the dog, the number's follower
+  that rides the scroll to the weeds, the trees-planted sticker.
 - `weeds/` — the tables under the rating hero; `weedsScroll.ts` is the scroll → tab map,
   `tallyMath.ts` the running sums the tally beside them counts.
 - `stage/` — scenery both pages share: the curtains, the greenery (the crest

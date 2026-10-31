@@ -15,6 +15,7 @@ import soilDeepUrl from "../assets/pub-Rtvr/rating/soil-deep.webp";
 import skyUrl from "../assets/golden_sky_background.webp";
 import pineUrl from "../assets/pub-Rtvr/rating/poly/rp-pine.webp";
 import DogStage from "./DogStage.svelte";
+import NumberFollower from "./NumberFollower.svelte";
 import GlobeSpinIcon from "../stage/GlobeSpinIcon.svelte";
 import Greenery from "../stage/Greenery.svelte";
 import RatingNumber from "./RatingNumber.svelte";
@@ -98,6 +99,54 @@ $effect(() => {
 	window.addEventListener("resize", onScroll);
 	return () => {
 		io.disconnect();
+		window.removeEventListener("scroll", onScroll);
+		window.removeEventListener("resize", onScroll);
+		if (raf) cancelAnimationFrame(raf);
+	};
+});
+
+// The follower rides in a track laid over the page from its top to the
+// lockup's foot, so sticky pins it under the nav and the browser releases it
+// at "Dig in deeper". The track's height is the one measured thing; the
+// follower shows once the real number has gone under the nav, and turns
+// light once its own top is past the hero's foot.
+let pageEl = $state<HTMLElement | null>(null);
+let bandEl = $state<HTMLElement | null>(null);
+let following = $state(false);
+let overSoil = $state(false);
+$effect(() => {
+	const page = pageEl;
+	const band = bandEl;
+	const soil = undergroundEl;
+	const number = numberEl;
+	const shown = revealed;
+	if (!page || !band || !soil) return;
+	let raf = 0;
+	let lastHead = -1;
+	const navBottom = () => {
+		const root = getComputedStyle(document.documentElement);
+		const chrome = parseFloat(root.getPropertyValue("--host-chrome"));
+		return Number.isFinite(chrome) ? chrome : 5 * parseFloat(root.fontSize);
+	};
+	const read = () => {
+		raf = 0;
+		const head = band.getBoundingClientRect().bottom - page.getBoundingClientRect().top;
+		if (Math.abs(head - lastHead) >= 1) {
+			lastHead = head;
+			page.style.setProperty("--dig-head-h", `${Math.round(head)}px`);
+		}
+		const nav = navBottom();
+		following = shown && number !== null && number.getBoundingClientRect().bottom <= nav;
+		const followerTop = Math.min(nav + 12, band.getBoundingClientRect().bottom);
+		overSoil = followerTop >= soil.getBoundingClientRect().top;
+	};
+	const onScroll = () => {
+		if (!raf) raf = requestAnimationFrame(read);
+	};
+	onScroll();
+	window.addEventListener("scroll", onScroll, { passive: true });
+	window.addEventListener("resize", onScroll);
+	return () => {
 		window.removeEventListener("scroll", onScroll);
 		window.removeEventListener("resize", onScroll);
 		if (raf) cancelAnimationFrame(raf);
@@ -208,7 +257,12 @@ const stateLine = $derived.by(() => {
 });
 </script>
 
-<div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl}); --art-soil: url({soilUrl}); --art-soil-deep: url({soilDeepUrl});">
+<div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl}); --art-soil: url({soilUrl}); --art-soil-deep: url({soilDeepUrl});" bind:this={pageEl}>
+	{#if record && record.rating !== null}
+		<div class="dig-head">
+			<NumberFollower rating={record.rating} name={record.name} {stateLine} on={following} {overSoil} {numberEl} />
+		</div>
+	{/if}
 	<section class="rating-hero" bind:this={heroEl}>
 		<Greenery>
 			<div class="dog-column">
@@ -287,7 +341,7 @@ const stateLine = $derived.by(() => {
 	</section>
 
 	<div class="underground" class:has-tally={tally !== null} bind:this={undergroundEl}>
-	<section class="soil-band">
+	<section class="soil-band" bind:this={bandEl}>
 		<div class="lockup" aria-hidden="true">
 			<div class="lockup-row">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -333,6 +387,17 @@ const stateLine = $derived.by(() => {
 		width: 100%;
 		background: #0b1109;
 		overflow-x: clip;
+	}
+
+	/* The follower's track: from the page's top to the lockup's foot, measured
+	   on every scroll read. No box of its own. */
+	.dig-head {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: var(--dig-head-h, 0px);
+		pointer-events: none;
 	}
 
 	/* The foot is the search hero's crest and grass, lower here so the dog and
