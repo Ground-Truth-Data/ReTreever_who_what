@@ -270,6 +270,11 @@ const stateLine = $derived.by(() => {
 <style>
 	.rating-page {
 		--pad: clamp(16px, 3vw, 40px);
+		--art: min(100vw, 1200px);
+		--greenery-h: clamp(170px, calc(var(--art) * 0.3), 36vh);
+		--upper-band: calc(var(--greenery-h) * 0.87);
+		/* The soil runs this far up under the grass, and the grass bases fade into it. */
+		--soil-overlap: calc(var(--upper-band) * 0.22);
 		position: relative;
 		min-height: calc(100vh - 5rem);
 		width: 100%;
@@ -281,9 +286,6 @@ const stateLine = $derived.by(() => {
 	   the number stand on the crest; the bottom padding is what keeps them off
 	   the grass. Capped at 900px or a tall monitor opens sky between them. */
 	.rating-hero {
-		--art: min(100vw, 1200px);
-		--greenery-h: clamp(170px, calc(var(--art) * 0.3), 36vh);
-		--upper-band: calc(var(--greenery-h) * 0.87);
 		--stage-w: clamp(200px, 34vw, 480px);
 		--stage-h: calc(var(--stage-w) * 900 / 940);
 		position: relative;
@@ -300,6 +302,9 @@ const stateLine = $derived.by(() => {
 		background-size: cover;
 		background-position: center top;
 		isolation: isolate;
+		z-index: 1;
+		-webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - var(--soil-overlap)), transparent);
+		mask-image: linear-gradient(to bottom, #000 calc(100% - var(--soil-overlap)), transparent);
 	}
 
 	/* The comp's sky carries the pine pattern faintly behind everything. */
@@ -540,6 +545,8 @@ const stateLine = $derived.by(() => {
 	   dark keeps the stickers and the tabs legible on it. */
 	.underground {
 		position: relative;
+		margin-top: calc(var(--soil-overlap) * -1);
+		padding-top: var(--soil-overlap);
 		background:
 			linear-gradient(rgb(11 17 9 / 0.3), rgb(11 17 9 / 0.3)),
 			var(--art-soil) top center / clamp(1200px, 200%, 2600px) auto repeat,
