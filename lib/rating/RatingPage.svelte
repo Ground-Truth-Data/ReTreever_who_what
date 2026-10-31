@@ -11,6 +11,7 @@ import DeeperRaw from "../assets/svg/rating/Rating_page_deeper_period.svg?raw";
 import ShovelRaw from "../assets/svg/rating/Rating_page_shovel.svg?raw";
 import YellowLineRaw from "../assets/svg/rating/Rating_page_bottom_yellow_line.svg?raw";
 import soilUrl from "../assets/pub-Rtvr/rating/soil-roots.webp";
+import soilDeepUrl from "../assets/pub-Rtvr/rating/soil-deep.webp";
 import skyUrl from "../assets/golden_sky_background.webp";
 import pineUrl from "../assets/pub-Rtvr/rating/poly/rp-pine.webp";
 import DogStage from "./DogStage.svelte";
@@ -206,7 +207,7 @@ const stateLine = $derived.by(() => {
 });
 </script>
 
-<div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl}); --art-soil: url({soilUrl});">
+<div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl}); --art-soil: url({soilUrl}); --art-soil-deep: url({soilDeepUrl});">
 	<section class="rating-hero" bind:this={heroEl}>
 		<Greenery>
 			<div class="dog-column">
@@ -593,13 +594,19 @@ const stateLine = $derived.by(() => {
 	   full-bleed under the lockup and the weeds. The tile is the art and its
 	   mirror side by side, so it repeats without a seam; a wash of the page's
 	   dark keeps the stickers and the tabs legible on it. */
+	/* The surface with its root tips is drawn once, at the top. Below it a
+	   deep tile takes over whose first row is the row the surface tile ends
+	   on, and which holds the deep soil and its vertical mirror, so every join
+	   down the dig is a reflection and the surface never repeats. */
 	.underground {
+		--soil-w: clamp(1200px, 200vw, 2600px);
 		position: relative;
 		margin-top: calc(var(--soil-overlap) * -1);
 		padding-top: var(--soil-overlap);
 		background:
 			linear-gradient(rgb(11 17 9 / 0.3), rgb(11 17 9 / 0.3)),
-			var(--art-soil) top center / clamp(1200px, 200%, 2600px) auto repeat,
+			var(--art-soil) top center / var(--soil-w) auto repeat-x,
+			var(--art-soil-deep) center calc(var(--soil-w) * 712 / 1972) / var(--soil-w) auto repeat,
 			#0b1109;
 	}
 
