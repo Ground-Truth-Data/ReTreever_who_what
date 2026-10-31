@@ -1,3 +1,13 @@
+<script lang="ts" module>
+import { createContext } from "svelte";
+
+// The rating route lends the phone's frames to the dog without the page between them carrying them.
+export const [getStageClipRoot, setStageClipRoot, hasStageClipRoot] = createContext<string | undefined>();
+
+// A server render carries the record in its HTML, so on the document's first page it landed with that.
+let pageSeen = false;
+</script>
+
 <script lang="ts">
 // The dog walks on and stands watching; once the number is up it turns in the
 // score's state, settles, then blinks now and then. Clips come from the host's
@@ -35,12 +45,26 @@ let settled = $state(false);
 let reacted = false;
 let blinkTimer: ReturnType<typeof setTimeout> | undefined;
 
+// Below 768px the stage paints at most ~600 device px: the window alone, sized for it.
+const PHONE = "(max-width: 767px)";
+const stageClipRoot = hasStageClipRoot() ? getStageClipRoot() : undefined;
+let root = $state<string | undefined>(undefined);
+const cropped = $derived(!!root && root === stageClipRoot);
+
+// The number waits for the dog at most this long after the record lands, so a
+// slow phone sees the score while the dog is still on its way. Unthrottled
+// desktop stands at ~3.7 s, inside it.
+const NUMBER_BUDGET_MS = 4000;
+const firstPage = typeof window !== "undefined" && !pageSeen;
+if (typeof window !== "undefined") pageSeen = true;
+let landedAt: number | null = null;
+
 const dogState = $derived(ratingState(rating));
 const current = $derived(blink ? { clip: blink, loop: false } : steps[at]);
 const ENTRANCE = "dog-entrance";
 const saplingSrc = $derived.by(() => {
 	const facts = manifest?.clips[ENTRANCE];
-	return clipRoot && facts ? frameUrl(clipRoot, ENTRANCE, facts, facts.frameCount) : null;
+	return root && facts ? frameUrl(root, ENTRANCE, facts, facts.frameCount) : null;
 });
 
 function stand(clips: Record<string, unknown> = {}) {
@@ -55,8 +79,10 @@ $effect(() => {
 		stand();
 		return;
 	}
+	const from = stageClipRoot && matchMedia(PHONE).matches ? stageClipRoot : clipRoot;
+	root = from;
 	let live = true;
-	loadClips(clipRoot).then(
+	loadClips(from).then(
 		(m) => {
 			if (!live) return;
 			manifest = m;
@@ -71,6 +97,16 @@ $effect(() => {
 	return () => {
 		live = false;
 	};
+});
+
+$effect(() => {
+	if (rating === null || standing) return;
+	if (landedAt === null) {
+		const doc = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+		landedAt = firstPage && doc?.name === location.href ? doc.responseEnd : performance.now();
+	}
+	const wait = setTimeout(() => onstanding?.(), Math.max(0, landedAt + NUMBER_BUDGET_MS - performance.now()));
+	return () => clearTimeout(wait);
 });
 
 $effect(() => {
@@ -122,14 +158,26 @@ export function nudge(): void {
 onDestroy(() => clearTimeout(blinkTimer));
 </script>
 
-<div class="dog-stage" aria-hidden="true">
+<svelte:head>
+	{#if clipRoot}
+		<!-- The manifest leaves with the HTML, so the frames start the moment the script runs. -->
+		{#if stageClipRoot}
+			<link rel="preload" href="{stageClipRoot}/clips.json" as="fetch" crossorigin="anonymous" media={PHONE} />
+			<link rel="preload" href="{clipRoot}/clips.json" as="fetch" crossorigin="anonymous" media="(min-width: 768px)" />
+		{:else}
+			<link rel="preload" href="{clipRoot}/clips.json" as="fetch" crossorigin="anonymous" />
+		{/if}
+	{/if}
+</svelte:head>
+
+<div class="dog-stage" class:cropped aria-hidden="true">
 	{#if planted && saplingSrc}
 		<img class="sapling" src={saplingSrc} alt="" draggable="false" />
 	{/if}
-	{#if manifest && clipRoot && current}
+	{#if manifest && root && current}
 		{#key `${current.clip}:${at}:${blink}`}
 			<FrameClipPlayer
-				root={clipRoot}
+				{root}
 				clip={current.clip}
 				facts={manifest.clips[current.clip]}
 				loop={current.loop}
@@ -171,5 +219,18 @@ onDestroy(() => clearTimeout(blinkTimer));
 		max-width: none;
 		left: calc(-100% * var(--win-x) / var(--win-w));
 		top: calc(-100% * var(--win-y) / var(--win-h));
+	}
+
+	/* The phone's frames are that window already, cut by import-rtvr-assets.py --stage-crops. */
+	.dog-stage.cropped :global(.frame-clip),
+	.cropped .sapling {
+		width: 100% !important;
+		left: 0;
+		top: 0;
+	}
+
+	/* The sapling's box again, in the window's own coordinates. */
+	.cropped .sapling {
+		clip-path: inset(51.7% 28.7% 3.9% 57.9%);
 	}
 </style>

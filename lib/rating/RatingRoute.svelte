@@ -2,6 +2,7 @@
 import type { ScoreTally, WeedsTable, WhoWhatEndpoints, WhoWhatRoutes } from "../whoWhatTypes";
 import type { SearchResult } from "./resultLoad";
 import RatingPage from "./RatingPage.svelte";
+import { setStageClipRoot } from "./DogStage.svelte";
 import { loadOrgList, loadProjectList, recordSearchHit } from "../search/searchLists";
 import { resolveSearchKey } from "../search/searchResolve";
 import type { SearchListItem } from "../search/searchTypes";
@@ -37,6 +38,8 @@ $effect(() => {
 	);
 });
 
+setStageClipRoot(endpoints.stageClipRoot);
+
 // The top bar searches again from the rating page; the list warms up in idle time.
 let items = $state<SearchListItem[]>([]);
 let loaded = false;
@@ -52,6 +55,12 @@ async function activate() {
 	} finally {
 		listLoading = false;
 	}
+}
+
+// Reaching for the bar is when a pick, and its wipe, becomes likely; idle time here belongs to the dog.
+function reach() {
+	curtain.warm();
+	void activate();
 }
 
 function pickItem(item: SearchListItem, go: boolean) {
@@ -140,7 +149,7 @@ function search(q: string) {
 		clipRoot={endpoints.clipRoot}
 		onsearch={search}
 		onpick={pickItem}
-		onactivate={activate}
+		onactivate={reach}
 		{weedsHref}
 		{tally}
 		onopenproject={tab === "orgs" ? openProject : undefined}

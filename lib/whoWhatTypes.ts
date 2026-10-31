@@ -67,6 +67,8 @@ export type WhoWhatEndpoints = {
 	score?: (tab: "orgs" | "projects", key: string) => string;
 	/** Where the frame clips (the dog, the page animations) and their clips.json are served from. Absent → no clip plays. */
 	clipRoot?: string;
+	/** The dog's clips cut to its stage window and sized for a phone, with their own clips.json. Absent → phones crop clipRoot's frames. */
+	stageClipRoot?: string;
 };
 
 // The host's `error`: a standalone child has no @sveltejs/kit to import it from.
