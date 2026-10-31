@@ -238,10 +238,6 @@ const stateLine = $derived.by(() => {
 
 	<div class="underground">
 	<section class="soil-band">
-		<div class="yellow-line" aria-hidden="true">
-			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-			{@html YellowLineRaw}
-		</div>
 		<div class="lockup" aria-hidden="true">
 			<div class="lockup-row">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -250,6 +246,10 @@ const stateLine = $derived.by(() => {
 				<div class="sticker shovel">{@html ShovelRaw}</div>
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 				<div class="sticker weeds">{@html TheWeedsRaw}</div>
+			</div>
+			<div class="yellow-line">
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+				{@html YellowLineRaw}
 			</div>
 			<div class="lockup-row second">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -579,16 +579,22 @@ const stateLine = $derived.by(() => {
 		filter: drop-shadow(1px 2px 4px rgb(12 8 1 / 0.45));
 	}
 
+	/* The shovel reaches down across the line into the second row. */
+	.sticker.shovel {
+		position: relative;
+		z-index: 1;
+	}
+
 	.sticker.shovel :global(svg) {
 		height: calc(var(--lockup-h) * 2.3);
 		margin-bottom: calc(var(--lockup-h) * -1.1);
 	}
 
+	/* Full-bleed between the two rows, as the reference draws it. */
 	.yellow-line {
-		position: absolute;
-		left: 0;
-		right: 0;
-		top: 0;
+		position: relative;
+		width: 100vw;
+		margin: calc(var(--lockup-h) * -0.12) 0 calc(var(--lockup-h) * -0.1);
 	}
 
 	.yellow-line :global(svg) {
