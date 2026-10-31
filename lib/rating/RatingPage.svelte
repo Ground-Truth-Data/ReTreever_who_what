@@ -551,7 +551,7 @@ const stateLine = $derived.by(() => {
 	}
 
 	.sticker :global(svg) {
-		--lockup-h: clamp(40px, 5.5vw, 78px);
+		--lockup-h: clamp(30px, 5.5vw, 78px);
 		height: var(--lockup-h);
 		width: auto;
 		display: block;
