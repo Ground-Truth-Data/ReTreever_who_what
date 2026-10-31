@@ -135,11 +135,23 @@ $effect(() => {
 	};
 });
 
-// The first tab fills itself once the hero has painted, like the dropdown lists.
+// The first tab fills itself once the hero has painted, like the dropdown
+// lists; then the rest follow in strip order, one in flight at a time, so the
+// rows are there before the scroll lights a tab. The lit tab's own load in
+// select() runs beside the queue, so it never waits its turn.
+let live = true;
+async function fillTheRest() {
+	for (const table of WEEDS_TABLES) {
+		if (!live) return;
+		if (!answers[table] && !failed[table]) await load(table);
+	}
+}
 $effect(() => {
-	const idle = window.requestIdleCallback?.(() => load("projects"), { timeout: 2000 });
-	const timer = idle === undefined ? setTimeout(() => load("projects"), 200) : undefined;
+	const start = () => void load("projects").then(fillTheRest);
+	const idle = window.requestIdleCallback?.(start, { timeout: 2000 });
+	const timer = idle === undefined ? setTimeout(start, 200) : undefined;
 	return () => {
+		live = false;
 		if (idle !== undefined) window.cancelIdleCallback?.(idle);
 		if (timer) clearTimeout(timer);
 	};
