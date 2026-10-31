@@ -14,6 +14,7 @@ import soilUrl from "../assets/pub-Rtvr/rating/soil-roots.webp";
 import soilDeepUrl from "../assets/pub-Rtvr/rating/soil-deep.webp";
 import skyUrl from "../assets/golden_sky_background.webp";
 import pineUrl from "../assets/pub-Rtvr/rating/poly/rp-pine.webp";
+import pinePhoneUrl from "../assets/pub-Rtvr/rating/poly/rp-pine-1366.webp";
 import DogStage from "./DogStage.svelte";
 import LessonHand from "../stage/LessonHand.svelte";
 import HelpSticker from "../stage/HelpSticker.svelte";
@@ -296,7 +297,7 @@ const stateLine = $derived.by(() => {
 });
 </script>
 
-<div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl}); --art-soil: url({soilUrl}); --art-soil-deep: url({soilDeepUrl});" bind:this={pageEl}>
+<div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl}); --art-pine-phone: url({pinePhoneUrl}); --art-soil: url({soilUrl}); --art-soil-deep: url({soilDeepUrl});" bind:this={pageEl}>
 	{#if record && record.rating !== null}
 		<div class="dig-head">
 			<NumberFollower rating={record.rating} name={record.name} {stateLine} on={following} {overSoil} {numberEl} />
@@ -838,6 +839,13 @@ const stateLine = $derived.by(() => {
 
 		.state-line {
 			align-self: center;
+		}
+	}
+
+	/* At 5% opacity the faint pine needs no more than a 1x tile on a phone. */
+	@media (max-width: 767px) {
+		.rating-hero::before {
+			background-image: var(--art-pine-phone, var(--art-pine));
 		}
 	}
 

@@ -17,6 +17,7 @@ import MiddleDividerRaw from "../assets/svg/search/poly/Search_page_Middle_Divid
 import skyUrl from "../assets/golden_sky_background.webp";
 import hillFillWebp from "../assets/pub-Rtvr/home/hill_fill.webp";
 import hillFillAvif from "../assets/pub-Rtvr/home/hill_fill.avif";
+import hillFillPhone from "../assets/pub-Rtvr/home/hill_fill-1290.avif";
 import { shard, shardId } from "../stage/shardIndex";
 import { withLocalPhotos } from "../stage/svgPhotos";
 import type { WhoWhatRoutes } from "../whoWhatTypes";
@@ -160,7 +161,7 @@ $effect(() => {
 </script>
 
 <!-- Missing asset falls through to --rtvr-missing-art. -->
-<div class="home-search-page" style="--art-sky: url({skyUrl}); --art-hill-fill-webp: url({hillFillWebp}); --art-hill-fill-avif: url({hillFillAvif});">
+<div class="home-search-page" style="--art-sky: url({skyUrl}); --art-hill-fill-webp: url({hillFillWebp}); --art-hill-fill-avif: url({hillFillAvif}); --art-hill-fill-phone: url({hillFillPhone});">
 	<section class="hero-section" bind:this={heroEl}>
 		<Greenery>
 			<GrassMascot ground="grass" />
@@ -528,6 +529,16 @@ $effect(() => {
 
 		.caption-row {
 			gap: 10px;
+		}
+	}
+
+	/* A phone gets art sized for 430px at 3x; old Safari keeps the plain WebP line above. */
+	@media (max-width: 480px) {
+		.headline-greenery {
+			background-image: image-set(
+				var(--art-hill-fill-phone, var(--rtvr-missing-art)) type("image/avif"),
+				var(--art-hill-fill-webp, var(--rtvr-missing-art)) type("image/webp")
+			);
 		}
 	}
 

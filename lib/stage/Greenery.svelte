@@ -14,6 +14,9 @@ import upperGrassFrontWebp from "../assets/pub-Rtvr/home/uppergrass_front.webp";
 import upperGrassFrontAvif from "../assets/pub-Rtvr/home/uppergrass_front.avif";
 import upperGrassBackWebp from "../assets/pub-Rtvr/home/uppergrass_back.webp";
 import upperGrassBackAvif from "../assets/pub-Rtvr/home/uppergrass_back.avif";
+import hillPatternPhone from "../assets/hill_pattern-1290.avif";
+import upperGrassFrontPhone from "../assets/pub-Rtvr/home/uppergrass_front-1290.avif";
+import upperGrassBackPhone from "../assets/pub-Rtvr/home/uppergrass_back-1290.avif";
 
 let { children, ridge = false }: { children?: Snippet; ridge?: boolean } = $props();
 </script>
@@ -22,7 +25,7 @@ let { children, ridge = false }: { children?: Snippet; ridge?: boolean } = $prop
 <div
 	class="greenery"
 	aria-hidden="true"
-	style="--art-hill-pattern-webp: url({hillPatternWebp}); --art-hill-pattern-avif: url({hillPatternAvif}); --art-uppergrass-front-webp: url({upperGrassFrontWebp}); --art-uppergrass-front-avif: url({upperGrassFrontAvif}); --art-uppergrass-back-webp: url({upperGrassBackWebp}); --art-uppergrass-back-avif: url({upperGrassBackAvif});"
+	style="--art-hill-pattern-webp: url({hillPatternWebp}); --art-hill-pattern-avif: url({hillPatternAvif}); --art-uppergrass-front-webp: url({upperGrassFrontWebp}); --art-uppergrass-front-avif: url({upperGrassFrontAvif}); --art-uppergrass-back-webp: url({upperGrassBackWebp}); --art-uppergrass-back-avif: url({upperGrassBackAvif}); --art-hill-pattern-phone: url({hillPatternPhone}); --art-uppergrass-front-phone: url({upperGrassFrontPhone}); --art-uppergrass-back-phone: url({upperGrassBackPhone});"
 >
 	{#if ridge}
 		<div class="ridge">
@@ -164,5 +167,29 @@ let { children, ridge = false }: { children?: Snippet; ridge?: boolean } = $prop
 			var(--art-uppergrass-back-avif, var(--rtvr-missing-art)) type("image/avif"),
 			var(--art-uppergrass-back-webp, var(--rtvr-missing-art)) type("image/webp")
 		);
+	}
+
+	/* A phone gets art sized for 430px at 3x; old Safari keeps the plain WebP lines above. */
+	@media (max-width: 480px) {
+		.crest {
+			background-image: image-set(
+				var(--art-hill-pattern-phone, var(--rtvr-missing-art)) type("image/avif"),
+				var(--art-hill-pattern-webp, var(--rtvr-missing-art)) type("image/webp")
+			);
+		}
+
+		.wildflower-band::before {
+			background-image: image-set(
+				var(--art-uppergrass-front-phone, var(--rtvr-missing-art)) type("image/avif"),
+				var(--art-uppergrass-front-webp, var(--rtvr-missing-art)) type("image/webp")
+			);
+		}
+
+		.wildflower-band::after {
+			background-image: image-set(
+				var(--art-uppergrass-back-phone, var(--rtvr-missing-art)) type("image/avif"),
+				var(--art-uppergrass-back-webp, var(--rtvr-missing-art)) type("image/webp")
+			);
+		}
 	}
 </style>
