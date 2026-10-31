@@ -39,7 +39,7 @@ const chars = $derived(text.split(""));
 		display: inline-flex;
 		align-items: flex-end;
 		/* Glyph height is the one knob; widths follow each glyph's own columns. */
-		--glyph-h: clamp(96px, 18vw, 260px);
+		--glyph-h: clamp(96px, 14vw, 210px);
 		height: var(--glyph-h);
 		/* The strokes are hand-drawn with air around them; pull the glyphs together. */
 		gap: calc(var(--glyph-h) * -0.06);
