@@ -76,7 +76,8 @@ function handleSubmit(event: SubmitEvent) {
 }
 </script>
 
-<!-- form= wires the foreignObject controls explicitly; DOM ancestry doesn't cross the SVG boundary. -->
+<!-- form= wires the foreignObject controls explicitly; DOM ancestry doesn't cross the SVG boundary.
+     Each foreignObject is the phone's 44px hit box; wider screens draw the control inside it at the art's size. -->
 <form
 	{id}
 	class={cn("search-bar", className)}
@@ -132,7 +133,7 @@ function handleSubmit(event: SubmitEvent) {
 			/>
 		</g>
 
-		<foreignObject x="6" y="5" width="34" height="39">
+		<foreignObject x="2" y="5" width="40" height="39">
 			<button
 				xmlns="http://www.w3.org/1999/xhtml"
 				type="button"
@@ -147,7 +148,7 @@ function handleSubmit(event: SubmitEvent) {
 			></button>
 		</foreignObject>
 
-		<foreignObject x="44" y="8" width="157" height="32">
+		<foreignObject x="44" y="5" width="157" height="39">
 			<div xmlns="http://www.w3.org/1999/xhtml" class="input-shell">
 				<input
 					type="search"
@@ -190,7 +191,7 @@ function handleSubmit(event: SubmitEvent) {
 			</div>
 		</foreignObject>
 
-		<foreignObject x="207" y="4" width="68" height="38">
+		<foreignObject x="207" y="3" width="68" height="41">
 			<button
 				xmlns="http://www.w3.org/1999/xhtml"
 				type="submit"
@@ -260,9 +261,11 @@ function handleSubmit(event: SubmitEvent) {
 		rotate: 180deg;
 	}
 
+	/* Inside a foreignObject a CSS px is one SVG user unit, so these offsets track the art at every width. */
 	.input-shell {
 		width: 100%;
-		height: 100%;
+		height: 32px;
+		margin-top: 3px;
 		display: flex;
 		align-items: center;
 	}
@@ -327,6 +330,7 @@ function handleSubmit(event: SubmitEvent) {
 	}
 
 	.hit {
+		display: block;
 		width: 100%;
 		height: 100%;
 		padding: 0;
@@ -335,6 +339,32 @@ function handleSubmit(event: SubmitEvent) {
 		border-radius: 3px;
 		cursor: pointer;
 		transition: background-color 0.2s ease;
+	}
+
+	.hit-list {
+		width: 34px;
+		height: 39px;
+		margin-left: 4px;
+	}
+
+	.hit-search {
+		height: 38px;
+		margin-top: 1px;
+	}
+
+	@media (max-width: 767px) {
+		.hit-list,
+		.hit-search,
+		.input-shell {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+		}
+
+		/* 40 units clears 44px wherever a phone draws the bar; the text gives way. */
+		.clear {
+			width: 40px;
+		}
 	}
 
 	/* Faint on purpose: the glyph transform is the visible hover. */

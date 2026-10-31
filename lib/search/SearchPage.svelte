@@ -108,7 +108,8 @@ const lessonPlaying = $derived(lessonHand?.playing() ?? false);
 const pressHelp = () => (lessonPlaying ? lessonHand?.cancel() : void lessonHand?.play());
 
 const lessonDoors = {
-	tabs: () => (tabsEl ? [...tabsEl.querySelectorAll<HTMLElement>(".tab-sticker")] : []),
+	// The art, not the link: on a phone the link's box reaches above it.
+	tabs: () => (tabsEl ? [...tabsEl.querySelectorAll<HTMLElement>(".tab-sticker > svg")] : []),
 	litTab: () => litTab,
 	setLitTab: (i: number | null) => (litOverride = i),
 	input: () => searchWrapEl?.querySelector<HTMLElement>(".search-input") ?? null,
@@ -539,6 +540,21 @@ $effect(() => {
 				var(--art-hill-fill-phone, var(--rtvr-missing-art)) type("image/avif"),
 				var(--art-hill-fill-webp, var(--rtvr-missing-art)) type("image/webp")
 			);
+		}
+	}
+
+	/* Taps: the art keeps its size, the hit box grows. Room above a tab lifts
+	   its centre clear of the bar it tucks under. */
+	@media (max-width: 767px) {
+		.tab-sticker {
+			--reach: max(0px, calc(60px - var(--tab-h-idle)));
+			box-sizing: content-box;
+			padding-top: var(--reach);
+			margin-top: calc(-1 * var(--reach));
+		}
+
+		.tab-sticker[aria-current="page"] {
+			--reach: max(0px, calc(60px - var(--tab-h-active)));
 		}
 	}
 

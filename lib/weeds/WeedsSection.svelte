@@ -457,4 +457,25 @@ function barKeydown(e: KeyboardEvent) {
 			padding-right: 16px;
 		}
 	}
+
+	/* On a phone the transparent controls take the bar's full 44px height;
+	   the clear takes the input's right padding. */
+	@media (max-width: 767px) {
+		.bar-input,
+		.bar-submit {
+			top: 0;
+			height: 100%;
+		}
+
+		.bar-input {
+			padding-right: 44px;
+		}
+
+		.bar-clear {
+			left: calc(75.5% - 44px);
+			top: 0;
+			width: 44px;
+			height: 100%;
+		}
+	}
 </style>

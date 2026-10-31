@@ -33,6 +33,19 @@ $effect(() => {
 		color: inherit;
 	}
 
+	/* On a phone the hit box reaches past the art to 44px. */
+	@media (max-width: 767px) {
+		.help-sticker {
+			position: relative;
+		}
+
+		.help-sticker::before {
+			content: "";
+			position: absolute;
+			inset: min(-6px, calc(50% - 24px));
+		}
+	}
+
 	.help-sticker:disabled {
 		cursor: default;
 	}

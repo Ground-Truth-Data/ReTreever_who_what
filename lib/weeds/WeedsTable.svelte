@@ -141,4 +141,28 @@ const drawn = $derived(columns.filter((c) => c.kind !== "key"));
 		outline: 2px solid var(--color-gold-bar);
 		outline-offset: 1px;
 	}
+
+	/* On a phone a cell's link or button fills the cell, 44px tall. */
+	@media (max-width: 767px) {
+		td:has(> a, > .row-open) {
+			padding: 0;
+		}
+
+		td > a,
+		td > .row-open {
+			display: block;
+			box-sizing: border-box;
+			width: 100%;
+			min-height: 44px;
+			padding: 13px 12px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			text-align: left;
+		}
+
+		td > .row-open:focus-visible,
+		td > a:focus-visible {
+			outline-offset: -2px;
+		}
+	}
 </style>

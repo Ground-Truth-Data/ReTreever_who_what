@@ -855,4 +855,85 @@ const stateLine = $derived.by(() => {
 			padding-bottom: calc(var(--upper-band) * 0.72 + var(--stage-h) * 0.61 + 12px);
 		}
 	}
+
+	/* A phone: the header shares its row with the globe and the help sticker,
+	   so the bar spans the screen at the search page's size; the number stands
+	   beside its trees-planted box, which brings the dog onto the first screen. */
+	@media (max-width: 720px) {
+		.rating-hero {
+			padding-top: 16px;
+			gap: 16px;
+		}
+
+		.hero-top {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto auto;
+			grid-template-areas:
+				"head globe help"
+				"tabs tabs tabs"
+				"bar bar bar";
+			align-items: center;
+			gap: 0 10px;
+			padding-left: 0;
+		}
+
+		.bar-block,
+		.bar-row {
+			display: contents;
+		}
+
+		.header-sticker {
+			grid-area: head;
+		}
+
+		.tabs {
+			grid-area: tabs;
+			justify-self: start;
+			margin-top: 14px;
+		}
+
+		.bar {
+			grid-area: bar;
+			z-index: 1;
+			width: 100%;
+			max-width: var(--card-max);
+		}
+
+		.bar-row :global(.globe-icon) {
+			grid-area: globe;
+			width: clamp(40px, calc(44.5 * var(--bar-scale)), 64px);
+		}
+
+		.bar-row :global(.help-sticker) {
+			grid-area: help;
+			height: calc(clamp(40px, calc(44.5 * var(--bar-scale)), 64px) * 160 / 213);
+		}
+
+		.score-column {
+			flex-direction: row;
+			flex-wrap: wrap;
+			justify-content: center;
+			align-items: center;
+			column-gap: 16px;
+		}
+
+		.name {
+			flex-basis: 100%;
+		}
+	}
+
+	/* Taps: the art keeps its size, the hit box grows. Room above a tab lifts
+	   its centre clear of the bar it tucks under. */
+	@media (max-width: 767px) {
+		.tab-sticker {
+			--reach: max(0px, calc(60px - 22.75 * var(--bar-scale)));
+			box-sizing: content-box;
+			padding-top: var(--reach);
+			margin-top: calc(-1 * var(--reach));
+		}
+
+		.tab-sticker[aria-current="page"] {
+			--reach: max(0px, calc(60px - 32.6 * var(--bar-scale)));
+		}
+	}
 </style>

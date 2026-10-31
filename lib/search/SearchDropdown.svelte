@@ -317,6 +317,13 @@ $effect(() => {
 		}
 	}
 
+	@media (max-width: 767px) {
+		.dropdown-row {
+			min-height: 44px;
+			align-items: center;
+		}
+	}
+
 	.dropdown-empty {
 		padding: var(--row-y) var(--row-x);
 		color: #8d93a6;

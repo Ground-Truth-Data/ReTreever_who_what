@@ -56,5 +56,18 @@ let { class: className = "", href }: { class?: string; href?: string } = $props(
 		}
 	}
 
+	/* On a phone the hit box reaches past the art to 44px. */
+	@media (max-width: 767px) {
+		.globe-spin-link {
+			position: relative;
+		}
+
+		.globe-spin-link::before {
+			content: "";
+			position: absolute;
+			inset: min(-6px, calc(50% - 24px));
+		}
+	}
+
 	/* NO prefers-reduced-motion gate — repo law. */
 </style>
