@@ -48,11 +48,17 @@ const drawn = $derived(columns.filter((c) => c.kind !== "key"));
 </div>
 
 <style>
-	/* The wrapper scrolls, never the page: seven columns at 390px stay inside it. */
+	/* Seven columns at 390px scroll sideways inside the wrapper, never the
+	   page. Rows scroll inside it too, up to the stage's cap, and the wheel
+	   chains to the page at the end: that is what walks the tabs, so the y
+	   axis is never contained. */
 	.weeds-table-wrap {
 		width: 100%;
 		max-width: 100%;
+		flex: 0 1 auto;
+		min-height: 0;
 		overflow-x: auto;
+		overflow-y: auto;
 		overscroll-behavior-x: contain;
 		border: 3px solid var(--color-gold-bar);
 		border-radius: 2px;

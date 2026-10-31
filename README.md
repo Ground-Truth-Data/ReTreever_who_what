@@ -49,7 +49,7 @@ utility at the root:
   lists and the URL resolver, the grass.
 - `rating/` — one org or project: route, page, the number, the state (the one
   place the four states are drawn), the loader, the dog.
-- `weeds/` — the tables under the rating hero.
+- `weeds/` — the tables under the rating hero; `weedsScroll.ts` is the scroll → tab map.
 - `stage/` — scenery both pages share: the curtains, the greenery (the crest
   and grass band every hero ends in, with its tufts), the globe icon, the
   shard id register the why page and the divider still use.

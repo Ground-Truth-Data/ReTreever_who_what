@@ -7,7 +7,8 @@ import WeedsBarArt from "../assets/svg/rating/Rating_page_weeds_search_bar.svg?r
 import WeedsTable from "./WeedsTable.svelte";
 import WeedsTabs from "./WeedsTabs.svelte";
 import { filterRows } from "./weedsFormat";
-import type { WeedsAnswer, WeedsRow, WeedsTable as WeedsTableName } from "../whoWhatTypes";
+import { scrollTopFor, tabIndexFor } from "./weedsScroll";
+import { WEEDS_TABLES, type WeedsAnswer, type WeedsRow, type WeedsTable as WeedsTableName } from "../whoWhatTypes";
 
 let {
 	tab,
@@ -35,6 +36,9 @@ let inFlight = new Set<WeedsTableName>();
 let loading = $state<Partial<Record<WeedsTableName, true>>>({});
 let query = $state("");
 let manifest = $state<ClipManifest | null>(null);
+let trackEl = $state<HTMLElement | null>(null);
+let stageEl = $state<HTMLElement | null>(null);
+let runEl = $state<HTMLElement | null>(null);
 
 async function load(table: WeedsTableName) {
 	if (answers[table] || inFlight.has(table)) return;
@@ -60,6 +64,69 @@ function select(table: WeedsTableName) {
 	active = table;
 	load(table);
 }
+
+// The page scroll walks the tabs: the track is one step per tab, the stage
+// pins inside it, and the scroll position alone says which tab is lit. The
+// browser owns the scroll; this only reads it.
+let landing: { top: number; until: number } | null = null;
+
+function pick(table: WeedsTableName) {
+	select(table);
+	const track = trackEl;
+	const run = runEl;
+	if (!track || !run) return;
+	const top = Math.round(scrollTopFor(WEEDS_TABLES.indexOf(table), pinTop(track), stepOf(run)));
+	const instant = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	// The listener would read every segment the smooth scroll passes through;
+	// it waits for the landing, or gives up when the scroll stops short.
+	landing = { top, until: performance.now() + 1500 };
+	window.scrollTo({ top, behavior: instant ? "instant" : "smooth" });
+}
+
+// Progress 0 is where the stage pins, so index 0 lands exactly under the nav
+// and the last index is the point the stage unpins.
+function pinTop(track: HTMLElement) {
+	const stageTop = stageEl ? parseFloat(getComputedStyle(stageEl).top) || 0 : 0;
+	return track.getBoundingClientRect().top + window.scrollY - stageTop;
+}
+
+function stepOf(run: HTMLElement) {
+	return run.getBoundingClientRect().height / (WEEDS_TABLES.length - 1);
+}
+
+$effect(() => {
+	const track = trackEl;
+	const run = runEl;
+	if (!track || !run) return;
+	let raf = 0;
+	const read = () => {
+		raf = 0;
+		const y = window.scrollY;
+		if (landing) {
+			if (Math.abs(y - landing.top) > 2 && performance.now() < landing.until) return;
+			landing = null;
+		}
+		const index = tabIndexFor(y - pinTop(track), stepOf(run), WEEDS_TABLES.length);
+		if (index !== WEEDS_TABLES.indexOf(active)) select(WEEDS_TABLES[index]);
+	};
+	const onScroll = () => {
+		if (!raf) raf = requestAnimationFrame(read);
+	};
+	const onScrollEnd = () => {
+		if (landing) landing.until = 0;
+		onScroll();
+	};
+	read();
+	window.addEventListener("scroll", onScroll, { passive: true });
+	window.addEventListener("scrollend", onScrollEnd, { passive: true });
+	window.addEventListener("resize", onScroll);
+	return () => {
+		window.removeEventListener("scroll", onScroll);
+		window.removeEventListener("scrollend", onScrollEnd);
+		window.removeEventListener("resize", onScroll);
+		if (raf) cancelAnimationFrame(raf);
+	};
+});
 
 // The first tab fills itself once the hero has painted, like the dropdown lists.
 $effect(() => {
@@ -107,8 +174,9 @@ function barKeydown(e: KeyboardEvent) {
 }
 </script>
 
-<section class="weeds-section" aria-label="The weeds">
-	<WeedsTabs {active} onselect={select} panelId={PANEL_ID} />
+<div class="weeds-track" style:--weeds-n={WEEDS_TABLES.length} bind:this={trackEl}>
+<section class="weeds-stage" aria-label="The weeds" bind:this={stageEl}>
+	<WeedsTabs {active} onselect={pick} panelId={PANEL_ID} />
 
 	<form class="weeds-bar" role="search" onsubmit={(e) => e.preventDefault()}>
 		<div class="bar-art" aria-hidden="true">
@@ -152,15 +220,39 @@ function barKeydown(e: KeyboardEvent) {
 		{/if}
 	</div>
 </section>
+<div class="run" aria-hidden="true" bind:this={runEl}></div>
+</div>
 
 <style>
-	.weeds-section {
-		--card-max: 1180px;
-		--tab-h: clamp(44px, 3.4vw, 56px);
+	/* One step of page scroll per tab; the run below the stage is the other
+	   N - 1 steps, so the stage pins for exactly that long. The nav above is
+	   5rem and sticky, so the stage pins under it. */
+	.weeds-track {
+		--weeds-step: clamp(320px, 60vh, 640px);
+		--stage-top: var(--host-chrome, 5rem);
 		position: relative;
 		z-index: 6;
 		width: 100%;
+		/* A new tab's table changes the stage's height; left to anchor on the
+		   run below it, the browser would scroll the page by that growth, and
+		   the scroll would read the next tab from it. */
+		overflow-anchor: none;
+	}
+
+	.run {
+		height: calc((var(--weeds-n) - 1) * var(--weeds-step));
+	}
+
+	.weeds-stage {
+		--card-max: 1180px;
+		--tab-h: clamp(44px, 3.4vw, 56px);
+		position: sticky;
+		top: var(--stage-top);
+		width: 100%;
 		max-width: var(--card-max);
+		/* The table takes what is left below the tabs and the bar, and scrolls
+		   inside; the floor keeps it usable on a short viewport. */
+		max-height: max(calc(100dvh - var(--stage-top)), 520px);
 		margin: 0 auto;
 		padding: calc(var(--tab-h) * 1.2) clamp(16px, 3vw, 40px) clamp(32px, 5vh, 72px);
 		box-sizing: border-box;
@@ -286,6 +378,9 @@ function barKeydown(e: KeyboardEvent) {
 		width: 100%;
 		min-width: 0;
 		min-height: calc(var(--tab-h) * 3);
+		flex: 0 1 auto;
+		display: flex;
+		flex-direction: column;
 	}
 
 	.note,
@@ -307,7 +402,7 @@ function barKeydown(e: KeyboardEvent) {
 	}
 
 	@media (max-width: 860px) {
-		.weeds-section {
+		.weeds-stage {
 			padding-left: 16px;
 			padding-right: 16px;
 		}
