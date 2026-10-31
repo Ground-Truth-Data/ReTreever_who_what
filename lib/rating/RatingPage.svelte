@@ -14,6 +14,7 @@ import skyUrl from "../assets/golden_sky_background.webp";
 import pineUrl from "../assets/pub-Rtvr/rating/poly/rp-pine.webp";
 import DogStage from "./DogStage.svelte";
 import GlobeSpinIcon from "../stage/GlobeSpinIcon.svelte";
+import Greenery from "../stage/Greenery.svelte";
 import RatingNumber from "./RatingNumber.svelte";
 import SearchBar from "../search/SearchBar.svelte";
 import SearchDropdown from "../search/SearchDropdown.svelte";
@@ -130,6 +131,7 @@ const stateLine = $derived.by(() => {
 
 <div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl});">
 	<section class="rating-hero">
+		<Greenery />
 		<div class="hero-top">
 			<div class="header-sticker" aria-hidden="true">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -201,7 +203,13 @@ const stateLine = $derived.by(() => {
 				<DogStage rating={record?.rating ?? null} {armed} {clipRoot} onstanding={() => (dogStanding = true)} />
 			</div>
 		</div>
+	</section>
 
+	<section class="soil-band">
+		<div class="yellow-line" aria-hidden="true">
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+			{@html YellowLineRaw}
+		</div>
 		<div class="lockup" aria-hidden="true">
 			<div class="lockup-row">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -219,11 +227,6 @@ const stateLine = $derived.by(() => {
 			</div>
 		</div>
 		<p class="visually-hidden">Truth is in the weeds… Dig in deeper.</p>
-
-		<div class="yellow-line" aria-hidden="true">
-			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-			{@html YellowLineRaw}
-		</div>
 	</section>
 
 	{#if weedsHref}
@@ -233,6 +236,7 @@ const stateLine = $derived.by(() => {
 
 <style>
 	.rating-page {
+		--pad: clamp(16px, 3vw, 40px);
 		position: relative;
 		min-height: calc(100vh - 5rem);
 		width: 100%;
@@ -240,13 +244,18 @@ const stateLine = $derived.by(() => {
 		overflow-x: clip;
 	}
 
+	/* The foot is the search hero's crest and grass, lower here so the dog and
+	   the number stand on the crest; the bottom padding is what keeps them off
+	   the grass. Capped at 900px or a tall monitor opens sky between them. */
 	.rating-hero {
-		--pad: clamp(16px, 3vw, 40px);
+		--art: min(100vw, 1200px);
+		--greenery-h: clamp(170px, calc(var(--art) * 0.3), 36vh);
+		--upper-band: calc(var(--greenery-h) * 0.87);
 		position: relative;
 		width: 100%;
 		box-sizing: border-box;
-		min-height: calc(100vh - 5rem);
-		padding: clamp(20px, 4vh, 48px) var(--pad) clamp(32px, 5vh, 72px);
+		min-height: min(100vh - 5rem, 900px);
+		padding: clamp(20px, 4vh, 48px) var(--pad) calc(var(--greenery-h) * 0.55);
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -369,6 +378,7 @@ const stateLine = $derived.by(() => {
 		z-index: 5;
 		width: 100%;
 		max-width: 1180px;
+		margin-top: auto;
 		display: grid;
 		grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
 		align-items: end;
@@ -471,14 +481,20 @@ const stateLine = $derived.by(() => {
 		min-width: 0;
 	}
 
-	.lockup {
+	.soil-band {
 		position: relative;
-		z-index: 5;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: clamp(18px, 3vh, 36px) var(--pad);
+		background: #0b1109;
+	}
+
+	.lockup {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 2px;
-		margin-top: auto;
 	}
 
 	.lockup-row {
@@ -508,9 +524,7 @@ const stateLine = $derived.by(() => {
 		position: absolute;
 		left: 0;
 		right: 0;
-		bottom: clamp(18px, 3vh, 44px);
-		z-index: 4;
-		pointer-events: none;
+		top: 0;
 	}
 
 	.yellow-line :global(svg) {
