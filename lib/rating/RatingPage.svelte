@@ -20,10 +20,11 @@ import RatingNumber from "./RatingNumber.svelte";
 import SearchBar from "../search/SearchBar.svelte";
 import SearchDropdown from "../search/SearchDropdown.svelte";
 import WeedsSection from "../weeds/WeedsSection.svelte";
+import WeedsTally from "../weeds/WeedsTally.svelte";
 import type { SearchResult } from "./resultLoad";
 import type { SearchListItem } from "../search/searchTypes";
 import { ratingState, type RatingState } from "./ratingState";
-import type { WeedsTable, WhoWhatRoutes } from "../whoWhatTypes";
+import type { ScoreTally, WeedsTable, WhoWhatRoutes } from "../whoWhatTypes";
 
 let {
 	tab,
@@ -37,6 +38,7 @@ let {
 	onpick,
 	onactivate,
 	weedsHref = undefined,
+	tally = null,
 	onopenproject = undefined,
 }: {
 	tab: "orgs" | "projects";
@@ -52,8 +54,53 @@ let {
 	onactivate?: () => void;
 	/** The host's URL for one weeds table of this record; absent, no weeds. */
 	weedsHref?: (table: WeedsTable) => string;
+	/** How the score adds up; null until the host answers, or when it cannot. */
+	tally?: ScoreTally | null;
 	onopenproject?: (projectKey: string) => void;
 } = $props();
+
+// The tally reads the lit tab from the weeds and shows only while the reader
+// is underground: a quarter of the viewport on the soil, and the track's end
+// not yet above the viewport's middle. The observer gates the scroll work.
+let litIndex = $state(0);
+let tallyVisible = $state(false);
+let undergroundEl = $state<HTMLElement | null>(null);
+$effect(() => {
+	const el = undergroundEl;
+	if (!el) return;
+	let intersecting = false;
+	let raf = 0;
+	const read = () => {
+		raf = 0;
+		if (!intersecting) {
+			tallyVisible = false;
+			return;
+		}
+		const vh = window.innerHeight;
+		const r = el.getBoundingClientRect();
+		const onScreen = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+		tallyVisible = onScreen >= vh * 0.25 && r.bottom >= vh / 2;
+	};
+	const onScroll = () => {
+		if (!raf) raf = requestAnimationFrame(read);
+	};
+	const io = new IntersectionObserver(
+		(entries) => {
+			intersecting = entries[entries.length - 1].isIntersecting;
+			onScroll();
+		},
+		{ threshold: [0, 0.25] },
+	);
+	io.observe(el);
+	window.addEventListener("scroll", onScroll, { passive: true });
+	window.addEventListener("resize", onScroll);
+	return () => {
+		io.disconnect();
+		window.removeEventListener("scroll", onScroll);
+		window.removeEventListener("resize", onScroll);
+		if (raf) cancelAnimationFrame(raf);
+	};
+});
 
 const noun = $derived(tab === "orgs" ? "organizations" : "projects");
 const LIST_ID = "rating-search-list";
@@ -236,7 +283,7 @@ const stateLine = $derived.by(() => {
 		</div>
 	</section>
 
-	<div class="underground">
+	<div class="underground" bind:this={undergroundEl}>
 	<section class="soil-band">
 		<div class="lockup" aria-hidden="true">
 			<div class="lockup-row">
@@ -262,7 +309,10 @@ const stateLine = $derived.by(() => {
 	</section>
 
 	{#if weedsHref}
-		<WeedsSection {tab} href={weedsHref} {clipRoot} {onopenproject} />
+		<WeedsSection {tab} href={weedsHref} {clipRoot} {onopenproject} onactive={(i) => (litIndex = i)} />
+		{#if tally}
+			<WeedsTally {tally} {litIndex} visible={tallyVisible} />
+		{/if}
 	{/if}
 	</div>
 </div>

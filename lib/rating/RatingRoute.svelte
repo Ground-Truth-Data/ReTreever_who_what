@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { WeedsTable, WhoWhatEndpoints, WhoWhatRoutes } from "../whoWhatTypes";
+import type { ScoreTally, WeedsTable, WhoWhatEndpoints, WhoWhatRoutes } from "../whoWhatTypes";
 import type { SearchResult } from "./resultLoad";
 import RatingPage from "./RatingPage.svelte";
 import { loadOrgList, loadProjectList, recordSearchHit } from "../search/searchLists";
@@ -67,6 +67,26 @@ const weedsHref = $derived.by(() => {
 	return weeds && key ? (table: WeedsTable) => weeds(tab, key, table) : undefined;
 });
 
+// Fetched once the record is in, so the shell paints first; a miss or an
+// unscored record simply leaves no tally.
+let tally = $state.raw<ScoreTally | null>(null);
+$effect(() => {
+	const key = record?.key;
+	const score = endpoints.score;
+	tally = null;
+	if (!key || !score) return;
+	let live = true;
+	fetch(score(tab, key))
+		.then((res) => (res.ok ? (res.json() as Promise<ScoreTally>) : null))
+		.then((answer) => {
+			if (live && answer?.scored) tally = answer;
+		})
+		.catch(() => {});
+	return () => {
+		live = false;
+	};
+});
+
 function openProject(projectKey: string) {
 	const href = routes.whatProject?.(projectKey);
 	if (href) curtain.wipe(href);
@@ -122,6 +142,7 @@ function search(q: string) {
 		onpick={pickItem}
 		onactivate={activate}
 		{weedsHref}
+		{tally}
 		onopenproject={tab === "orgs" ? openProject : undefined}
 	/>
 {/key}

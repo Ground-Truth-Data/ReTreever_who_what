@@ -15,6 +15,7 @@ let {
 	href,
 	clipRoot = undefined,
 	onopenproject = undefined,
+	onactive = undefined,
 }: {
 	tab: "orgs" | "projects";
 	/** The host's URL for one table of this record. */
@@ -22,6 +23,8 @@ let {
 	clipRoot?: string;
 	/** An org's Projects row picked; absent, the names are plain text. */
 	onopenproject?: (projectKey: string) => void;
+	/** The lit tab's index, whenever it changes — by scroll, click or key. */
+	onactive?: (index: number) => void;
 } = $props();
 
 const PANEL_ID = "weeds-panel";
@@ -64,6 +67,10 @@ function select(table: WeedsTableName) {
 	active = table;
 	load(table);
 }
+
+$effect(() => {
+	onactive?.(WEEDS_TABLES.indexOf(active));
+});
 
 // The page scroll walks the tabs: the track is one step per tab, the stage
 // pins inside it, and the scroll position alone says which tab is lit. The
