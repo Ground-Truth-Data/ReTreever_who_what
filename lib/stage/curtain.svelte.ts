@@ -7,6 +7,7 @@ export const CURTAIN_CLIP = "tree-curtains";
 
 let href = $state<string | null>(null);
 let token = $state(0);
+let wanted = $state(false);
 
 export const curtain = {
 	/** The destination of the wipe in flight, or null when the curtains are open. */
@@ -17,12 +18,21 @@ export const curtain = {
 	get token() {
 		return token;
 	},
+	/** A wipe is likely: the frames should load now, not on every page. */
+	get wanted() {
+		return wanted;
+	},
+	/** The reader is on a search page or in a search bar: a pick, and so a wipe, may follow. */
+	warm() {
+		wanted = true;
+	},
 	/**
 	 * Shut the curtains, swap the page behind them, let them open on the new one.
 	 * The destination's data loads while they close, so the swap at the midpoint
 	 * is a render, not a round trip.
 	 */
 	wipe(to: string) {
+		wanted = true;
 		href = to;
 		token += 1;
 		void preloadData(to);

@@ -10,24 +10,47 @@ import { CURTAIN_CLIP, curtain } from "./curtain.svelte";
 let { clipRoot = undefined }: { clipRoot?: string } = $props();
 
 let facts = $state<ClipFacts | null>(null);
+let ready = $state(false);
+// A wipe asked before its frames are in waits this long for them, then plays anyway.
+const READY_CAP_MS = 1500;
+let waited = $state(false);
 
-// Loaded and preloaded on mount, so the first wipe runs at speed.
+// The manifest on mount; the frames only once a wipe is likely (curtain.warm),
+// so a page with no search on it never fetches them.
 $effect(() => {
 	if (!clipRoot) return;
 	let live = true;
 	loadClips(clipRoot).then((m) => {
-		if (!live) return;
-		facts = m.clips[CURTAIN_CLIP] ?? null;
-		if (facts) {
-			for (const u of frameUrls(clipRoot, CURTAIN_CLIP, facts)) {
-				const img = new Image();
-				img.src = u;
-			}
-		}
+		if (live) facts = m.clips[CURTAIN_CLIP] ?? null;
 	});
 	return () => {
 		live = false;
 	};
+});
+
+// Held, so the decoded frames stay in memory for the wipe instead of revalidating mid-play.
+let held: HTMLImageElement[] = [];
+$effect(() => {
+	if (!clipRoot || !facts || !curtain.wanted || held.length) return;
+	const urls = frameUrls(clipRoot, CURTAIN_CLIP, facts);
+	let left = urls.length;
+	for (const u of urls) {
+		const img = new Image();
+		held.push(img);
+		img.fetchPriority = "low";
+		img.onload = img.onerror = () => {
+			left -= 1;
+			if (left === 0) ready = true;
+		};
+		img.src = u;
+	}
+});
+
+$effect(() => {
+	if (!curtain.href || ready) return;
+	waited = false;
+	const cap = setTimeout(() => (waited = true), READY_CAP_MS);
+	return () => clearTimeout(cap);
 });
 
 const mid = $derived(facts ? Math.ceil(facts.frameCount / 2) : 0);
@@ -49,7 +72,7 @@ $effect(() => {
 });
 </script>
 
-{#if curtain.href && clipRoot && facts}
+{#if curtain.href && clipRoot && facts && (ready || waited)}
 	{#key curtain.token}
 		<div class="curtain-layer" aria-hidden="true">
 			<FrameClipPlayer root={clipRoot} clip={CURTAIN_CLIP} {facts} onFrame={atFrame} onDone={() => curtain.done()} />

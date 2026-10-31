@@ -48,6 +48,7 @@ async function loadTab(which: "orgs" | "projects") {
 
 function activate() {
 	activated = true;
+	curtain.warm();
 	loadTab(tab);
 }
 
