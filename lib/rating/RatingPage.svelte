@@ -10,6 +10,7 @@ import DigInRaw from "../assets/svg/rating/Rating_page_Dig_in.svg?raw";
 import DeeperRaw from "../assets/svg/rating/Rating_page_deeper_period.svg?raw";
 import ShovelRaw from "../assets/svg/rating/Rating_page_shovel.svg?raw";
 import YellowLineRaw from "../assets/svg/rating/Rating_page_bottom_yellow_line.svg?raw";
+import rootsUrl from "../assets/svg/rating/Rating_page_roots.svg";
 import skyUrl from "../assets/golden_sky_background.webp";
 import pineUrl from "../assets/pub-Rtvr/rating/poly/rp-pine.webp";
 import DogStage from "./DogStage.svelte";
@@ -158,7 +159,7 @@ const stateLine = $derived.by(() => {
 });
 </script>
 
-<div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl});">
+<div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl}); --art-roots: url({rootsUrl});">
 	<section class="rating-hero" bind:this={heroEl}>
 		<Greenery ridge>
 			<div class="dog-column">
@@ -531,13 +532,18 @@ const stateLine = $derived.by(() => {
 		z-index: 2;
 	}
 
+	/* Roots hang from the grass above and fade into the soil before the lockup;
+	   the strip tiles sideways at the band's height, so no root is cut at an edge. */
 	.soil-band {
 		position: relative;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		padding: clamp(18px, 3vh, 36px) var(--pad);
-		background: #0b1109;
+		padding: clamp(28px, 5vh, 56px) var(--pad) clamp(18px, 3vh, 36px);
+		background:
+			linear-gradient(to bottom, rgb(11 17 9 / 0) 30%, #0b1109 95%),
+			var(--art-roots) top center / auto 100% repeat-x,
+			#0b1109;
 	}
 
 	.lockup {
