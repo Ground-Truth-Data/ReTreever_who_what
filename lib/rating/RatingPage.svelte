@@ -364,7 +364,7 @@ const stateLine = $derived.by(() => {
 		</div>
 
 		<div class="hero-grid">
-			<div class="score-column">
+			<div class="score-column" class:pending={!record}>
 				{#if record}
 					<h1 class="name">
 						<span class="name-text">{record.name};</span>
@@ -849,10 +849,20 @@ const stateLine = $derived.by(() => {
 		}
 	}
 
-	/* One column: the number sits above the dog's head, which rises over the crest. */
+	/* One column: the hero hugs its content, since a phone's 100vh is taller
+	   than what a reader sees. The -64px raises the dog's head behind the crest
+	   to just under the number's foot (the grid stacks over the dog); any more
+	   and it reaches the number. That puts the whole dog on the first screen. */
 	@media (max-width: 720px) {
 		.rating-hero {
-			padding-bottom: calc(var(--upper-band) * 0.72 + var(--stage-h) * 0.61 + 12px);
+			min-height: 0;
+			padding-bottom: calc(var(--upper-band) * 0.72 + var(--stage-h) * 0.61 - 64px);
+		}
+
+		/* Held while the record streams: a one-line name (49px), the row gap and
+		   the number (102px) with its margins, so the dog stands where it will. */
+		.score-column.pending {
+			min-height: calc(155px + 2 * clamp(4px, 1vh, 12px));
 		}
 	}
 
@@ -862,7 +872,7 @@ const stateLine = $derived.by(() => {
 	@media (max-width: 720px) {
 		.rating-hero {
 			padding-top: 16px;
-			gap: 16px;
+			gap: 10px;
 		}
 
 		.hero-top {
@@ -889,7 +899,7 @@ const stateLine = $derived.by(() => {
 		.tabs {
 			grid-area: tabs;
 			justify-self: start;
-			margin-top: 14px;
+			margin-top: 8px;
 		}
 
 		.bar {
@@ -915,6 +925,7 @@ const stateLine = $derived.by(() => {
 			justify-content: center;
 			align-items: center;
 			column-gap: 16px;
+			row-gap: 4px;
 		}
 
 		.name {
