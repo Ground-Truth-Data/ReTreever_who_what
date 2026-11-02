@@ -28,8 +28,8 @@ let {
 } = $props();
 
 const lists = {
-	orgs: new LiveList((q) => loadOrgList(fetch, endpoints, q)),
-	projects: new LiveList((q) => loadProjectList(fetch, endpoints, q)),
+	orgs: new LiveList((q, signal) => loadOrgList(fetch, endpoints, q, signal)),
+	projects: new LiveList((q, signal) => loadProjectList(fetch, endpoints, q, signal)),
 };
 let activated = false;
 

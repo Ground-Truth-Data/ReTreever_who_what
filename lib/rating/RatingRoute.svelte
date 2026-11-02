@@ -46,7 +46,9 @@ $effect(() => {
 setStageClipRoot(endpoints.stageClipRoot);
 
 // The top bar searches again from the rating page; the list warms up in idle time.
-const list = new LiveList((q) => (tab === "orgs" ? loadOrgList(fetch, endpoints, q) : loadProjectList(fetch, endpoints, q)));
+const list = new LiveList((q, signal) =>
+	tab === "orgs" ? loadOrgList(fetch, endpoints, q, signal) : loadProjectList(fetch, endpoints, q, signal),
+);
 let words = "";
 let activated = false;
 let notice = $state<string | null>(null);

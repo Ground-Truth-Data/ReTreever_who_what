@@ -41,13 +41,14 @@ export async function loadOrgList(
 	fetch: typeof globalThis.fetch,
 	endpoints: WhoWhatEndpoints,
 	query = "",
+	signal?: AbortSignal,
 ): Promise<SearchListItem[]> {
 	// Empty, not a fetch at "/undefined".
 	if (!endpoints.organizations) return [];
 	const endpoint = `${endpoints.organizations}?${listQuery("organizationKey,organizationName,primaryStakeholderCategory,scoreOrgFinal", query)}`;
 
 	try {
-		const res = await fetch(endpoint);
+		const res = await fetch(endpoint, { signal });
 		if (!res.ok) {
 			throw new Error(`${endpoint} responded ${res.status}`);
 		}
@@ -64,6 +65,7 @@ export async function loadOrgList(
 			}))
 			.sort(byRating);
 	} catch (error) {
+		if (signal?.aborted) return [];
 		console.error("who: failed to load organizations list", error);
 		return [];
 	}
@@ -73,13 +75,14 @@ export async function loadProjectList(
 	fetch: typeof globalThis.fetch,
 	endpoints: WhoWhatEndpoints,
 	query = "",
+	signal?: AbortSignal,
 ): Promise<SearchListItem[]> {
 	if (!endpoints.projects) return [];
 	// scored: only projects whose detail views have a score.
 	const endpoint = `${endpoints.projects}?${listQuery("projectKey,projectName,scoreProject", query, { scored: "true" })}`;
 
 	try {
-		const res = await fetch(endpoint);
+		const res = await fetch(endpoint, { signal });
 		if (!res.ok) {
 			throw new Error(`${endpoint} responded ${res.status}`);
 		}
@@ -95,6 +98,7 @@ export async function loadProjectList(
 			}))
 			.sort(byRating);
 	} catch (error) {
+		if (signal?.aborted) return [];
 		console.error("what: failed to load projects list", error);
 		return [];
 	}

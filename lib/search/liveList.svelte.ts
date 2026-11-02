@@ -8,12 +8,13 @@ export class LiveList {
 	items = $state<SearchListItem[]>([]);
 	loading = $state(false);
 
-	#load: (query: string) => Promise<SearchListItem[]>;
+	#load: (query: string, signal: AbortSignal) => Promise<SearchListItem[]>;
 	#asked: string | null = null;
 	#answer: Promise<SearchListItem[]> = Promise.resolve([]);
 	#timer: ReturnType<typeof setTimeout> | undefined;
+	#inFlight: AbortController | null = null;
 
-	constructor(load: (query: string) => Promise<SearchListItem[]>) {
+	constructor(load: (query: string, signal: AbortSignal) => Promise<SearchListItem[]>) {
 		this.#load = load;
 	}
 
@@ -30,10 +31,18 @@ export class LiveList {
 		if (q === this.#asked) return this.#answer;
 		this.#asked = q;
 		this.loading = true;
-		const answer = this.#load(q);
+		// Newer words make the older request worthless. Leaving the page aborts it too, before the
+		// browser cancels it into a "Failed to fetch" no loader can tell from a real outage.
+		this.#inFlight?.abort();
+		const inFlight = new AbortController();
+		this.#inFlight = inFlight;
+		const leave = () => inFlight.abort();
+		globalThis.addEventListener?.("pagehide", leave);
+		const answer = this.#load(q, inFlight.signal);
 		this.#answer = answer;
 		// The loaders never reject. A late answer to older words is dropped, not painted over newer ones.
 		void answer.then((items) => {
+			globalThis.removeEventListener?.("pagehide", leave);
 			if (this.#answer !== answer) return;
 			this.items = items;
 			this.loading = false;

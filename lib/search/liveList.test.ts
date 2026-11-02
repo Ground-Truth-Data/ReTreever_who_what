@@ -17,7 +17,7 @@ describe("LiveList — the bar's words, asked of the server", () => {
 		list.ask("Man ");
 		await vi.runAllTimersAsync();
 
-		expect(load.mock.calls).toEqual([["man"]]);
+		expect(load.mock.calls.map(([q]) => q)).toEqual(["man"]);
 		expect(list.items).toEqual([item("man")]);
 		expect(list.loading).toBe(false);
 	});
@@ -46,5 +46,18 @@ describe("LiveList — the bar's words, asked of the server", () => {
 		await slow;
 
 		expect(list.items).toEqual([item("new")]);
+	});
+
+	it("aborts the request for older words when newer ones are asked", async () => {
+		const signals: AbortSignal[] = [];
+		const list = new LiveList(async (q, signal) => {
+			signals.push(signal);
+			return [item(q)];
+		});
+
+		void list.now("old");
+		await list.now("new");
+
+		expect(signals.map((s) => s.aborted)).toEqual([true, false]);
 	});
 });

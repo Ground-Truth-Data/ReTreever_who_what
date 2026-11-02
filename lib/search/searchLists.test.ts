@@ -67,6 +67,21 @@ describe("loadOrgList", () => {
 	});
 });
 
+describe("a request its page aborted", () => {
+	it("answers empty without an error in the console", async () => {
+		const error = vi.spyOn(console, "error").mockImplementation(() => {});
+		const leaving = new AbortController();
+		leaving.abort();
+		const fetch = vi.fn(async () => {
+			throw new TypeError("Failed to fetch");
+		}) as unknown as typeof globalThis.fetch;
+
+		await expect(loadOrgList(fetch, ENDPOINTS, "", leaving.signal)).resolves.toEqual([]);
+		await expect(loadProjectList(fetch, ENDPOINTS, "", leaving.signal)).resolves.toEqual([]);
+		expect(error).not.toHaveBeenCalled();
+	});
+});
+
 describe("loadProjectList", () => {
 	it("asks for one capped page of scored projects, best first, with key, name and score", async () => {
 		const fetch = fetchReturning({ projects: [] });
