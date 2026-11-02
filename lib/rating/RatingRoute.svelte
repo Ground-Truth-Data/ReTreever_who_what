@@ -3,6 +3,7 @@ import type { ScoreTally, WeedsTable, WhoWhatEndpoints, WhoWhatRoutes } from "..
 import type { SearchResult } from "./resultLoad";
 import RatingPage from "./RatingPage.svelte";
 import { setStageClipRoot } from "./DogStage.svelte";
+import { LiveList } from "../search/liveList.svelte";
 import { loadOrgList, loadProjectList, recordSearchHit } from "../search/searchLists";
 import { resolveSearchKey } from "../search/searchResolve";
 import type { SearchListItem } from "../search/searchTypes";
@@ -45,20 +46,19 @@ $effect(() => {
 setStageClipRoot(endpoints.stageClipRoot);
 
 // The top bar searches again from the rating page; the list warms up in idle time.
-let items = $state<SearchListItem[]>([]);
-let loaded = false;
-let listLoading = $state(false);
+const list = new LiveList((q) => (tab === "orgs" ? loadOrgList(fetch, endpoints, q) : loadProjectList(fetch, endpoints, q)));
+let words = "";
+let activated = false;
 let notice = $state<string | null>(null);
 
-async function activate() {
-	if (loaded) return;
-	loaded = true;
-	listLoading = true;
-	try {
-		items = tab === "orgs" ? await loadOrgList(fetch, endpoints) : await loadProjectList(fetch, endpoints);
-	} finally {
-		listLoading = false;
-	}
+function activate() {
+	activated = true;
+	void list.now(words);
+}
+
+function narrow(next: string) {
+	words = next;
+	if (activated) list.ask(next);
 }
 
 // Reaching for the bar is when a pick, and its wipe, becomes likely; idle time here belongs to the dog.
@@ -114,16 +114,14 @@ $effect(() => {
 	};
 });
 
-function search(q: string) {
+async function search(q: string) {
 	if (!q.trim()) {
 		notice = m.ww_rating_notice_empty();
 		return;
 	}
-	if (items.length === 0) {
-		notice = m.ww_rating_notice_loading();
-		return;
-	}
-	const key = resolveSearchKey(q, items, null);
+	const answer = list.now(q);
+	if (list.loading) notice = m.ww_rating_notice_loading();
+	const key = resolveSearchKey(q, await answer, null);
 	if (!key) {
 		notice = m.ww_rating_notice_no_match();
 		return;
@@ -148,8 +146,9 @@ function search(q: string) {
 		{record}
 		{routes}
 		{notice}
-		{items}
-		{listLoading}
+		items={list.items}
+		listLoading={list.loading}
+		onwords={narrow}
 		clipRoot={endpoints.clipRoot}
 		onsearch={search}
 		onpick={pickItem}

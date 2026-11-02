@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { loadOrgList, loadProjectList } from "./searchLists";
+import { LIST_LIMIT, loadOrgList, loadProjectList } from "./searchLists";
 
 const ENDPOINTS = { organizations: "/api/who/organizations", projects: "/api/what/projects" };
 
@@ -11,13 +11,26 @@ function fetchReturning(body: unknown, ok = true) {
 afterEach(() => vi.restoreAllMocks());
 
 describe("loadOrgList", () => {
-	it("asks for the key, name, category and final score in one request", async () => {
+	it("asks for one capped page of the best-rated, with the key, name, category and final score", async () => {
 		const fetch = fetchReturning({ organizations: [] });
 		await loadOrgList(fetch, ENDPOINTS);
 		expect(fetch).toHaveBeenCalledTimes(1);
-		expect(fetch).toHaveBeenCalledWith(
-			"/api/who/organizations?fields=organizationKey,organizationName,primaryStakeholderCategory,scoreOrgFinal",
-		);
+		const url = new URL(fetch.mock.calls[0][0] as string, "http://x");
+		expect(url.pathname).toBe("/api/who/organizations");
+		expect(Object.fromEntries(url.searchParams)).toEqual({
+			fields: "organizationKey,organizationName,primaryStakeholderCategory,scoreOrgFinal",
+			sort: "rating",
+			limit: String(LIST_LIMIT),
+		});
+	});
+
+	it("hands the bar's words to the server, and sends none for a blank bar", async () => {
+		const fetch = fetchReturning({ organizations: [] });
+		await loadOrgList(fetch, ENDPOINTS, "  eden & co ");
+		await loadOrgList(fetch, ENDPOINTS, "   ");
+		const q = (n: number) => new URL(fetch.mock.calls[n][0] as string, "http://x").searchParams.get("q");
+		expect(q(0)).toBe("eden & co");
+		expect(q(1)).toBeNull();
 	});
 
 	it("maps a row to key, name, hint and a 0–100 rating, best first and unscored last", async () => {
@@ -55,11 +68,19 @@ describe("loadOrgList", () => {
 });
 
 describe("loadProjectList", () => {
-	it("asks for scored projects with key, name and score in one request", async () => {
+	it("asks for one capped page of scored projects, best first, with key, name and score", async () => {
 		const fetch = fetchReturning({ projects: [] });
-		await loadProjectList(fetch, ENDPOINTS);
+		await loadProjectList(fetch, ENDPOINTS, "mangrove");
 		expect(fetch).toHaveBeenCalledTimes(1);
-		expect(fetch).toHaveBeenCalledWith("/api/what/projects?scored=true&fields=projectKey,projectName,scoreProject");
+		const url = new URL(fetch.mock.calls[0][0] as string, "http://x");
+		expect(url.pathname).toBe("/api/what/projects");
+		expect(Object.fromEntries(url.searchParams)).toEqual({
+			scored: "true",
+			fields: "projectKey,projectName,scoreProject",
+			sort: "rating",
+			limit: String(LIST_LIMIT),
+			q: "mangrove",
+		});
 	});
 
 	it("maps a row to key, name and rating, best first", async () => {

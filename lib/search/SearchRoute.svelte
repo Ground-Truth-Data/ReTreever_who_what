@@ -5,6 +5,7 @@ import { localizeHref } from "$parent/src/lib/paraglide/runtime";
 import { curtain } from "../stage/curtain.svelte";
 import type { WhoWhatEndpoints, WhoWhatRoutes } from "../whoWhatTypes";
 import SearchPage from "./SearchPage.svelte";
+import { LiveList } from "./liveList.svelte";
 import { loadOrgList, loadProjectList, recordSearchHit } from "./searchLists";
 import { resolveSearchKey } from "./searchResolve";
 import type { SearchListItem } from "./searchTypes";
@@ -26,40 +27,25 @@ let {
 	endpoints?: WhoWhatEndpoints;
 } = $props();
 
-let orgs = $state<SearchListItem[]>([]);
-let projects = $state<SearchListItem[]>([]);
-let orgsLoaded = false;
-let projectsLoaded = false;
+const lists = {
+	orgs: new LiveList((q) => loadOrgList(fetch, endpoints, q)),
+	projects: new LiveList((q) => loadProjectList(fetch, endpoints, q)),
+};
 let activated = false;
-let listLoading = $state(false);
-
-async function loadTab(which: "orgs" | "projects") {
-	// Flag set BEFORE the await, or a focus plus the tab effect double-fetch.
-	if (which === "orgs" ? orgsLoaded : projectsLoaded) return;
-	if (which === "orgs") orgsLoaded = true;
-	else projectsLoaded = true;
-
-	listLoading = true;
-	try {
-		if (which === "orgs") orgs = await loadOrgList(fetch, endpoints);
-		else projects = await loadProjectList(fetch, endpoints);
-	} finally {
-		listLoading = false;
-	}
-}
 
 function activate() {
 	activated = true;
 	curtain.warm();
-	loadTab(tab);
+	void lists[tab].now(query);
 }
 
 $effect(() => {
-	tab;
-	if (activated) loadTab(tab);
+	const words = query;
+	const list = lists[tab];
+	if (activated) list.ask(words);
 });
 
-// Idle warm-up; loadTab is idempotent, so a real interaction can't double-fetch.
+// Idle warm-up; now() skips words already asked, so a real interaction can't double-fetch.
 $effect(() => {
 	let idleHandle = 0;
 	let timer: ReturnType<typeof setTimeout> | undefined;
@@ -97,18 +83,15 @@ function pickItem(item: SearchListItem, t: "orgs" | "projects", go: boolean) {
 	if (href) curtain.wipe(localizeHref(href));
 }
 
-function submitSearch(q: string, t: "orgs" | "projects") {
-	const items = t === "orgs" ? orgs : projects;
-
+async function submitSearch(q: string, t: "orgs" | "projects") {
 	if (!q.trim()) {
 		notice = m.ww_search_notice_empty_query();
 		return;
 	}
 
-	if (items.length === 0) {
-		notice = m.ww_search_notice_loading();
-		return;
-	}
+	const answer = lists[t].now(q);
+	if (lists[t].loading) notice = m.ww_search_notice_loading();
+	const items = await answer;
 
 	const key = resolveSearchKey(q, items, selected);
 	if (!key) {
@@ -135,9 +118,9 @@ function submitSearch(q: string, t: "orgs" | "projects") {
 	{notice}
 	activeTab={tab}
 	{routes}
-	{orgs}
-	{projects}
-	{listLoading}
+	orgs={lists.orgs.items}
+	projects={lists.projects.items}
+	listLoading={lists[tab].loading}
 	clipRoot={endpoints.clipRoot}
 	onsearch={submitSearch}
 	onpick={pickItem}

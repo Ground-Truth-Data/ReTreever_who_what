@@ -47,6 +47,7 @@ let {
 	onsearch,
 	onpick,
 	onactivate,
+	onwords,
 	weedsHref = undefined,
 	tally = null,
 	onopenproject = undefined,
@@ -62,6 +63,8 @@ let {
 	onsearch?: (query: string) => void;
 	onpick?: (item: SearchListItem, go: boolean) => void;
 	onactivate?: () => void;
+	/** The words the list should narrow to: empty while the bar still shows the record's own name. */
+	onwords?: (words: string) => void;
 	/** The host's URL for one weeds table of this record; absent, no weeds. */
 	weedsHref?: (table: WeedsTable) => string;
 	/** How the score adds up; null until the host answers, or when it cannot. */
@@ -201,6 +204,8 @@ let query = $state(record?.name ?? "");
 $effect(() => {
 	if (record) query = record.name;
 });
+const words = $derived(query === record?.name ? "" : query);
+$effect(() => onwords?.(words));
 
 // The number waits for the dog to stand, then the dog brings it: it is born
 // small at the dog's mouth, lobs across to its place growing to full size, and
@@ -370,7 +375,7 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 							bind:open={dropdownOpen}
 							bind:activeDescendant
 							{items}
-							query={query === record?.name ? "" : query}
+							query={words}
 							{listLoading}
 							{noun}
 							listId={LIST_ID}

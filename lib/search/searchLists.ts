@@ -16,7 +16,7 @@ interface ProjectListRow {
 	scoreProject: string | number | null;
 }
 
-/** Best rating first, unscored last, ties by name; the API orders by name only. */
+/** Best rating first, unscored last, ties by name: the API's order, kept by the client for a list it merges. */
 function byRating(a: SearchListItem, b: SearchListItem): number {
 	if (a.rating !== b.rating) {
 		if (a.rating === null) return 1;
@@ -26,13 +26,25 @@ function byRating(a: SearchListItem, b: SearchListItem): number {
 	return a.name.localeCompare(b.name);
 }
 
+/** The API's ceiling for a key-less list; the bar narrows by asking again, never by paging. */
+export const LIST_LIMIT = 50;
+
+const listQuery = (fields: string, query: string, extra: Record<string, string> = {}) => {
+	const params = new URLSearchParams({ ...extra, fields, sort: "rating", limit: String(LIST_LIMIT) });
+	const q = query.trim();
+	if (q) params.set("q", q);
+	return params.toString();
+};
+
+/** The best-rated orgs whose name contains `query`, or the best-rated of all when it is empty. */
 export async function loadOrgList(
 	fetch: typeof globalThis.fetch,
 	endpoints: WhoWhatEndpoints,
+	query = "",
 ): Promise<SearchListItem[]> {
 	// Empty, not a fetch at "/undefined".
 	if (!endpoints.organizations) return [];
-	const endpoint = `${endpoints.organizations}?fields=organizationKey,organizationName,primaryStakeholderCategory,scoreOrgFinal`;
+	const endpoint = `${endpoints.organizations}?${listQuery("organizationKey,organizationName,primaryStakeholderCategory,scoreOrgFinal", query)}`;
 
 	try {
 		const res = await fetch(endpoint);
@@ -60,10 +72,11 @@ export async function loadOrgList(
 export async function loadProjectList(
 	fetch: typeof globalThis.fetch,
 	endpoints: WhoWhatEndpoints,
+	query = "",
 ): Promise<SearchListItem[]> {
 	if (!endpoints.projects) return [];
 	// scored: only projects whose detail views have a score.
-	const endpoint = `${endpoints.projects}?scored=true&fields=projectKey,projectName,scoreProject`;
+	const endpoint = `${endpoints.projects}?${listQuery("projectKey,projectName,scoreProject", query, { scored: "true" })}`;
 
 	try {
 		const res = await fetch(endpoint);
