@@ -38,10 +38,8 @@ $effect(() => {
 			n += 1;
 			lap = n; // WRITE only
 			run = true;
-			// Without this he runs once per page load.
-			released = setTimeout(() => {
-				running = false;
-			}, 6000);
+			// Well past the longest crossing (~2.5 s), then the next lap: a reader who only watches sees him again.
+			released = setTimeout(arm, 6000);
 		}, delay);
 	};
 
