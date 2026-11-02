@@ -6,11 +6,21 @@ import type { RatingState } from "./ratingState";
 
 export type DogState = RatingState;
 
-export type DogStep = { clip: string; loop: boolean };
+/** `hold`: show the clip's last frame and stay there until something replaces the step. */
+export type DogStep = { clip: string; loop: boolean; hold?: boolean };
 
 /** The walk on, played once before the dog stands. */
 export function entranceFor(clips: Record<string, unknown>): DogStep[] {
 	return "dog-entrance" in clips ? [{ clip: "dog-entrance", loop: false }] : [];
+}
+
+/**
+ * Watching the number after the walk on: the entrance's last frame, held. It is
+ * the profile every turn starts from; the front-facing standing loop between
+ * them made the dog look away and back just before it reacted.
+ */
+export function watchingFor(clips: Record<string, unknown>): DogStep[] {
+	return "dog-entrance" in clips ? [{ clip: "dog-entrance", loop: false, hold: true }] : standingFor(clips);
 }
 
 /** Standing and watching, looped for as long as the number is not up. */

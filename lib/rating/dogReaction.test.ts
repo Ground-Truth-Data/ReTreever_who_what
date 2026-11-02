@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { entranceFor, idleBlinkFor, reactionFor, standingFor } from "./dogReaction";
+import { entranceFor, idleBlinkFor, reactionFor, standingFor, watchingFor } from "./dogReaction";
 
 const clips = Object.fromEntries(
 	[
@@ -16,6 +16,16 @@ describe("entranceFor and standingFor", () => {
 		expect(standingFor(clips)).toEqual([{ clip: "dog-still-blink", loop: true }]);
 		expect(entranceFor({})).toEqual([]);
 		expect(standingFor({})).toEqual([]);
+	});
+});
+
+describe("watchingFor", () => {
+	it("holds the entrance's last frame, the profile every turn starts from", () => {
+		expect(watchingFor(clips)).toEqual([{ clip: "dog-entrance", loop: false, hold: true }]);
+	});
+
+	it("falls back to the standing loop when there was no entrance", () => {
+		expect(watchingFor({ "dog-still-blink": {} })).toEqual([{ clip: "dog-still-blink", loop: true }]);
 	});
 });
 

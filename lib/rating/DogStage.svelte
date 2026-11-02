@@ -15,7 +15,7 @@ let pageSeen = false;
 import { onDestroy } from "svelte";
 import FrameClipPlayer from "$gc/FrameClipPlayer.svelte";
 import { frameUrl, loadClips, type ClipManifest } from "$gc/frameClips";
-import { entranceFor, idleBlinkFor, reactionFor, standingFor, type DogStep } from "./dogReaction";
+import { entranceFor, idleBlinkFor, reactionFor, standingFor, watchingFor, type DogStep } from "./dogReaction";
 import { ratingState } from "./ratingState";
 
 let {
@@ -40,7 +40,7 @@ let standing = $state(false);
 // The entrance ends with the sapling set down beside the dog; no other clip
 // draws it, so its patch of the entrance's last frame stays on stage underneath.
 let planted = $state(false);
-// The last step has played out: a remount after a blink shows its final frame, not a replay.
+// The last step has played out: coming back from a blink shows its final frame, not a replay.
 let settled = $state(false);
 let reacted = false;
 let blinkTimer: ReturnType<typeof setTimeout> | undefined;
@@ -60,15 +60,15 @@ if (typeof window !== "undefined") pageSeen = true;
 let landedAt: number | null = null;
 
 const dogState = $derived(ratingState(rating));
-const current = $derived(blink ? { clip: blink, loop: false } : steps[at]);
+const current = $derived<DogStep | undefined>(blink ? { clip: blink, loop: false } : steps[at]);
 const ENTRANCE = "dog-entrance";
 const saplingSrc = $derived.by(() => {
 	const facts = manifest?.clips[ENTRANCE];
 	return root && facts ? frameUrl(root, ENTRANCE, facts, facts.frameCount) : null;
 });
 
-function stand(clips: Record<string, unknown> = {}) {
-	steps = standingFor(clips);
+function stand(next: DogStep[]) {
+	steps = next;
 	at = 0;
 	standing = true;
 	onstanding?.();
@@ -76,7 +76,7 @@ function stand(clips: Record<string, unknown> = {}) {
 
 $effect(() => {
 	if (!clipRoot) {
-		stand();
+		stand([]);
 		return;
 	}
 	const from = stageClipRoot && matchMedia(PHONE).matches ? stageClipRoot : clipRoot;
@@ -88,10 +88,10 @@ $effect(() => {
 			manifest = m;
 			const entrance = entranceFor(m.clips);
 			if (entrance.length) steps = entrance;
-			else stand(m.clips);
+			else stand(standingFor(m.clips));
 		},
 		() => {
-			if (live) stand();
+			if (live) stand([]);
 		},
 	);
 	return () => {
@@ -110,12 +110,14 @@ $effect(() => {
 });
 
 $effect(() => {
-	if (!armed || !standing || reacted || !manifest || dogState === null) return;
-	const reaction = reactionFor(dogState, manifest.clips);
-	if (!reaction.length) return;
+	if (!armed || !standing || reacted || !manifest) return;
+	const reaction = dogState === null ? [] : reactionFor(dogState, manifest.clips);
+	// With no turn to make, an unscored dog stops watching and faces the reader.
+	const next = reaction.length ? reaction : steps[at]?.hold ? standingFor(manifest.clips) : null;
+	if (!next) return;
 	reacted = true;
 	settled = false;
-	steps = reaction;
+	steps = next;
 	at = 0;
 	blink = null;
 });
@@ -135,13 +137,14 @@ function stepDone() {
 		scheduleBlink();
 		return;
 	}
+	if (steps[at]?.hold) return;
 	if (at + 1 < steps.length) {
 		at += 1;
 		return;
 	}
 	if (!standing) {
 		planted = steps[at]?.clip === ENTRANCE;
-		stand(manifest?.clips);
+		stand(watchingFor(manifest?.clips ?? {}));
 		return;
 	}
 	settled = true;
@@ -175,16 +178,16 @@ onDestroy(() => clearTimeout(blinkTimer));
 		<img class="sapling" src={saplingSrc} alt="" draggable="false" />
 	{/if}
 	{#if manifest && root && current}
-		{#key `${current.clip}:${at}:${blink}`}
-			<FrameClipPlayer
-				{root}
-				clip={current.clip}
-				facts={manifest.clips[current.clip]}
-				loop={current.loop}
-				from={settled && !blink ? manifest.clips[current.clip].frameCount : 1}
-				onDone={stepDone}
-			/>
-		{/key}
+		<!-- One player for every clip, not one per clip: a fresh <img> paints blank until its frame
+		     decodes, which flashed the dog out between clips. Swapping src keeps the last frame up. -->
+		<FrameClipPlayer
+			{root}
+			clip={current.clip}
+			facts={manifest.clips[current.clip]}
+			loop={current.loop}
+			from={current.hold || (settled && !blink) ? manifest.clips[current.clip].frameCount : 1}
+			onDone={stepDone}
+		/>
 	{/if}
 </div>
 
