@@ -1,5 +1,7 @@
 <script lang="ts">
 import { untrack } from "svelte";
+import { m } from "$parent/src/lib/paraglide/messages";
+import { localizeHref } from "$parent/src/lib/paraglide/runtime";
 import { curtain } from "../stage/curtain.svelte";
 import type { WhoWhatEndpoints, WhoWhatRoutes } from "../whoWhatTypes";
 import SearchPage from "./SearchPage.svelte";
@@ -92,25 +94,25 @@ function pickItem(item: SearchListItem, t: "orgs" | "projects", go: boolean) {
 	recordSearchHit(fetch, endpoints, t, item.key);
 	if (!go) return;
 	const href = t === "orgs" ? routes.whoOrg?.(item.key) : routes.whatProject?.(item.key);
-	if (href) curtain.wipe(href);
+	if (href) curtain.wipe(localizeHref(href));
 }
 
 function submitSearch(q: string, t: "orgs" | "projects") {
 	const items = t === "orgs" ? orgs : projects;
 
 	if (!q.trim()) {
-		notice = "Type a name, or open the list to browse.";
+		notice = m.ww_search_notice_empty_query();
 		return;
 	}
 
 	if (items.length === 0) {
-		notice = "Still loading — try again in a moment.";
+		notice = m.ww_search_notice_loading();
 		return;
 	}
 
 	const key = resolveSearchKey(q, items, selected);
 	if (!key) {
-		notice = "No match — pick one from the list.";
+		notice = m.ww_search_notice_no_match();
 		return;
 	}
 
@@ -118,7 +120,7 @@ function submitSearch(q: string, t: "orgs" | "projects") {
 	recordSearchHit(fetch, endpoints, t, key);
 	const href =
 		t === "orgs" ? routes.whoOrg?.(key) : routes.whatProject?.(key);
-	if (href) curtain.wipe(href);
+	if (href) curtain.wipe(localizeHref(href));
 }
 </script>
 

@@ -2,17 +2,21 @@
 // The designer's "Trees Planted" box under the hero's number, the record's
 // published count in its lower two thirds. Never a control.
 import BoxRaw from "../assets/svg/rating/Rating_page_trees_planted_box.svg?raw";
+import { svgFit } from "../stage/svgFit";
+import { m } from "$parent/src/lib/paraglide/messages";
+import { getLocale } from "$parent/src/lib/paraglide/runtime";
 
 let { value = undefined, revealed = false }: { value?: number | null; revealed?: boolean } = $props();
 
 // Null is unknown, and so is a tally that has not landed; 0 is a published nothing.
-const text = $derived(typeof value === "number" ? value.toLocaleString("en") : "—");
+const boxArt = svgFit(BoxRaw, [["Trees Planted", m.ww_rating_art_trees_planted()]]);
+const text = $derived(typeof value === "number" ? value.toLocaleString(getLocale()) : "—");
 </script>
 
-<div class="box" class:revealed role="img" aria-label="Trees planted: {text}" style="--chars: {text.length}">
+<div class="box" class:revealed role="img" aria-label={m.ww_rating_trees_planted_label({ count: text })} style="--chars: {text.length}">
 	<span class="art" aria-hidden="true">
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-		{@html BoxRaw}
+		{@html boxArt}
 	</span>
 	<span class="value" aria-hidden="true">{text}</span>
 </div>

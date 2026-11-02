@@ -1,8 +1,15 @@
 import { formatTransparencyScore, type WeedsColumn, type WeedsKind, type WeedsRow } from "../whoWhatTypes";
+import { getLocale } from "$parent/src/lib/paraglide/runtime";
 
 export const EMPTY = "—";
 
-const number = new Intl.NumberFormat("en", { maximumFractionDigits: 2 });
+const numbers = new Map<string, Intl.NumberFormat>();
+function number(): Intl.NumberFormat {
+	const locale = getLocale();
+	let format = numbers.get(locale);
+	if (!format) numbers.set(locale, (format = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 })));
+	return format;
+}
 
 /** `2024/7/12`, the comp's spelling; UTC so a midnight date never slips a day. */
 export function formatWeedsDate(iso: string): string {
@@ -27,7 +34,7 @@ export function formatCell(value: string | number | null | undefined, kind: Weed
 		case "date":
 			return formatWeedsDate(String(value));
 		case "number":
-			return typeof value === "number" ? number.format(value) : String(value);
+			return typeof value === "number" ? number().format(value) : String(value);
 		case "score":
 			return formatTransparencyScore(value);
 		case "link":

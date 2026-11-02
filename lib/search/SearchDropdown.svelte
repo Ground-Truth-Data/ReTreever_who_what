@@ -8,13 +8,14 @@ import { frameUrls, loadClips, type ClipFacts } from "$gc/frameClips";
 import WindowRaw from "../assets/svg/rating/Rating_page_search_dropdown.svg?raw";
 import { WINDOW_BOX, windowBorderCss, windowSliceCss } from "./dropWindow";
 import type { SearchListItem } from "./searchTypes";
+import { m } from "$parent/src/lib/paraglide/messages";
 
 let {
 	items = [],
 	query = "",
 	open = $bindable(false),
 	listLoading = false,
-	noun = "results",
+	noun = m.ww_search_noun_results(),
 	listId,
 	hrefOf = () => undefined,
 	within = null,
@@ -210,12 +211,11 @@ $effect(() => {
 						<span class="fetch-stage" aria-hidden="true" style:--clip-w="{fetchClip.widthRem}rem">
 							<FrameClipPlayer root={clipRoot} clip={FETCH_CLIP} facts={fetchClip} loop />
 						</span>
-						<span class="visually-hidden">Loading {noun}…</span>
+						<span class="visually-hidden">{m.ww_search_list_loading({ noun })}</span>
 					{:else if listLoading}
-						Loading {noun}…
+						{m.ww_search_list_loading({ noun })}
 					{:else}
-						No {noun}
-						{query.trim() ? "match" : "loaded"}
+						{query.trim() ? m.ww_search_list_no_match({ noun }) : m.ww_search_list_none_loaded({ noun })}
 					{/if}
 				</li>
 			{/each}

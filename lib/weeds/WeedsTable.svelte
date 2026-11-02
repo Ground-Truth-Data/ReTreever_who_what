@@ -1,5 +1,6 @@
 <script lang="ts">
 import { formatCell } from "./weedsFormat";
+import { columnLabel } from "./columnLabels";
 import type { WeedsColumn, WeedsRow } from "../whoWhatTypes";
 
 let {
@@ -21,7 +22,7 @@ const drawn = $derived(columns.filter((c) => c.kind !== "key"));
 		<thead>
 			<tr>
 				{#each drawn as c (c.key)}
-					<th scope="col" class={c.kind}>{c.label}</th>
+					<th scope="col" class={c.kind}>{columnLabel(c)}</th>
 				{/each}
 			</tr>
 		</thead>

@@ -1,0 +1,150 @@
+{
+	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"ww_rating_state_opaque": "Opaque data…",
+	"ww_rating_state_partial": "Partial data…",
+	"ww_rating_state_open": "Open data…",
+	"ww_rating_state_transparent": "Transparent data…",
+	"ww_rating_state_unscored": "Unscored",
+	"ww_rating_name_line": "{name};",
+	"ww_rating_notice_empty": "Type a name to search again.",
+	"ww_rating_notice_loading": "Still loading — try again in a moment.",
+	"ww_rating_notice_no_match": "No match — try the full name.",
+	"ww_rating_lockup": "Truth is in the weeds… Dig in deeper.",
+	"ww_rating_art_rating": "RATING:",
+	"ww_rating_art_data_transparency": "Data Transparency",
+	"ww_rating_art_truth": "Truth",
+	"ww_rating_art_is_in": "is in",
+	"ww_rating_art_the": "the",
+	"ww_rating_art_weeds": "weeds",
+	"ww_rating_art_dig": "Dig",
+	"ww_rating_art_in": "in",
+	"ww_rating_art_deeper": "deeper",
+	"ww_rating_art_trees_planted": "Trees Planted",
+	"ww_rating_trees_planted_label": "Trees planted: {count}",
+	"ww_rating_help": "Show me how this page works",
+	"ww_rating_explore_map": "Explore the map",
+	"ww_rating_weeds": "The weeds",
+	"ww_rating_weeds_filter_placeholder": "Filter these rows…",
+	"ww_rating_weeds_filter_label": "Filter the {table} rows",
+	"ww_rating_weeds_filter_clear": "Clear the filter",
+	"ww_rating_weeds_filter_submit": "Filter",
+	"ww_rating_weeds_empty": "Nothing here yet.",
+	"ww_rating_weeds_failed": "Could not load this table.",
+	"ww_rating_weeds_digging": "Digging…",
+	"ww_rating_weeds_rows_capped": "{count} of more — the first {count} rows are shown",
+	"ww_rating_table_projects": "Projects",
+	"ww_rating_table_crop": "Crop",
+	"ww_rating_table_planting": "Planting",
+	"ww_rating_table_land": "Land",
+	"ww_rating_table_polymorphic": "Polymorphic",
+	"ww_rating_table_stakeholders": "Stakeholders",
+	"ww_rating_table_sources": "Sources",
+	"ww_rating_table_scores_projects": "the record's own fields",
+	"ww_rating_table_scores_crop": "species and crop names",
+	"ww_rating_table_scores_planting": "planting rows and their counts",
+	"ww_rating_table_scores_land": "plots and their polygons",
+	"ww_rating_table_scores_polymorphic": "the misc fields",
+	"ww_rating_table_scores_stakeholders": "stakeholder categories",
+	"ww_rating_table_scores_sources": "where the record came from",
+	"ww_rating_tally_status": "{table}: {awarded} of {available}. {scored} of {total} so far.",
+	"ww_rating_tally_caption": "How {rating} adds up",
+	"ww_rating_tally_points_so_far": "of {available} points so far",
+	"ww_rating_tally_after_claims": "after claims",
+	"ww_rating_tally_table_scores": "{table}: {scores}",
+	"ww_rating_tally_not_broken_down_long": "N/A — not broken down",
+	"ww_rating_tally_not_broken_down": "not broken down",
+	"ww_rating_tally_of": "{scored} of {total}",
+	"ww_rating_column_project": "Project",
+	"ww_rating_column_platform": "Platform",
+	"ww_rating_column_score": "Score",
+	"ww_rating_column_points_scored": "Points scored",
+	"ww_rating_column_points_available": "Points available",
+	"ww_rating_column_trees_planted": "Trees planted",
+	"ww_rating_column_scored_on": "Scored on",
+	"ww_rating_column_linked_through": "Linked through",
+	"ww_rating_column_listing_id": "Listing id",
+	"ww_rating_column_started": "Started",
+	"ww_rating_column_ends": "Ends",
+	"ww_rating_column_description": "Description",
+	"ww_rating_column_added": "Added",
+	"ww_rating_column_crop": "Crop",
+	"ww_rating_column_species": "Species",
+	"ww_rating_column_seed_source": "Seed source",
+	"ww_rating_column_nursery_stock": "Nursery stock",
+	"ww_rating_column_trees_planned": "Trees planned",
+	"ww_rating_column_units": "Units",
+	"ww_rating_column_unit": "Unit",
+	"ww_rating_column_price_per_unit": "Price per unit",
+	"ww_rating_column_currency": "Currency",
+	"ww_rating_column_price_in_usd": "Price in USD",
+	"ww_rating_column_planted_on": "Planted on",
+	"ww_rating_column_belongs_to": "Belongs to",
+	"ww_rating_column_site": "Site",
+	"ww_rating_column_hectares": "Hectares",
+	"ww_rating_column_latitude": "Latitude",
+	"ww_rating_column_longitude": "Longitude",
+	"ww_rating_column_status": "Status",
+	"ww_rating_column_surviving_pct": "Surviving (%)",
+	"ww_rating_column_price_per_tree": "Price per tree",
+	"ww_rating_column_people_employed": "People employed",
+	"ww_rating_column_counted_as": "Counted as",
+	"ww_rating_column_restoration_type": "Restoration type",
+	"ww_rating_column_treatment": "Treatment",
+	"ww_rating_column_degraded_on": "Degraded on",
+	"ww_rating_column_reviews": "Reviews",
+	"ww_rating_column_organization": "Organization",
+	"ww_rating_column_role": "Role",
+	"ww_rating_column_on": "On",
+	"ww_rating_column_url": "URL",
+	"ww_rating_column_kind": "Kind",
+	"ww_rating_column_published_by": "Published by",
+	"ww_rating_column_credit": "Credit",
+	"ww_rating_column_order": "Order",
+	"ww_rating_column_backs": "Backs",
+	"ww_rating_weeds_rows": [
+		{
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
+			"match": {
+				"countPlural=one": "{count} row",
+				"countPlural=*": "{count} rows"
+			}
+		}
+	],
+	"ww_rating_weeds_rows_filtered": [
+		{
+			"declarations": [
+				"input shown",
+				"input total",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{shown} of {total} rows",
+				"totalPlural=*": "{shown} of {total} rows"
+			}
+		}
+	],
+	"ww_rating_tally_mean": [
+		{
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
+			"match": {
+				"countPlural=one": "mean of {count} project",
+				"countPlural=*": "mean of {count} projects"
+			}
+		}
+	]
+}

@@ -13,6 +13,9 @@ import SearchDropdown from "./SearchDropdown.svelte";
 import LessonHand from "../stage/LessonHand.svelte";
 import HelpSticker from "../stage/HelpSticker.svelte";
 import MiddleDividerRaw from "../assets/svg/search/poly/Search_page_Middle_Divider.svg?raw";
+import { m } from "$parent/src/lib/paraglide/messages";
+import { getLocale, localizeHref } from "$parent/src/lib/paraglide/runtime";
+import { fitWords, svgWords } from "./svgWords";
 
 import skyUrl from "../assets/golden_sky_background.webp";
 import hillFillWebp from "../assets/pub-Rtvr/home/hill_fill.webp";
@@ -68,7 +71,28 @@ let {
 } = $props();
 
 const listItems = $derived(activeTab === "orgs" ? orgs : projects);
-const noun = $derived(activeTab === "orgs" ? "organizations" : "projects");
+const noun = $derived(activeTab === "orgs" ? m.ww_search_noun_orgs() : m.ww_search_noun_projects());
+const placeholder = $derived(activeTab === "orgs" ? m.ww_search_placeholder_orgs() : m.ww_search_placeholder_projects());
+const searchLabel = $derived(activeTab === "orgs" ? m.ww_search_label_orgs() : m.ww_search_label_projects());
+
+const localized = (href: string | undefined) => (href ? localizeHref(href) : undefined);
+
+const findArt = svgWords(FindRaw, [["Find", m.ww_search_art_find()]]);
+const truthArt = svgWords(TruthInReforestationRaw, [
+	["Truth", m.ww_search_art_truth()],
+	["in", m.ww_search_art_in()],
+	["Reforestation", m.ww_search_art_reforestation()],
+]);
+// Each word's room inside its black box, measured on the English art; English never needs squeezing.
+const english = getLocale() === "en";
+const FIND_FIT: Record<string, number> = english ? {} : { "search-page-find-tspan1": 193 };
+const TRUTH_FIT: Record<string, number> = english
+	? {}
+	: {
+			"search-page-truth-in-reforestation-tspan1": 224,
+			"search-page-truth-in-reforestation-tspan2": 120,
+			"search-page-truth-in-reforestation-tspan3": 575,
+		};
 
 const LIST_ID = "home-search-list";
 let bar = $state<SearchBar | null>(null);
@@ -77,6 +101,8 @@ let tabsEl = $state<HTMLElement | null>(null);
 // The lesson lights the other tab without navigating; null is the page's own.
 let litOverride = $state<number | null>(null);
 const litTab = $derived(litOverride ?? (activeTab === "orgs" ? 0 : 1));
+const orgsArt = $derived(svgWords(litTab === 0 ? OrgsSelectedRaw : OrgsUnselectedRaw, [["Organizations", m.ww_search_tab_orgs()]]));
+const projectsArt = $derived(svgWords(litTab === 1 ? ProjectsSelectedRaw : ProjectsUnselectedRaw, [["Projects", m.ww_search_tab_projects()]]));
 let activeDescendant = $state<string | undefined>(undefined);
 
 function submit(q: string) {
@@ -96,7 +122,7 @@ function selectItem(item: SearchListItem) {
 }
 
 const hrefOf = (item: SearchListItem) =>
-	activeTab === "orgs" ? routes.whoOrg?.(item.key) : routes.whatProject?.(item.key);
+	localized(activeTab === "orgs" ? routes.whoOrg?.(item.key) : routes.whatProject?.(item.key));
 
 function pick(item: SearchListItem, go: boolean) {
 	if (go) selectItem(item);
@@ -287,22 +313,22 @@ $effect(() => {
 		</Greenery>
 
 		<div class="search-card" bind:this={cardEl}>
-			<nav class="tabs" aria-label="Search by" bind:this={tabsEl}>
+			<nav class="tabs" aria-label={m.ww_search_tabs_label()} bind:this={tabsEl}>
 				<a
-					href={routes.who ?? null}
+					href={localized(routes.who) ?? null}
 					class="tab-sticker"
 					aria-current={litTab === 0 ? "page" : undefined}
 				>
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html litTab === 0 ? OrgsSelectedRaw : OrgsUnselectedRaw}
+					{@html orgsArt}
 				</a>
 				<a
-					href={routes.what ?? null}
+					href={localized(routes.what) ?? null}
 					class="tab-sticker"
 					aria-current={litTab === 1 ? "page" : undefined}
 				>
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html litTab === 1 ? ProjectsSelectedRaw : ProjectsUnselectedRaw}
+					{@html projectsArt}
 				</a>
 			</nav>
 
@@ -311,8 +337,8 @@ $effect(() => {
 					bind:this={bar}
 					bind:value={query}
 					bind:dropdownOpen
-					placeholder="Search {noun}…"
-					ariaLabel="Search {noun}"
+					{placeholder}
+					ariaLabel={searchLabel}
 					onsearch={submit}
 					{onactivate}
 					onkeynav={(dir) => list?.move(dir)}
@@ -341,8 +367,8 @@ $effect(() => {
 			</div>
 
 			<div class="caption-row">
-				<p class="search-caption">Search transparency rating</p>
-				<GlobeSpinIcon class="globe-icon" href={mapHref ?? routes.whoMap} />
+				<p class="search-caption">{m.ww_search_caption()}</p>
+				<GlobeSpinIcon class="globe-icon" href={localized(mapHref ?? routes.whoMap)} />
 				<HelpSticker playing={lessonPlaying} onpress={pressHelp} />
 			</div>
 		</div>
@@ -365,15 +391,15 @@ $effect(() => {
 		{/each}
 
 		<div class="headline" bind:this={lockupEl}>
-			<div class="headline-find" aria-hidden="true">
+			<div class="headline-find" aria-hidden="true" use:fitWords={FIND_FIT}>
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				{@html FindRaw}
+				{@html findArt}
 			</div>
-			<div class="headline-truth" aria-hidden="true">
+			<div class="headline-truth" aria-hidden="true" use:fitWords={TRUTH_FIT}>
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				{@html TruthInReforestationRaw}
+				{@html truthArt}
 			</div>
-			<h1 class="visually-hidden">Find Truth in Reforestation.</h1>
+			<h1 class="visually-hidden">{m.ww_search_headline()}</h1>
 		</div>
 	</section>
 </div>

@@ -5,6 +5,8 @@ import { untrack } from "svelte";
 import RatingNumber from "../rating/RatingNumber.svelte";
 import { TABLE_LABELS, TABLE_SCORES, ladderValue, sumsThrough, tween } from "./tallyMath";
 import { WEEDS_TABLES, type ScoreTally } from "../whoWhatTypes";
+import { m } from "$parent/src/lib/paraglide/messages";
+import { getLocale } from "$parent/src/lib/paraglide/runtime";
 
 let { tally, litIndex, visible }: { tally: ScoreTally; litIndex: number; visible: boolean } = $props();
 
@@ -44,19 +46,22 @@ $effect(() => {
 const whole = (n: number) => String(Math.round(n));
 const bigText = $derived(shown.big.toFixed(1));
 const ratingText = $derived((tally.rating ?? 0).toFixed(1));
+const ratingWords = $derived(
+	new Intl.NumberFormat(getLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1, useGrouping: false }).format(Number(ratingText)),
+);
 const label = $derived(TABLE_LABELS[lit.table]);
 const status = $derived(
-	`${label}: ${lit.awarded} of ${lit.available}. ${target.scored} of ${target.available} so far.`,
+	m.ww_rating_tally_status({ table: label, awarded: lit.awarded, available: lit.available, scored: target.scored, total: target.available }),
 );
 </script>
 
 <p class="sr" role="status">{status}</p>
 
 <aside class="tally corner" class:on={visible} aria-hidden="true">
-	<p class="caption">How {ratingText} adds up</p>
+	<p class="caption">{m.ww_rating_tally_caption({ rating: ratingWords })}</p>
 	<div class="big"><RatingNumber text={bigText} /></div>
 	{#if brokenDown}
-		<p class="so-far"><span class="pts"><RatingNumber text={whole(shown.scored)} /></span> of {whole(shown.available)} points so far</p>
+		<p class="so-far"><span class="pts"><RatingNumber text={whole(shown.scored)} /></span> {m.ww_rating_tally_points_so_far({ available: whole(shown.available) })}</p>
 		<ol class="ladder">
 			{#each tally.tables as line, i (line.table)}
 				{@const value = ladderValue(line, i, litIndex)}
@@ -73,28 +78,28 @@ const status = $derived(
 			{/each}
 			{#if tally.kind === "org" && tally.org}
 				<li class:dim={litIndex < LAST} class:lit={litIndex === LAST}>
-					<span class="name">mean of {tally.org.projects} {tally.org.projects === 1 ? "project" : "projects"}</span>
+					<span class="name">{m.ww_rating_tally_mean({ count: tally.org.projects })}</span>
 					<span class="value"><RatingNumber text={(tally.org.mean ?? 0).toFixed(1)} /></span>
 				</li>
 				<li class:dim={litIndex < LAST} class:lit={litIndex === LAST}>
-					<span class="name">after claims</span>
+					<span class="name">{m.ww_rating_tally_after_claims()}</span>
 					<span class="value"><RatingNumber text={ratingText} /></span>
 				</li>
 			{/if}
 		</ol>
-		<p class="scores">{label}: {TABLE_SCORES[lit.table]}</p>
+		<p class="scores">{m.ww_rating_tally_table_scores({ table: label, scores: TABLE_SCORES[lit.table] })}</p>
 	{:else}
-		<p class="scores">N/A — not broken down</p>
+		<p class="scores">{m.ww_rating_tally_not_broken_down_long()}</p>
 	{/if}
 </aside>
 
 <div class="tally strip" class:on={visible} aria-hidden="true">
 	<span class="pct"><RatingNumber text={bigText} /></span>
 	{#if brokenDown}
-		<span class="row-pts">{whole(shown.scored)} of {whole(shown.available)}</span>
+		<span class="row-pts">{m.ww_rating_tally_of({ scored: whole(shown.scored), total: whole(shown.available) })}</span>
 		<span class="row-lit"><span class="name">{label}</span> {lit.awarded}/{lit.available}</span>
 	{:else}
-		<span class="row-pts">not broken down</span>
+		<span class="row-pts">{m.ww_rating_tally_not_broken_down()}</span>
 	{/if}
 </div>
 

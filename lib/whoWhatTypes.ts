@@ -1,3 +1,5 @@
+import { getLocale } from "$parent/src/lib/paraglide/runtime";
+
 /** Raw 0–1 score (a Prisma Decimal string) → 0–100 to one decimal; null, not 0, when unscored. */
 export function toTransparencyScore(raw: unknown): number | null {
 	if (raw === null || raw === undefined) return null;
@@ -5,10 +7,13 @@ export function toTransparencyScore(raw: unknown): number | null {
 	return Number.isFinite(n) ? Math.round(n * 1000) / 10 : null;
 }
 
-/** "73.3%" or "—"; coerces because Mapbox hands properties back as strings. */
+/** "73.3%" (fr "73,3 %") or "—"; coerces because Mapbox hands properties back as strings. */
 export function formatTransparencyScore(score: unknown): string {
 	const n = Number(score);
-	return Number.isFinite(n) ? `${n.toFixed(1)}%` : "—";
+	if (!Number.isFinite(n)) return "—";
+	// Rounded by toFixed first: Intl rounds a halfway hundredth the other way, and English must not move.
+	const percent = new Intl.NumberFormat(getLocale(), { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1, useGrouping: false });
+	return percent.format(Number(n.toFixed(1)) / 100);
 }
 
 /** The seven tables under a rating, in strip order. */

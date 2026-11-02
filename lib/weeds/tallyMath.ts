@@ -2,6 +2,7 @@
 // easing, and the words each table gets. Pure, so the corner and the phone
 // strip draw one truth.
 import type { WeedsTable } from "../whoWhatTypes";
+import { m } from "$parent/src/lib/paraglide/messages";
 
 export type TallyLine = { table: WeedsTable; awarded: number; available: number };
 export type Sums = { scored: number; available: number; pct: number | null };
@@ -30,23 +31,24 @@ export function ladderValue(line: TallyLine, index: number, lit: number): "·" |
 	return { awarded: line.awarded, available: line.available };
 }
 
-export const TABLE_LABELS: Record<WeedsTable, string> = {
-	projects: "Projects",
-	crop: "Crop",
-	planting: "Planting",
-	land: "Land",
-	polymorphic: "Polymorphic",
-	stakeholders: "Stakeholders",
-	sources: "Sources",
+// Getters, so each read speaks the request's language; SSR shares this module across locales.
+export const TABLE_LABELS: Readonly<Record<WeedsTable, string>> = {
+	get projects() { return m.ww_rating_table_projects(); },
+	get crop() { return m.ww_rating_table_crop(); },
+	get planting() { return m.ww_rating_table_planting(); },
+	get land() { return m.ww_rating_table_land(); },
+	get polymorphic() { return m.ww_rating_table_polymorphic(); },
+	get stakeholders() { return m.ww_rating_table_stakeholders(); },
+	get sources() { return m.ww_rating_table_sources(); },
 };
 
 /** What each table's points are scored on, for the corner's last line. */
-export const TABLE_SCORES: Record<WeedsTable, string> = {
-	projects: "the record's own fields",
-	crop: "species and crop names",
-	planting: "planting rows and their counts",
-	land: "plots and their polygons",
-	polymorphic: "the misc fields",
-	stakeholders: "stakeholder categories",
-	sources: "where the record came from",
+export const TABLE_SCORES: Readonly<Record<WeedsTable, string>> = {
+	get projects() { return m.ww_rating_table_scores_projects(); },
+	get crop() { return m.ww_rating_table_scores_crop(); },
+	get planting() { return m.ww_rating_table_scores_planting(); },
+	get land() { return m.ww_rating_table_scores_land(); },
+	get polymorphic() { return m.ww_rating_table_scores_polymorphic(); },
+	get stakeholders() { return m.ww_rating_table_scores_stakeholders(); },
+	get sources() { return m.ww_rating_table_scores_sources(); },
 };

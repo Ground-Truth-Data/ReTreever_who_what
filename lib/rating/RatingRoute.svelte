@@ -7,6 +7,8 @@ import { loadOrgList, loadProjectList, recordSearchHit } from "../search/searchL
 import { resolveSearchKey } from "../search/searchResolve";
 import type { SearchListItem } from "../search/searchTypes";
 import { curtain } from "../stage/curtain.svelte";
+import { m } from "$parent/src/lib/paraglide/messages";
+import { localizeHref } from "$parent/src/lib/paraglide/runtime";
 
 let {
 	tab,
@@ -69,7 +71,7 @@ function pickItem(item: SearchListItem, go: boolean) {
 	recordSearchHit(fetch, endpoints, tab, item.key);
 	if (!go) return;
 	const href = tab === "orgs" ? routes.whoOrg?.(item.key) : routes.whatProject?.(item.key);
-	if (href) curtain.wipe(href);
+	if (href) curtain.wipe(localizeHref(href));
 }
 
 const weedsHref = $derived.by(() => {
@@ -100,7 +102,7 @@ $effect(() => {
 
 function openProject(projectKey: string) {
 	const href = routes.whatProject?.(projectKey);
-	if (href) curtain.wipe(href);
+	if (href) curtain.wipe(localizeHref(href));
 }
 
 $effect(() => {
@@ -114,22 +116,22 @@ $effect(() => {
 
 function search(q: string) {
 	if (!q.trim()) {
-		notice = "Type a name to search again.";
+		notice = m.ww_rating_notice_empty();
 		return;
 	}
 	if (items.length === 0) {
-		notice = "Still loading — try again in a moment.";
+		notice = m.ww_rating_notice_loading();
 		return;
 	}
 	const key = resolveSearchKey(q, items, null);
 	if (!key) {
-		notice = "No match — try the full name.";
+		notice = m.ww_rating_notice_no_match();
 		return;
 	}
 	notice = null;
 	recordSearchHit(fetch, endpoints, tab, key);
 	const href = tab === "orgs" ? routes.whoOrg?.(key) : routes.whatProject?.(key);
-	if (href) curtain.wipe(href);
+	if (href) curtain.wipe(localizeHref(href));
 }
 </script>
 

@@ -14,6 +14,9 @@ import StakeholdersUnselectedRaw from "../assets/svg/rating/Rating_page_stakehol
 import SourcesSelectedRaw from "../assets/svg/rating/Rating_page_sources_Selected.svg?raw";
 import SourcesUnselectedRaw from "../assets/svg/rating/Rating_page_sources_unselected.svg?raw";
 import { WEEDS_TABLES, type WeedsTable } from "../whoWhatTypes";
+import { svgFit } from "../stage/svgFit";
+import { TABLE_LABELS } from "./tallyMath";
+import { m } from "$parent/src/lib/paraglide/messages";
 
 let {
 	active,
@@ -27,17 +30,25 @@ let {
 
 // Each sticker's viewBox width and the height of what it actually draws: the
 // six new pairs carry a stray point below the box that pads the viewBox, so
-// the strip sizes by width and clips at the drawn edge.
+// the strip sizes by width and clips at the drawn edge. `drawn` is the word the art carries.
 type Sticker = { lit: string; dim: string; vw: [number, number]; vh: [number, number] };
-const STICKERS: Record<WeedsTable, { label: string } & Sticker> = {
-	projects: { label: "Projects", lit: ProjectsSelectedRaw, dim: ProjectsUnselectedRaw, vw: [85.25, 71.9], vh: [49.7, 26.8] },
-	crop: { label: "Crop", lit: CropSelectedRaw, dim: CropUnselectedRaw, vw: [102.3, 90.3], vh: [76, 52] },
-	planting: { label: "Planting", lit: PlantingSelectedRaw, dim: PlantingUnselectedRaw, vw: [102.3, 90.3], vh: [78, 52] },
-	land: { label: "Land", lit: LandSelectedRaw, dim: LandUnselectedRaw, vw: [102.3, 90.3], vh: [77, 52] },
-	polymorphic: { label: "Polymorphic", lit: PolymorphicSelectedRaw, dim: PolymorphicUnselectedRaw, vw: [102.3, 90.3], vh: [78, 52] },
-	stakeholders: { label: "Stakeholders", lit: StakeholdersSelectedRaw, dim: StakeholdersUnselectedRaw, vw: [102.3, 90.3], vh: [78, 52] },
-	sources: { label: "Sources", lit: SourcesSelectedRaw, dim: SourcesUnselectedRaw, vw: [102.3, 90.3], vh: [79, 52] },
+const STICKERS: Record<WeedsTable, { drawn: string } & Sticker> = {
+	projects: { drawn: "Projects", lit: ProjectsSelectedRaw, dim: ProjectsUnselectedRaw, vw: [85.25, 71.9], vh: [49.7, 26.8] },
+	crop: { drawn: "Crop", lit: CropSelectedRaw, dim: CropUnselectedRaw, vw: [102.3, 90.3], vh: [76, 52] },
+	planting: { drawn: "Planting", lit: PlantingSelectedRaw, dim: PlantingUnselectedRaw, vw: [102.3, 90.3], vh: [78, 52] },
+	land: { drawn: "Land", lit: LandSelectedRaw, dim: LandUnselectedRaw, vw: [102.3, 90.3], vh: [77, 52] },
+	polymorphic: { drawn: "Polymorphic", lit: PolymorphicSelectedRaw, dim: PolymorphicUnselectedRaw, vw: [102.3, 90.3], vh: [78, 52] },
+	stakeholders: { drawn: "Stakeholders", lit: StakeholdersSelectedRaw, dim: StakeholdersUnselectedRaw, vw: [102.3, 90.3], vh: [78, 52] },
+	sources: { drawn: "Sources", lit: SourcesSelectedRaw, dim: SourcesUnselectedRaw, vw: [102.3, 90.3], vh: [79, 52] },
 };
+
+const ART = Object.fromEntries(
+	WEEDS_TABLES.map((t) => {
+		const { drawn, lit, dim } = STICKERS[t];
+		const swap = [[drawn, TABLE_LABELS[t]]] as const;
+		return [t, { lit: svgFit(lit, swap), dim: svgFit(dim, swap) }];
+	}),
+) as Record<WeedsTable, { lit: string; dim: string }>;
 
 const tabId = (t: WeedsTable) => `weeds-tab-${t}`;
 
@@ -78,7 +89,7 @@ $effect(() => {
 </script>
 
 <div class="strip-frame">
-	<div class="strip" role="tablist" aria-label="The weeds" bind:this={stripEl}>
+	<div class="strip" role="tablist" aria-label={m.ww_rating_weeds()} bind:this={stripEl}>
 		{#each WEEDS_TABLES as t (t)}
 			{@const s = STICKERS[t]}
 			{@const lit = t === active}
@@ -98,9 +109,9 @@ $effect(() => {
 			>
 				<span class="art" aria-hidden="true">
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html lit ? s.lit : s.dim}
+					{@html lit ? ART[t].lit : ART[t].dim}
 				</span>
-				<span class="visually-hidden">{s.label}</span>
+				<span class="visually-hidden">{TABLE_LABELS[t]}</span>
 			</button>
 		{/each}
 	</div>

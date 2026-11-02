@@ -1,0 +1,150 @@
+{
+	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"ww_rating_state_opaque": "Datos opacos…",
+	"ww_rating_state_partial": "Datos parciales…",
+	"ww_rating_state_open": "Datos abiertos…",
+	"ww_rating_state_transparent": "Datos transparentes…",
+	"ww_rating_state_unscored": "Sin calificar",
+	"ww_rating_name_line": "{name};",
+	"ww_rating_notice_empty": "Escriba un nombre para buscar de nuevo.",
+	"ww_rating_notice_loading": "Aún está cargando — vuelva a intentarlo en un momento.",
+	"ww_rating_notice_no_match": "Sin coincidencias — pruebe con el nombre completo.",
+	"ww_rating_lockup": "La verdad está en la maleza… Cave más hondo.",
+	"ww_rating_art_rating": "CALIFICACIÓN:",
+	"ww_rating_art_data_transparency": "Transparencia de datos",
+	"ww_rating_art_truth": "La verdad",
+	"ww_rating_art_is_in": "está en",
+	"ww_rating_art_the": "la",
+	"ww_rating_art_weeds": "maleza",
+	"ww_rating_art_dig": "Cave",
+	"ww_rating_art_in": "más",
+	"ww_rating_art_deeper": "hondo",
+	"ww_rating_art_trees_planted": "Árboles plantados",
+	"ww_rating_trees_planted_label": "Árboles plantados: {count}",
+	"ww_rating_help": "Muéstreme cómo funciona esta página",
+	"ww_rating_explore_map": "Explore el mapa",
+	"ww_rating_weeds": "La maleza",
+	"ww_rating_weeds_filter_placeholder": "Filtrar estas filas…",
+	"ww_rating_weeds_filter_label": "Filtrar las filas de {table}",
+	"ww_rating_weeds_filter_clear": "Borrar el filtro",
+	"ww_rating_weeds_filter_submit": "Filtrar",
+	"ww_rating_weeds_empty": "Aún no hay nada aquí.",
+	"ww_rating_weeds_failed": "No se pudo cargar esta tabla.",
+	"ww_rating_weeds_digging": "Excavando…",
+	"ww_rating_weeds_rows_capped": "{count} de más — se muestran las primeras {count} filas",
+	"ww_rating_table_projects": "Proyectos",
+	"ww_rating_table_crop": "Cultivo",
+	"ww_rating_table_planting": "Plantación",
+	"ww_rating_table_land": "Terreno",
+	"ww_rating_table_polymorphic": "Polimórfico",
+	"ww_rating_table_stakeholders": "Actores",
+	"ww_rating_table_sources": "Fuentes",
+	"ww_rating_table_scores_projects": "los campos propios del registro",
+	"ww_rating_table_scores_crop": "especies y nombres de cultivos",
+	"ww_rating_table_scores_planting": "filas de plantación y sus cantidades",
+	"ww_rating_table_scores_land": "terrenos y sus polígonos",
+	"ww_rating_table_scores_polymorphic": "los campos varios",
+	"ww_rating_table_scores_stakeholders": "categorías de actores",
+	"ww_rating_table_scores_sources": "de dónde proviene el registro",
+	"ww_rating_tally_status": "{table}: {awarded} de {available}. {scored} de {total} hasta ahora.",
+	"ww_rating_tally_caption": "Cómo se compone {rating}",
+	"ww_rating_tally_points_so_far": "de {available} puntos hasta ahora",
+	"ww_rating_tally_after_claims": "tras las declaraciones",
+	"ww_rating_tally_table_scores": "{table}: {scores}",
+	"ww_rating_tally_not_broken_down_long": "N/D — sin desglose",
+	"ww_rating_tally_not_broken_down": "sin desglose",
+	"ww_rating_tally_of": "{scored} de {total}",
+	"ww_rating_column_project": "Proyecto",
+	"ww_rating_column_platform": "Plataforma",
+	"ww_rating_column_score": "Calificación",
+	"ww_rating_column_points_scored": "Puntos obtenidos",
+	"ww_rating_column_points_available": "Puntos posibles",
+	"ww_rating_column_trees_planted": "Árboles plantados",
+	"ww_rating_column_scored_on": "Calificado el",
+	"ww_rating_column_linked_through": "Vinculado mediante",
+	"ww_rating_column_listing_id": "ID de la ficha",
+	"ww_rating_column_started": "Inicio",
+	"ww_rating_column_ends": "Fin",
+	"ww_rating_column_description": "Descripción",
+	"ww_rating_column_added": "Agregado",
+	"ww_rating_column_crop": "Cultivo",
+	"ww_rating_column_species": "Especie",
+	"ww_rating_column_seed_source": "Origen de la semilla",
+	"ww_rating_column_nursery_stock": "Plantas de vivero",
+	"ww_rating_column_trees_planned": "Árboles previstos",
+	"ww_rating_column_units": "Unidades",
+	"ww_rating_column_unit": "Unidad",
+	"ww_rating_column_price_per_unit": "Precio por unidad",
+	"ww_rating_column_currency": "Moneda",
+	"ww_rating_column_price_in_usd": "Precio en USD",
+	"ww_rating_column_planted_on": "Plantado el",
+	"ww_rating_column_belongs_to": "Pertenece a",
+	"ww_rating_column_site": "Sitio",
+	"ww_rating_column_hectares": "Hectáreas",
+	"ww_rating_column_latitude": "Latitud",
+	"ww_rating_column_longitude": "Longitud",
+	"ww_rating_column_status": "Estado",
+	"ww_rating_column_surviving_pct": "Supervivencia (%)",
+	"ww_rating_column_price_per_tree": "Precio por árbol",
+	"ww_rating_column_people_employed": "Personas empleadas",
+	"ww_rating_column_counted_as": "Contado como",
+	"ww_rating_column_restoration_type": "Tipo de restauración",
+	"ww_rating_column_treatment": "Tratamiento",
+	"ww_rating_column_degraded_on": "Degradado el",
+	"ww_rating_column_reviews": "Reseñas",
+	"ww_rating_column_organization": "Organización",
+	"ww_rating_column_role": "Rol",
+	"ww_rating_column_on": "En",
+	"ww_rating_column_url": "URL",
+	"ww_rating_column_kind": "Tipo",
+	"ww_rating_column_published_by": "Publicado por",
+	"ww_rating_column_credit": "Crédito",
+	"ww_rating_column_order": "Orden",
+	"ww_rating_column_backs": "Respalda",
+	"ww_rating_weeds_rows": [
+		{
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
+			"match": {
+				"countPlural=one": "{count} fila",
+				"countPlural=*": "{count} filas"
+			}
+		}
+	],
+	"ww_rating_weeds_rows_filtered": [
+		{
+			"declarations": [
+				"input shown",
+				"input total",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{shown} de {total} fila",
+				"totalPlural=*": "{shown} de {total} filas"
+			}
+		}
+	],
+	"ww_rating_tally_mean": [
+		{
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
+			"match": {
+				"countPlural=one": "promedio de {count} proyecto",
+				"countPlural=*": "promedio de {count} proyectos"
+			}
+		}
+	]
+}

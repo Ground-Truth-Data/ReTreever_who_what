@@ -3,6 +3,7 @@
 // page sizes it to the globe beside it; under reduced motion nothing animates,
 // so the button is disabled rather than given a still variant.
 import InfoRaw from "../assets/svg/rating/Rating_page_info_button.svg?raw";
+import { m } from "$parent/src/lib/paraglide/messages";
 
 let { playing, onpress }: { playing: boolean; onpress: () => void } = $props();
 
@@ -16,7 +17,7 @@ $effect(() => {
 });
 </script>
 
-<button type="button" class="help-sticker" aria-label="Show me how this page works" aria-pressed={playing} disabled={reduced} onclick={onpress}>
+<button type="button" class="help-sticker" aria-label={m.ww_rating_help()} aria-pressed={playing} disabled={reduced} onclick={onpress}>
 	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 	{@html InfoRaw}
 </button>

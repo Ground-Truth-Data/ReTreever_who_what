@@ -1,0 +1,150 @@
+{
+	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"ww_rating_state_opaque": "Dados opacos…",
+	"ww_rating_state_partial": "Dados parciais…",
+	"ww_rating_state_open": "Dados abertos…",
+	"ww_rating_state_transparent": "Dados transparentes…",
+	"ww_rating_state_unscored": "Sem classificação",
+	"ww_rating_name_line": "{name};",
+	"ww_rating_notice_empty": "Digite um nome para buscar de novo.",
+	"ww_rating_notice_loading": "Ainda carregando — tente de novo em um instante.",
+	"ww_rating_notice_no_match": "Nenhum resultado — tente o nome completo.",
+	"ww_rating_lockup": "A verdade está no mato… Cave mais fundo.",
+	"ww_rating_art_rating": "CLASSIFICAÇÃO:",
+	"ww_rating_art_data_transparency": "Transparência de dados",
+	"ww_rating_art_truth": "A verdade",
+	"ww_rating_art_is_in": "está",
+	"ww_rating_art_the": "no",
+	"ww_rating_art_weeds": "mato",
+	"ww_rating_art_dig": "Cave",
+	"ww_rating_art_in": "mais",
+	"ww_rating_art_deeper": "fundo",
+	"ww_rating_art_trees_planted": "Árvores plantadas",
+	"ww_rating_trees_planted_label": "Árvores plantadas: {count}",
+	"ww_rating_help": "Mostre como esta página funciona",
+	"ww_rating_explore_map": "Explore o mapa",
+	"ww_rating_weeds": "O mato",
+	"ww_rating_weeds_filter_placeholder": "Filtrar estas linhas…",
+	"ww_rating_weeds_filter_label": "Filtrar as linhas de {table}",
+	"ww_rating_weeds_filter_clear": "Limpar o filtro",
+	"ww_rating_weeds_filter_submit": "Filtrar",
+	"ww_rating_weeds_empty": "Ainda não há nada aqui.",
+	"ww_rating_weeds_failed": "Não foi possível carregar esta tabela.",
+	"ww_rating_weeds_digging": "Cavando…",
+	"ww_rating_weeds_rows_capped": "{count} de mais — as primeiras {count} linhas são exibidas",
+	"ww_rating_table_projects": "Projetos",
+	"ww_rating_table_crop": "Cultivo",
+	"ww_rating_table_planting": "Plantio",
+	"ww_rating_table_land": "Terreno",
+	"ww_rating_table_polymorphic": "Polimórfico",
+	"ww_rating_table_stakeholders": "Atores",
+	"ww_rating_table_sources": "Fontes",
+	"ww_rating_table_scores_projects": "os campos do próprio registro",
+	"ww_rating_table_scores_crop": "espécies e nomes de cultivos",
+	"ww_rating_table_scores_planting": "linhas de plantio e suas quantidades",
+	"ww_rating_table_scores_land": "terrenos e seus polígonos",
+	"ww_rating_table_scores_polymorphic": "os campos diversos",
+	"ww_rating_table_scores_stakeholders": "categorias de atores",
+	"ww_rating_table_scores_sources": "de onde veio o registro",
+	"ww_rating_tally_status": "{table}: {awarded} de {available}. {scored} de {total} até agora.",
+	"ww_rating_tally_caption": "Como {rating} se compõe",
+	"ww_rating_tally_points_so_far": "de {available} pontos até agora",
+	"ww_rating_tally_after_claims": "após as declarações",
+	"ww_rating_tally_table_scores": "{table}: {scores}",
+	"ww_rating_tally_not_broken_down_long": "N/D — sem detalhamento",
+	"ww_rating_tally_not_broken_down": "sem detalhamento",
+	"ww_rating_tally_of": "{scored} de {total}",
+	"ww_rating_column_project": "Projeto",
+	"ww_rating_column_platform": "Plataforma",
+	"ww_rating_column_score": "Classificação",
+	"ww_rating_column_points_scored": "Pontos obtidos",
+	"ww_rating_column_points_available": "Pontos possíveis",
+	"ww_rating_column_trees_planted": "Árvores plantadas",
+	"ww_rating_column_scored_on": "Classificado em",
+	"ww_rating_column_linked_through": "Vinculado por",
+	"ww_rating_column_listing_id": "ID da ficha",
+	"ww_rating_column_started": "Início",
+	"ww_rating_column_ends": "Término",
+	"ww_rating_column_description": "Descrição",
+	"ww_rating_column_added": "Adicionado",
+	"ww_rating_column_crop": "Cultivo",
+	"ww_rating_column_species": "Espécie",
+	"ww_rating_column_seed_source": "Origem da semente",
+	"ww_rating_column_nursery_stock": "Mudas de viveiro",
+	"ww_rating_column_trees_planned": "Árvores previstas",
+	"ww_rating_column_units": "Unidades",
+	"ww_rating_column_unit": "Unidade",
+	"ww_rating_column_price_per_unit": "Preço por unidade",
+	"ww_rating_column_currency": "Moeda",
+	"ww_rating_column_price_in_usd": "Preço em USD",
+	"ww_rating_column_planted_on": "Plantado em",
+	"ww_rating_column_belongs_to": "Pertence a",
+	"ww_rating_column_site": "Local",
+	"ww_rating_column_hectares": "Hectares",
+	"ww_rating_column_latitude": "Latitude",
+	"ww_rating_column_longitude": "Longitude",
+	"ww_rating_column_status": "Situação",
+	"ww_rating_column_surviving_pct": "Sobrevivência (%)",
+	"ww_rating_column_price_per_tree": "Preço por árvore",
+	"ww_rating_column_people_employed": "Pessoas empregadas",
+	"ww_rating_column_counted_as": "Contado como",
+	"ww_rating_column_restoration_type": "Tipo de restauração",
+	"ww_rating_column_treatment": "Tratamento",
+	"ww_rating_column_degraded_on": "Degradado em",
+	"ww_rating_column_reviews": "Avaliações",
+	"ww_rating_column_organization": "Organização",
+	"ww_rating_column_role": "Papel",
+	"ww_rating_column_on": "Em",
+	"ww_rating_column_url": "URL",
+	"ww_rating_column_kind": "Tipo",
+	"ww_rating_column_published_by": "Publicado por",
+	"ww_rating_column_credit": "Crédito",
+	"ww_rating_column_order": "Ordem",
+	"ww_rating_column_backs": "Respalda",
+	"ww_rating_weeds_rows": [
+		{
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
+			"match": {
+				"countPlural=one": "{count} linha",
+				"countPlural=*": "{count} linhas"
+			}
+		}
+	],
+	"ww_rating_weeds_rows_filtered": [
+		{
+			"declarations": [
+				"input shown",
+				"input total",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{shown} de {total} linha",
+				"totalPlural=*": "{shown} de {total} linhas"
+			}
+		}
+	],
+	"ww_rating_tally_mean": [
+		{
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
+			"match": {
+				"countPlural=one": "média de {count} projeto",
+				"countPlural=*": "média de {count} projetos"
+			}
+		}
+	]
+}

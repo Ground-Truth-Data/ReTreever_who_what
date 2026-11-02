@@ -1,6 +1,7 @@
 <script lang="ts">
 import { cn } from "../cn";
 import globeSprite from "../assets/pub-Rtvr/animations/globe-spin-sprite.webp";
+import { m } from "$parent/src/lib/paraglide/messages";
 
 let { class: className = "", href }: { class?: string; href?: string } = $props();
 </script>
@@ -9,7 +10,7 @@ let { class: className = "", href }: { class?: string; href?: string } = $props(
 <svelte:element
 	this={href ? "a" : "span"}
 	{href}
-	aria-label={href ? "Explore the map" : undefined}
+	aria-label={href ? m.ww_rating_explore_map() : undefined}
 	class={cn("globe-spin-link", className)}
 >
 	<div class="globe-spin" style="--globe-sprite: url({globeSprite})"></div>

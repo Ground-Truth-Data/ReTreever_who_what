@@ -7,6 +7,8 @@ import WeedsBarArt from "../assets/svg/rating/Rating_page_weeds_search_bar.svg?r
 import WeedsTable from "./WeedsTable.svelte";
 import WeedsTabs from "./WeedsTabs.svelte";
 import { filterRows } from "./weedsFormat";
+import { TABLE_LABELS } from "./tallyMath";
+import { m } from "$parent/src/lib/paraglide/messages";
 import { scrollTopFor, tabIndexFor } from "./weedsScroll";
 import { WEEDS_TABLES, type WeedsAnswer, type WeedsRow, type WeedsTable as WeedsTableName } from "../whoWhatTypes";
 
@@ -219,7 +221,7 @@ function barKeydown(e: KeyboardEvent) {
 </script>
 
 <div class="weeds-track" style:--weeds-n={WEEDS_TABLES.length} bind:this={trackEl}>
-<section class="weeds-stage" aria-label="The weeds" bind:this={stageEl}>
+<section class="weeds-stage" aria-label={m.ww_rating_weeds()} bind:this={stageEl}>
 	<WeedsTabs {active} onselect={pick} panelId={PANEL_ID} />
 
 	<form class="weeds-bar" role="search" onsubmit={(e) => e.preventDefault()}>
@@ -230,37 +232,37 @@ function barKeydown(e: KeyboardEvent) {
 		<input
 			type="search"
 			class="bar-input"
-			placeholder="Filter these rows…"
-			aria-label="Filter the {active} rows"
+			placeholder={m.ww_rating_weeds_filter_placeholder()}
+			aria-label={m.ww_rating_weeds_filter_label({ table: TABLE_LABELS[active].toLowerCase() })}
 			bind:value={query}
 			onkeydown={barKeydown}
 		/>
 		{#if query}
-			<button type="button" class="bar-clear" aria-label="Clear the filter" onclick={() => (query = "")}>
+			<button type="button" class="bar-clear" aria-label={m.ww_rating_weeds_filter_clear()} onclick={() => (query = "")}>
 				<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 2 8 8M8 2 2 8" /></svg>
 			</button>
 		{/if}
-		<button type="submit" class="bar-submit" aria-label="Filter"></button>
+		<button type="submit" class="bar-submit" aria-label={m.ww_rating_weeds_filter_submit()}></button>
 	</form>
 
 	<div id={PANEL_ID} class="panel" role="tabpanel" aria-labelledby="weeds-tab-{active}" aria-busy={!!loading[active]}>
 		{#if answer}
 			{#if answer.rows.length === 0}
-				<p class="note">Nothing here yet.</p>
+				<p class="note">{m.ww_rating_weeds_empty()}</p>
 			{:else}
 				<WeedsTable columns={answer.columns} {rows} {open} />
 				<p class="count" aria-live="polite">
-					{#if query}{rows.length} of {answer.rows.length} rows{:else if answer.more}{answer.rows.length} of more — the first {answer.rows.length} rows are shown{:else}{answer.rows.length} {answer.rows.length === 1 ? "row" : "rows"}{/if}
+					{#if query}{m.ww_rating_weeds_rows_filtered({ shown: rows.length, total: answer.rows.length })}{:else if answer.more}{m.ww_rating_weeds_rows_capped({ count: answer.rows.length })}{:else}{m.ww_rating_weeds_rows({ count: answer.rows.length })}{/if}
 				</p>
 			{/if}
 		{:else if failed[active]}
-			<p class="note">Could not load this table.</p>
+			<p class="note">{m.ww_rating_weeds_failed()}</p>
 		{:else if fetchClip && clipRoot}
-			<div class="digging" aria-label="Digging…">
+			<div class="digging" aria-label={m.ww_rating_weeds_digging()}>
 				<FrameClipPlayer root={clipRoot} clip={FETCH_CLIP} facts={fetchClip} loop />
 			</div>
 		{:else}
-			<p class="note">Digging…</p>
+			<p class="note">{m.ww_rating_weeds_digging()}</p>
 		{/if}
 	</div>
 </section>

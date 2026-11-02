@@ -5,6 +5,7 @@
 // go. Never a control.
 import { untrack } from "svelte";
 import RatingNumber from "./RatingNumber.svelte";
+import { m } from "$parent/src/lib/paraglide/messages";
 
 let {
 	rating,
@@ -77,7 +78,7 @@ $effect(() => {
 	<div class="body" class:shown class:soil={overSoil} bind:this={body}>
 		<span class="glyphs" bind:this={glyphs}><RatingNumber text={rating.toFixed(1)} /></span>
 		<span class="words">
-			<span class="name">{name};</span>
+			<span class="name">{m.ww_rating_name_line({ name })}</span>
 			<span class="state">{stateLine}</span>
 		</span>
 	</div>

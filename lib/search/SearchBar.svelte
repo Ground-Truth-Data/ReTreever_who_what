@@ -1,13 +1,14 @@
 <script lang="ts">
 import { cn } from "../cn";
+import { m } from "$parent/src/lib/paraglide/messages";
 
 // foreignObject boxes are in SVG user units: font-size inside one scales with the artwork, not px.
 
 let {
 	value = $bindable(""),
 	dropdownOpen = $bindable(false),
-	placeholder = "Search…",
-	ariaLabel = "Search",
+	placeholder = m.ww_search_bar_placeholder(),
+	ariaLabel = m.ww_search_bar_label(),
 	id = "home-search",
 	class: className = "",
 	onsearch,
@@ -140,7 +141,7 @@ function handleSubmit(event: SubmitEvent) {
 				class="hit hit-list"
 				form={id}
 				aria-expanded={dropdownOpen}
-				aria-label="Search by list"
+				aria-label={m.ww_search_bar_list()}
 				onclick={() => {
 					dropdownOpen = !dropdownOpen;
 					if (dropdownOpen) onactivate?.();
@@ -180,7 +181,7 @@ function handleSubmit(event: SubmitEvent) {
 						type="button"
 						class="clear"
 						form={id}
-						aria-label="Clear search"
+						aria-label={m.ww_search_bar_clear()}
 						onclick={clearByButton}
 					>
 						<svg viewBox="0 0 10 10" aria-hidden="true">

@@ -31,6 +31,10 @@ import type { SearchResult } from "./resultLoad";
 import type { SearchListItem } from "../search/searchTypes";
 import { ratingState, type RatingState } from "./ratingState";
 import { WEEDS_TABLES, type ScoreTally, type WeedsTable, type WhoWhatRoutes } from "../whoWhatTypes";
+import { svgWords } from "../search/svgWords";
+import { svgFit } from "../stage/svgFit";
+import { m } from "$parent/src/lib/paraglide/messages";
+import { localizeHref } from "$parent/src/lib/paraglide/runtime";
 
 let {
 	tab,
@@ -159,15 +163,17 @@ $effect(() => {
 	};
 });
 
-const noun = $derived(tab === "orgs" ? "organizations" : "projects");
+const noun = $derived(tab === "orgs" ? m.ww_search_noun_orgs() : m.ww_search_noun_projects());
 const LIST_ID = "rating-search-list";
 let dropdownOpen = $state(false);
 let list = $state<SearchDropdown | null>(null);
 let activeDescendant = $state<string | undefined>(undefined);
 let barEl = $state<HTMLElement | null>(null);
 
+const localized = (href: string | undefined) => (href ? localizeHref(href) : undefined);
+
 const hrefOf = (item: SearchListItem) =>
-	tab === "orgs" ? routes.whoOrg?.(item.key) : routes.whatProject?.(item.key);
+	localized(tab === "orgs" ? routes.whoOrg?.(item.key) : routes.whatProject?.(item.key));
 
 // The bar carries this record's name once it lands; opened untouched, the list
 // offers the most-searched records rather than one match for the page itself.
@@ -285,16 +291,36 @@ const lessonFacts = () => ({
 });
 
 // One string per state until the wording is decided (RT 41 📣).
-const STATE_LINES: Record<RatingState, string> = {
-	opaque: "Opaque data…",
-	partial: "Partial data…",
-	open: "Open data…",
-	transparent: "Transparent data…",
+const STATE_LINES: Record<RatingState, () => string> = {
+	opaque: m.ww_rating_state_opaque,
+	partial: m.ww_rating_state_partial,
+	open: m.ww_rating_state_open,
+	transparent: m.ww_rating_state_transparent,
 };
 const stateLine = $derived.by(() => {
 	const state = record ? ratingState(record.rating) : null;
-	return state ? STATE_LINES[state] : "Unscored";
+	return state ? STATE_LINES[state]() : m.ww_rating_state_unscored();
 });
+
+const headerArt = svgFit(HeaderRaw, [
+	["RATING:", m.ww_rating_art_rating()],
+	["Data Transparency", m.ww_rating_art_data_transparency()],
+]);
+const orgsArt = $derived(svgWords(tab === "orgs" ? OrgsSelectedRaw : OrgsUnselectedRaw, [["Organizations", m.ww_search_tab_orgs()]]));
+const projectsArt = $derived(svgWords(tab === "projects" ? ProjectsSelectedRaw : ProjectsUnselectedRaw, [["Projects", m.ww_search_tab_projects()]]));
+const truthArt = svgFit(TruthIsInRaw, [
+	["Truth", m.ww_rating_art_truth()],
+	["is in", m.ww_rating_art_is_in()],
+]);
+const weedsArt = svgFit(TheWeedsRaw, [
+	["the", m.ww_rating_art_the()],
+	["weeds", m.ww_rating_art_weeds()],
+]);
+const digArt = svgFit(DigInRaw, [
+	["Dig", m.ww_rating_art_dig()],
+	["in", m.ww_rating_art_in()],
+]);
+const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 </script>
 
 <div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl}); --art-pine-phone: url({pinePhoneUrl}); --art-soil: url({soilUrl}); --art-soil-deep: url({soilDeepUrl});" bind:this={pageEl}>
@@ -312,17 +338,17 @@ const stateLine = $derived.by(() => {
 		<div class="hero-top">
 			<div class="header-sticker" aria-hidden="true">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				{@html HeaderRaw}
+				{@html headerArt}
 			</div>
 			<div class="bar-block">
-				<nav class="tabs" aria-label="Search by">
-					<a href={routes.who ?? null} class="tab-sticker" aria-current={tab === "orgs" ? "page" : undefined}>
+				<nav class="tabs" aria-label={m.ww_search_tabs_label()}>
+					<a href={localized(routes.who) ?? null} class="tab-sticker" aria-current={tab === "orgs" ? "page" : undefined}>
 						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-						{@html tab === "orgs" ? OrgsSelectedRaw : OrgsUnselectedRaw}
+						{@html orgsArt}
 					</a>
-					<a href={routes.what ?? null} class="tab-sticker" aria-current={tab === "projects" ? "page" : undefined}>
+					<a href={localized(routes.what) ?? null} class="tab-sticker" aria-current={tab === "projects" ? "page" : undefined}>
 						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-						{@html tab === "projects" ? ProjectsSelectedRaw : ProjectsUnselectedRaw}
+						{@html projectsArt}
 					</a>
 				</nav>
 				<div class="bar-row">
@@ -331,8 +357,8 @@ const stateLine = $derived.by(() => {
 							bind:value={query}
 							bind:dropdownOpen
 							id="rating-search"
-							placeholder="Search {noun}…"
-							ariaLabel="Search {noun}"
+							placeholder={tab === "orgs" ? m.ww_search_placeholder_orgs() : m.ww_search_placeholder_projects()}
+							ariaLabel={tab === "orgs" ? m.ww_search_label_orgs() : m.ww_search_label_projects()}
 							onsearch={submit}
 							{onactivate}
 							onkeynav={(dir) => list?.move(dir)}
@@ -357,7 +383,7 @@ const stateLine = $derived.by(() => {
 							<p class="search-notice" role="status" aria-live="polite">{notice}</p>
 						{/if}
 					</div>
-					<GlobeSpinIcon class="globe-icon" href={routes.whoMap} />
+					<GlobeSpinIcon class="globe-icon" href={localized(routes.whoMap)} />
 					<HelpSticker playing={lessonPlaying} onpress={pressHelp} />
 				</div>
 			</div>
@@ -367,7 +393,7 @@ const stateLine = $derived.by(() => {
 			<div class="score-column" class:pending={!record}>
 				{#if record}
 					<h1 class="name">
-						<span class="name-text">{record.name};</span>
+						<span class="name-text">{m.ww_rating_name_line({ name: record.name })}</span>
 						<span class="state-line">{stateLine}</span>
 					</h1>
 					{#if record.rating !== null}
@@ -386,11 +412,11 @@ const stateLine = $derived.by(() => {
 		<div class="lockup" aria-hidden="true">
 			<div class="lockup-row">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				<div class="sticker truth">{@html TruthIsInRaw}</div>
+				<div class="sticker truth">{@html truthArt}</div>
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 				<div class="sticker shovel">{@html ShovelRaw}</div>
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				<div class="sticker weeds">{@html TheWeedsRaw}</div>
+				<div class="sticker weeds">{@html weedsArt}</div>
 			</div>
 			<div class="yellow-line">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -398,12 +424,12 @@ const stateLine = $derived.by(() => {
 			</div>
 			<div class="lockup-row second">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				<div class="sticker dig">{@html DigInRaw}</div>
+				<div class="sticker dig">{@html digArt}</div>
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				<div class="sticker deeper">{@html DeeperRaw}</div>
+				<div class="sticker deeper">{@html deeperArt}</div>
 			</div>
 		</div>
-		<p class="visually-hidden">Truth is in the weeds… Dig in deeper.</p>
+		<p class="visually-hidden">{m.ww_rating_lockup()}</p>
 	</section>
 
 	{#if weedsHref}
