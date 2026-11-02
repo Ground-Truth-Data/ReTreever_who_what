@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SHARDS, shard, shardId } from './shardIndex';
+import { SHARDS, byArt, shard, shardId, shardsFor } from './shardIndex';
 
 describe('shard numbers are unique across the whole site', () => {
 	it('never reuses a number, on any page', () => {
@@ -47,5 +47,23 @@ describe('the index describes something real', () => {
 	it('throws on a number nobody allocated, rather than returning undefined', () => {
 		// silent undefined would render id="undefined" far from the typo — throwing points at the call site instead
 		expect(() => shard(9999)).toThrow(/No shard numbered 9999/);
+	});
+});
+
+describe('artwork mapping', () => {
+	it('maps artwork numbers to shards per page', () => {
+		const m = byArt('search');
+		expect(m.get(9)?.n).toBe(6);
+		expect(m.get(1)?.n).toBe(1);
+	});
+
+	it('never maps one artwork to two shards on the same page', () => {
+		for (const page of ['search', 'why'] as const) {
+			const arts = shardsFor(page)
+				.map((s) => s.art)
+				.filter((a): a is number => a !== undefined);
+			expect(new Set(arts).size, `${page} reuses an artwork number`)
+				.toBe(arts.length);
+		}
 	});
 });
