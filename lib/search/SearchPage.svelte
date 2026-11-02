@@ -28,7 +28,7 @@ import {
 	type Placed,
 } from "../stage/shardLayout";
 import { byArt, shard, shardId } from "../stage/shardIndex";
-import { withLocalPhotos } from "../stage/svgPhotos";
+import { withLocalPhotos, withPhonePhotos } from "../stage/svgPhotos";
 import type { WhoWhatRoutes } from "../whoWhatTypes";
 import type { SearchListItem } from "./searchTypes";
 
@@ -109,7 +109,16 @@ const PHOTOS = import.meta.glob<string>(
 	"../assets/pub-Rtvr/home/poly/*.webp",
 	{ eager: true, query: "?url", import: "default" },
 );
+const PHONE_PHOTOS = import.meta.glob<string>(
+	"../assets/pub-Rtvr/home/poly/*-phone.webp",
+	{ eager: true, query: "?url", import: "default" },
+);
 const localPhotos = (svg: string) => withLocalPhotos(svg, PHOTOS, "home/poly");
+// Picked once, at mount: the shards lay out from DOM measurements, so none
+// renders on the server and the pick costs no second fetch.
+const phone = typeof matchMedia === "function" && matchMedia("(max-width: 480px)").matches;
+const shardPhotos = (svg: string) =>
+	phone ? withPhonePhotos(svg, PHONE_PHOTOS, "home/poly") : localPhotos(svg);
 
 const shardArt: Record<number, string> = Object.fromEntries(
 	Object.entries(
@@ -118,7 +127,7 @@ const shardArt: Record<number, string> = Object.fromEntries(
 			query: "?raw",
 			import: "default",
 		}),
-	).map(([path, svg]) => [Number(/poly_(\d+)\.svg$/.exec(path)![1]), localPhotos(svg)]),
+	).map(([path, svg]) => [Number(/poly_(\d+)\.svg$/.exec(path)![1]), shardPhotos(svg)]),
 );
 
 let shards = $state<Placed[]>([]);
