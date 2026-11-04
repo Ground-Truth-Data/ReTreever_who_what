@@ -350,8 +350,10 @@ function barKeydown(e: KeyboardEvent) {
 	}
 
 	/* The bar's art is 685.4 × 49.1; the input and the button sit on its two panels. */
+	/* Never shrinks for a long table; the table scrolls instead. */
 	.weeds-bar {
 		position: relative;
+		flex: none;
 		width: 100%;
 		aspect-ratio: 685.4 / 49.1;
 		min-height: 44px;
