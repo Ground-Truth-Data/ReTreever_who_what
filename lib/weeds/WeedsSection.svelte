@@ -1,6 +1,7 @@
 <script lang="ts">
 // The weeds under the rating: the tab strip, the weeds bar and one table per
 // tab. Each table is fetched once and kept; the bar narrows the rows it has.
+import type { Snippet } from "svelte";
 import FrameClipPlayer from "$gc/FrameClipPlayer.svelte";
 import { loadClips, type ClipManifest } from "$gc/frameClips";
 import WeedsBarArt from "../assets/svg/rating/Rating_page_weeds_search_bar.svg?raw";
@@ -15,6 +16,7 @@ import { WEEDS_TABLES, type WeedsAnswer, type WeedsRow, type WeedsTable as Weeds
 let {
 	tab,
 	href,
+	head = undefined,
 	clipRoot = undefined,
 	onopenproject = undefined,
 	onactive = undefined,
@@ -22,6 +24,8 @@ let {
 	tab: "orgs" | "projects";
 	/** The host's URL for one table of this record. */
 	href: (table: WeedsTableName) => string;
+	/** Pins above the stage, at the page's full width, for as long as the stage does. */
+	head?: Snippet;
 	clipRoot?: string;
 	/** An org's Projects row picked; absent, the names are plain text. */
 	onopenproject?: (projectKey: string) => void;
@@ -42,7 +46,8 @@ let loading = $state<Partial<Record<WeedsTableName, true>>>({});
 let query = $state("");
 let manifest = $state<ClipManifest | null>(null);
 let trackEl = $state<HTMLElement | null>(null);
-let stageEl = $state<HTMLElement | null>(null);
+let pinEl = $state<HTMLElement | null>(null);
+let headH = $state(0);
 let runEl = $state<HTMLElement | null>(null);
 
 async function load(table: WeedsTableName) {
@@ -114,8 +119,8 @@ export function stagePin(): number | null {
 // Progress 0 is where the stage pins, so index 0 lands exactly under the nav
 // and the last index is the point the stage unpins.
 function pinTop(track: HTMLElement) {
-	const stageTop = stageEl ? parseFloat(getComputedStyle(stageEl).top) || 0 : 0;
-	return track.getBoundingClientRect().top + window.scrollY - stageTop;
+	const stickTop = pinEl ? parseFloat(getComputedStyle(pinEl).top) || 0 : 0;
+	return track.getBoundingClientRect().top + window.scrollY - stickTop;
 }
 
 function stepOf(run: HTMLElement) {
@@ -221,7 +226,12 @@ function barKeydown(e: KeyboardEvent) {
 </script>
 
 <div class="weeds-track" style:--weeds-n={WEEDS_TABLES.length} bind:this={trackEl}>
-<section class="weeds-stage" aria-label={m.ww_rating_weeds()} bind:this={stageEl}>
+<div class="weeds-pin" style:--head-h="{headH}px" bind:this={pinEl}>
+{#if head}
+	<div class="weeds-head" bind:clientHeight={headH}>{@render head()}</div>
+{/if}
+<div class="weeds-lean">
+<section class="weeds-stage" aria-label={m.ww_rating_weeds()}>
 	<WeedsTabs {active} onselect={pick} panelId={PANEL_ID} />
 
 	<form class="weeds-bar" role="search" onsubmit={(e) => e.preventDefault()}>
@@ -266,29 +276,54 @@ function barKeydown(e: KeyboardEvent) {
 		{/if}
 	</div>
 </section>
+</div>
+</div>
 <div class="run" aria-hidden="true" bind:this={runEl}></div>
 </div>
 
 <style>
-	/* One step of page scroll per tab; the run below the stage is the other
-	   N - 1 steps, so the stage pins for exactly that long. The nav above is
-	   5rem and sticky, so the stage pins under it. */
+	/* One step of page scroll per tab; the run below the pin is the other
+	   N - 1 steps, so the pin holds for exactly that long. The nav above is
+	   5rem and sticky, so the pin holds under it. */
 	.weeds-track {
 		--weeds-step: clamp(320px, 60vh, 640px);
 		--stage-top: var(--host-chrome, 5rem);
 		position: relative;
 		z-index: 6;
 		width: 100%;
-		box-sizing: border-box;
-		/* The page sets this when a tally stands at the right edge: the stage
-		   gives it the column and leans only half that way, so it still reads
-		   as the page's centre under the lockup. */
-		padding-right: var(--stage-room, 0px);
-		padding-left: calc(var(--stage-room, 0px) / 2);
 		/* A new tab's table changes the stage's height; left to anchor on the
 		   run below it, the browser would scroll the page by that growth, and
 		   the scroll would read the next tab from it. */
 		overflow-anchor: none;
+	}
+
+	/* The whole scene holds still while the scroll walks the tabs: the head,
+	   the stage and whatever ground the host paints on the pin. It fills the
+	   screen under the nav, so nothing behind it shows moving; a short screen
+	   still gets the stage's 520px floor under the head. */
+	.weeds-pin {
+		position: sticky;
+		top: var(--stage-top);
+		height: max(calc(100dvh - var(--stage-top)), calc(var(--head-h) + 520px));
+		display: flex;
+		flex-direction: column;
+	}
+
+	.weeds-head {
+		flex: none;
+	}
+
+	/* The page sets --stage-room when a tally stands at the right edge: the
+	   stage gives it the column and leans only half that way, so it still
+	   reads as the page's centre under the head. */
+	.weeds-lean {
+		flex: 1 1 0;
+		min-height: 0;
+		box-sizing: border-box;
+		display: flex;
+		flex-direction: column;
+		padding-right: var(--stage-room, 0px);
+		padding-left: calc(var(--stage-room, 0px) / 2);
 	}
 
 	.run {
@@ -298,13 +333,12 @@ function barKeydown(e: KeyboardEvent) {
 	.weeds-stage {
 		--card-max: 1180px;
 		--tab-h: clamp(44px, 3.4vw, 56px);
-		position: sticky;
-		top: var(--stage-top);
 		width: 100%;
 		max-width: var(--card-max);
-		/* The table takes what is left below the tabs and the bar, and scrolls
-		   inside; the floor keeps it usable on a short viewport. */
-		max-height: max(calc(100dvh - var(--stage-top)), 520px);
+		/* The table takes what the pin leaves below the tabs and the bar, and
+		   scrolls inside. */
+		flex: 0 1 auto;
+		min-height: 0;
 		margin: 0 auto;
 		padding: calc(var(--tab-h) * 1.2) clamp(16px, 3vw, 40px) clamp(32px, 5vh, 72px);
 		box-sizing: border-box;

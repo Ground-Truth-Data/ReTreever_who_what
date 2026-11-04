@@ -122,16 +122,14 @@ $effect(() => {
 // once the real number has gone under the nav, and turns light once its own
 // top is past the crest of the hills, which is where the dark begins.
 let pageEl = $state<HTMLElement | null>(null);
-let bandEl = $state<HTMLElement | null>(null);
 let following = $state(false);
 let overSoil = $state(false);
 $effect(() => {
 	const page = pageEl;
-	const band = bandEl;
 	const soil = undergroundEl;
 	const number = numberEl;
 	const shown = revealed;
-	if (!page || !band || !soil) return;
+	if (!page || !soil) return;
 	let raf = 0;
 	let lastHead = -1;
 	const navBottom = () => {
@@ -139,17 +137,19 @@ $effect(() => {
 		const chrome = parseFloat(root.getPropertyValue("--host-chrome"));
 		return Number.isFinite(chrome) ? chrome : 5 * parseFloat(root.fontSize);
 	};
+	// The lockup pins with the weeds, so its unpinned top is read off the soil it opens.
+	const bandTop = () => soil.getBoundingClientRect().top + parseFloat(getComputedStyle(soil).paddingTop);
 	const read = () => {
 		raf = 0;
 		const body = page.querySelector(".follower .body")?.getBoundingClientRect().height ?? 0;
-		const head = band.getBoundingClientRect().top - page.getBoundingClientRect().top - body;
+		const head = bandTop() - page.getBoundingClientRect().top - body;
 		if (Math.abs(head - lastHead) >= 1) {
 			lastHead = head;
 			page.style.setProperty("--dig-head-h", `${Math.round(head)}px`);
 		}
 		const nav = navBottom();
 		following = shown && number !== null && number.getBoundingClientRect().bottom <= nav;
-		const followerTop = Math.min(nav + 12, band.getBoundingClientRect().top - body);
+		const followerTop = Math.min(nav + 12, bandTop() - body);
 		const dark = page.querySelector(".crest") ?? soil;
 		overSoil = followerTop >= dark.getBoundingClientRect().top;
 	};
@@ -413,7 +413,8 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 	</section>
 
 	<div class="underground" class:has-tally={tally !== null} bind:this={undergroundEl}>
-	<section class="soil-band" bind:this={bandEl}>
+	{#snippet lockup()}
+	<section class="soil-band">
 		<div class="lockup" aria-hidden="true">
 			<div class="lockup-row">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -436,12 +437,15 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		</div>
 		<p class="visually-hidden">{m.ww_rating_lockup()}</p>
 	</section>
+	{/snippet}
 
 	{#if weedsHref}
-		<WeedsSection bind:this={weeds} {tab} href={weedsHref} {clipRoot} {onopenproject} onactive={(i) => (litIndex = i)} />
+		<WeedsSection bind:this={weeds} {tab} href={weedsHref} head={lockup} {clipRoot} {onopenproject} onactive={(i) => (litIndex = i)} />
 		{#if tally}
 			<WeedsTally {tally} {litIndex} visible={tallyVisible} />
 		{/if}
+	{:else}
+		{@render lockup()}
 	{/if}
 	</div>
 	<LessonHand bind:this={lessonHand} name="rating" facts={lessonFacts} rating={lessonDoors} />
@@ -773,11 +777,21 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		position: relative;
 		margin-top: calc(var(--soil-overlap) * -1);
 		padding-top: var(--soil-overlap);
+	}
+
+	/* The weeds pin paints the same ground, shifted by where it starts, so
+	   it is seamless until it pins and then holds still while the tabs walk. */
+	.underground,
+	.underground :global(.weeds-pin) {
 		background:
 			linear-gradient(rgb(11 17 9 / 0.3), rgb(11 17 9 / 0.3)),
-			var(--art-soil) top center / var(--soil-w) auto repeat-x,
-			var(--art-soil-deep) center calc(var(--soil-w) * 712 / 1972) / var(--soil-w) auto repeat,
+			var(--art-soil) center var(--soil-y, 0px) / var(--soil-w) auto repeat-x,
+			var(--art-soil-deep) center calc(var(--soil-y, 0px) + var(--soil-w) * 712 / 1972) / var(--soil-w) auto repeat,
 			#0b1109;
+	}
+
+	.underground :global(.weeds-pin) {
+		--soil-y: calc(var(--soil-overlap) * -1);
 	}
 
 	/* The tally stands in the right margin from 1100px up (WeedsTally's own
