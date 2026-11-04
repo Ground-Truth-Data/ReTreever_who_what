@@ -30,17 +30,22 @@ describe("watchingFor", () => {
 });
 
 describe("reactionFor", () => {
-	it("turns, then settles or pants when the state has those clips", () => {
+	it("turns, then pants a while and settles, in the order the art joins", () => {
 		expect(reactionFor("partial", clips).map((s) => s.clip)).toEqual([
 			"dog-turn-partial", "dog-to-neutral-partial",
 		]);
 		expect(reactionFor("transparent", clips)).toEqual([
 			{ clip: "dog-turn-transparent", loop: false },
+			{ clip: "dog-pant-transparent", loop: 9 },
 			{ clip: "dog-to-neutral-transparent", loop: false },
-			{ clip: "dog-pant-transparent", loop: true },
 		]);
 		expect(reactionFor("open", clips).map((s) => s.clip)).toEqual(["dog-turn-open"]);
 		expect(reactionFor("opaque", clips).map((s) => s.clip)).toEqual(["dog-turn-opaque"]);
+	});
+
+	it("turns an unscored dog with the plain open turn, and nothing after it", () => {
+		expect(reactionFor(null, clips)).toEqual([{ clip: "dog-turn-open", loop: false }]);
+		expect(reactionFor(null, {})).toEqual([]);
 	});
 
 	it("plays nothing the manifest lacks", () => {

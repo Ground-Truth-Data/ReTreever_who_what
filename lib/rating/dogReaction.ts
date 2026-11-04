@@ -6,8 +6,14 @@ import type { RatingState } from "./ratingState";
 
 export type DogState = RatingState;
 
-/** `hold`: show the clip's last frame and stay there until something replaces the step. */
-export type DogStep = { clip: string; loop: boolean; hold?: boolean };
+/**
+ * `loop`: forever, or a number of plays before the next step. `hold`: show the
+ * clip's last frame and stay there until something replaces the step.
+ */
+export type DogStep = { clip: string; loop: boolean | number; hold?: boolean };
+
+// About three seconds of the eight-frame pant at 24 fps before the dog calms.
+const PANT_PLAYS = 9;
 
 /** The walk on, played once before the dog stands. */
 export function entranceFor(clips: Record<string, unknown>): DogStep[] {
@@ -28,12 +34,20 @@ export function standingFor(clips: Record<string, unknown>): DogStep[] {
 	return "dog-still-blink" in clips ? [{ clip: "dog-still-blink", loop: true }] : [];
 }
 
-/** The turn in the state's colour, then whatever settle and pant that state has drawn. */
-export function reactionFor(state: DogState, clips: Record<string, unknown>): DogStep[] {
+/**
+ * The turn in the state's colour, then the pant and the settle that state has
+ * drawn, in the order the art joins: a turn ends where its pant starts, and a
+ * to-neutral starts from the pant's last frame (or the turn's, with no pant).
+ * An unscored dog takes the open state's turn, the plain one, so it never cuts
+ * from profile to facing front.
+ */
+export function reactionFor(state: DogState | null, clips: Record<string, unknown>): DogStep[] {
+	const turn = `dog-turn-${state ?? "open"}`;
 	const steps: DogStep[] = [];
-	if (`dog-turn-${state}` in clips) steps.push({ clip: `dog-turn-${state}`, loop: false });
+	if (turn in clips) steps.push({ clip: turn, loop: false });
+	if (state === null) return steps;
+	if (`dog-pant-${state}` in clips) steps.push({ clip: `dog-pant-${state}`, loop: PANT_PLAYS });
 	if (`dog-to-neutral-${state}` in clips) steps.push({ clip: `dog-to-neutral-${state}`, loop: false });
-	if (`dog-pant-${state}` in clips) steps.push({ clip: `dog-pant-${state}`, loop: true });
 	return steps;
 }
 

@@ -117,7 +117,7 @@ $effect(() => {
 
 $effect(() => {
 	if (!armed || !standing || reacted || !manifest) return;
-	const reaction = dogState === null ? [] : reactionFor(dogState, manifest.clips);
+	const reaction = reactionFor(dogState, manifest.clips);
 	// With no turn to make, an unscored dog stops watching and faces the reader.
 	const next = reaction.length ? reaction : steps[at]?.hold ? standingFor(manifest.clips) : null;
 	if (!next) return;
