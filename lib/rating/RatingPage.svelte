@@ -10,8 +10,7 @@ import DigInRaw from "../assets/svg/rating/Rating_page_Dig_in.svg?raw";
 import DeeperRaw from "../assets/svg/rating/Rating_page_deeper_period.svg?raw";
 import ShovelRaw from "../assets/svg/rating/Rating_page_shovel.svg?raw";
 import YellowLineRaw from "../assets/svg/rating/Rating_page_bottom_yellow_line.svg?raw";
-import soilUrl from "../assets/pub-Rtvr/rating/soil-roots.webp";
-import soilDeepUrl from "../assets/pub-Rtvr/rating/soil-deep.webp";
+import groundUrl from "../assets/pub-Rtvr/rating/ground.webp";
 import skyUrl from "../assets/golden_sky_background.webp";
 import pineUrl from "../assets/pub-Rtvr/rating/poly/rp-pine.webp";
 import pinePhoneUrl from "../assets/pub-Rtvr/rating/poly/rp-pine-1366.webp";
@@ -328,7 +327,7 @@ const digArt = svgFit(DigInRaw, [
 const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 </script>
 
-<div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl}); --art-pine-phone: url({pinePhoneUrl}); --art-soil: url({soilUrl}); --art-soil-deep: url({soilDeepUrl});" bind:this={pageEl}>
+<div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl}); --art-pine-phone: url({pinePhoneUrl}); --art-ground: url({groundUrl});" bind:this={pageEl}>
 	{#if record && record.rating !== null}
 		<div class="dig-head">
 			<NumberFollower rating={record.rating} name={record.name} {stateLine} on={following} {overSoil} {numberEl} />
@@ -764,16 +763,14 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		z-index: 2;
 	}
 
-	/* Below the grass the page is underground: soil, roots and stones run
-	   full-bleed under the lockup and the weeds. The tile is the art and its
-	   mirror side by side, so it repeats without a seam; a wash of the page's
-	   dark keeps the stickers and the tabs legible on it. */
-	/* The surface with its root tips is drawn once, at the top. Below it a
-	   deep tile takes over whose first row is the row the surface tile ends
-	   on, and which holds the deep soil and its vertical mirror, so every join
-	   down the dig is a reflection and the surface never repeats. */
+	/* Below the grass the page is underground: one ground picture, drawn once
+	   and never mirrored or repeated, under the lockup and the weeds; a wash
+	   of the page's dark keeps the stickers and the tabs legible on it. It is
+	   as wide as the page and at least as tall as the pinned scene (a screen,
+	   or the pin's 520px floor under the head), so a narrow screen crops its
+	   sides. */
 	.underground {
-		--soil-w: clamp(1200px, 200vw, 2600px);
+		--ground-w: max(100%, calc(max(100dvh, 860px) * 986 / 712));
 		position: relative;
 		margin-top: calc(var(--soil-overlap) * -1);
 		padding-top: var(--soil-overlap);
@@ -785,8 +782,7 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 	.underground :global(.weeds-pin) {
 		background:
 			linear-gradient(rgb(11 17 9 / 0.3), rgb(11 17 9 / 0.3)),
-			var(--art-soil) center var(--soil-y, 0px) / var(--soil-w) auto repeat-x,
-			var(--art-soil-deep) center calc(var(--soil-y, 0px) + var(--soil-w) * 712 / 1972) / var(--soil-w) auto repeat,
+			var(--art-ground) center var(--soil-y, 0px) / var(--ground-w) auto no-repeat,
 			#0b1109;
 	}
 
