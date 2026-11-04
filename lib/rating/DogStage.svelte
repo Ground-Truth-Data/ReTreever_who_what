@@ -17,6 +17,12 @@ import FrameClipPlayer from "$gc/FrameClipPlayer.svelte";
 import { frameUrl, loadClips, type ClipManifest } from "$gc/frameClips";
 import { entranceFor, idleBlinkFor, reactionFor, standingFor, watchingFor, type DogStep } from "./dogReaction";
 import { ratingState } from "./ratingState";
+import hillWebp from "../assets/hill_pattern.webp";
+import hillAvif from "../assets/hill_pattern.avif";
+import hillPhone from "../assets/hill_pattern-1290.avif";
+import tuft3 from "../assets/pub-Rtvr/home/tufts/tuft-3.webp";
+import tuft7Flipped from "../assets/pub-Rtvr/home/tufts/tuft-7-flipped.webp";
+import tuft9 from "../assets/pub-Rtvr/home/tufts/tuft-9.webp";
 
 let {
 	rating,
@@ -173,6 +179,11 @@ onDestroy(() => clearTimeout(blinkTimer));
 	{/if}
 </svelte:head>
 
+<div
+	class="earth back"
+	aria-hidden="true"
+	style="--art-hill-webp: url({hillWebp}); --art-hill-avif: url({hillAvif}); --art-hill-phone: url({hillPhone});"
+></div>
 <div class="dog-stage" class:cropped aria-hidden="true">
 	{#if planted && saplingSrc}
 		<img class="sapling" src={saplingSrc} alt="" draggable="false" />
@@ -190,6 +201,18 @@ onDestroy(() => clearTimeout(blinkTimer));
 		/>
 	{/if}
 </div>
+<div
+	class="earth lip"
+	aria-hidden="true"
+	style="--art-hill-webp: url({hillWebp}); --art-hill-avif: url({hillAvif}); --art-hill-phone: url({hillPhone});"
+></div>
+{#if planted}
+	<div class="sprouts" aria-hidden="true">
+		<img class="sprout" style="--at: 62%; --h: 8%; --ratio: 320 / 226; --delay: 0ms" src={tuft7Flipped} alt="" draggable="false" />
+		<img class="sprout" style="--at: 71%; --h: 14%; --ratio: 320 / 252; --delay: 90ms" src={tuft9} alt="" draggable="false" />
+		<img class="sprout" style="--at: 79%; --h: 9%; --ratio: 320 / 216; --delay: 180ms" src={tuft3} alt="" draggable="false" />
+	</div>
+{/if}
 
 <style>
 	/* The dog uses a corner of its 2732x2048 frame: every settled clip sits in
@@ -235,5 +258,71 @@ onDestroy(() => clearTimeout(blinkTimer));
 	/* The sapling's box again, in the window's own coordinates. */
 	.cropped .sapling {
 		clip-path: inset(51.7% 28.7% 3.9% 57.9%);
+	}
+
+	/* Ground for the dog and the sapling where a valley of the crest would
+	   leave them on the sky: the hills' own texture at the crest's scale,
+	   running down past the stage into the soil fade. Positions are in the
+	   window: paws end 93.4% down, the plug spans x 57.9-65.6%, y 79.8-95.3%.
+	   Both layers share one box and one background, so the lip in front of
+	   the plug's base is the same ground the dog sits on. */
+	.earth {
+		position: absolute;
+		left: -10%;
+		right: -10%;
+		top: 86%;
+		bottom: -25%;
+		pointer-events: none;
+		background-image: var(--art-hill-webp);
+		background-image: image-set(var(--art-hill-avif) type("image/avif"), var(--art-hill-webp) type("image/webp"));
+		background-size: 100vw auto;
+		background-position: center 25%;
+	}
+
+	@media (max-width: 480px) {
+		.earth {
+			background-image: image-set(var(--art-hill-phone) type("image/avif"), var(--art-hill-webp) type("image/webp"));
+		}
+	}
+
+	.earth.back {
+		clip-path: ellipse(55% 92% at 50% 100%);
+	}
+
+	/* From 91% down: the plug's last tenth goes into the ground. */
+	.earth.lip {
+		clip-path: ellipse(4.6% 87% at 60% 100%);
+	}
+
+	/* Grass shoots out of the planting once the dog sits beside it. */
+	.sprouts {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
+
+	.sprout {
+		position: absolute;
+		left: var(--at);
+		top: 93.5%;
+		height: var(--h);
+		aspect-ratio: var(--ratio);
+		translate: -50% -100%;
+		transform-origin: 50% 100%;
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		.sprout {
+			animation: shoot 520ms cubic-bezier(0.2, 0.9, 0.3, 1.25) var(--delay) both;
+		}
+	}
+
+	@keyframes shoot {
+		from {
+			transform: scale(0.5, 0);
+		}
+		to {
+			transform: none;
+		}
 	}
 </style>
