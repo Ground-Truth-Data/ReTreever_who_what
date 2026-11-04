@@ -6,9 +6,10 @@ import ProjectsSelectedRaw from "../assets/svg/rating/Rating_page_projects_Selec
 import ProjectsUnselectedRaw from "../assets/svg/rating/Rating_page_projects_unselected.svg?raw";
 import TruthIsInRaw from "../assets/svg/rating/Rating_page_Truth_is_in.svg?raw";
 import TheWeedsRaw from "../assets/svg/rating/Rating_page_the_weeds_dot_dot_dot.svg?raw";
-import DigInRaw from "../assets/svg/rating/Rating_page_Dig_in.svg?raw";
+import DigRaw from "../assets/svg/rating/Rating_page_Dig.svg?raw";
+import InRaw from "../assets/svg/rating/Rating_page_in.svg?raw";
 import DeeperRaw from "../assets/svg/rating/Rating_page_deeper_period.svg?raw";
-import ShovelRaw from "../assets/svg/rating/Rating_page_shovel.svg?raw";
+import shovelUrl from "../assets/pub-Rtvr/rating/shovel-highballer.webp";
 import YellowLineRaw from "../assets/svg/rating/Rating_page_bottom_yellow_line.svg?raw";
 import groundUrl from "../assets/pub-Rtvr/rating/ground.webp";
 import skyUrl from "../assets/golden_sky_background.webp";
@@ -320,10 +321,8 @@ const weedsArt = svgFit(TheWeedsRaw, [
 	["the", m.ww_rating_art_the()],
 	["weeds", m.ww_rating_art_weeds()],
 ]);
-const digArt = svgFit(DigInRaw, [
-	["Dig", m.ww_rating_art_dig()],
-	["in", m.ww_rating_art_in()],
-]);
+const digArt = svgFit(DigRaw, [["Dig", m.ww_rating_art_dig()]]);
+const inArt = svgFit(InRaw, [["in", m.ww_rating_art_in()]]);
 const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 </script>
 
@@ -415,21 +414,20 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 	{#snippet lockup()}
 	<section class="soil-band">
 		<div class="lockup" aria-hidden="true">
-			<div class="lockup-row">
-				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				<div class="sticker truth">{@html truthArt}</div>
-				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				<div class="sticker shovel">{@html ShovelRaw}</div>
-				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				<div class="sticker weeds">{@html weedsArt}</div>
-			</div>
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+			<div class="sticker truth">{@html truthArt}</div>
+			<img class="shovel" src={shovelUrl} alt="" draggable="false" />
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+			<div class="sticker weeds">{@html weedsArt}</div>
 			<div class="yellow-line">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 				{@html YellowLineRaw}
 			</div>
-			<div class="lockup-row second">
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+			<div class="sticker dig">{@html digArt}</div>
+			<div class="tail">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				<div class="sticker dig">{@html digArt}</div>
+				<div class="sticker in">{@html inArt}</div>
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 				<div class="sticker deeper">{@html deeperArt}</div>
 			</div>
@@ -808,51 +806,83 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		padding: clamp(28px, 5vh, 56px) var(--pad) clamp(18px, 3vh, 36px);
 	}
 
+	/* Three columns, the shovel alone in the middle one: the words on each
+	   row close up to it from either side, so its blade, pushed through the
+	   line into the second row, lands in a gap the grid keeps for it and
+	   never on a letter, whatever the width or the language. */
 	.lockup {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 2px;
+		--lockup-h: clamp(30px, 5.5vw, 78px);
+		display: grid;
+		grid-template-columns: repeat(3, auto);
+		justify-content: center;
+		align-items: end;
+		column-gap: clamp(6px, 1vw, 14px);
+		row-gap: 2px;
 	}
 
-	.lockup-row {
+	.truth,
+	.dig {
+		justify-self: end;
+	}
+
+	.weeds,
+	.tail {
+		grid-column: 3;
+		justify-self: start;
+	}
+
+	.dig,
+	.tail {
+		grid-row: 3;
+	}
+
+	.tail {
 		display: flex;
 		align-items: flex-end;
 		gap: clamp(6px, 1vw, 14px);
 	}
 
-	.lockup-row.second {
-		margin-top: calc(var(--lockup-h) * -0.1);
-	}
-
 	.sticker :global(svg) {
-		--lockup-h: clamp(30px, 5.5vw, 78px);
 		height: var(--lockup-h);
 		width: auto;
 		display: block;
 		filter: drop-shadow(1px 2px 4px rgb(12 8 1 / 0.45));
 	}
 
-	/* The shovel reaches down across the line into the second row. */
-	.sticker.shovel {
+	/* A real planting shovel, its blade sunk through the line. The yellow
+	   rim keeps its dark grip and steel readable on the soil, a sticker
+	   like the words around it. */
+	.shovel {
+		--rim: clamp(1px, 0.15vw, 2px);
 		position: relative;
 		z-index: 1;
+		grid-area: 1 / 2;
+		display: block;
+		height: calc(var(--lockup-h) * 1.9);
+		width: auto;
+		margin-bottom: calc(var(--lockup-h) * -0.55);
+		pointer-events: none;
+		filter:
+			drop-shadow(var(--rim) 0 0 var(--rt-yellow-bright))
+			drop-shadow(calc(-1 * var(--rim)) 0 0 var(--rt-yellow-bright))
+			drop-shadow(0 var(--rim) 0 var(--rt-yellow-bright))
+			drop-shadow(0 calc(-1 * var(--rim)) 0 var(--rt-yellow-bright))
+			drop-shadow(1px 2px 4px rgb(12 8 1 / 0.45));
 	}
 
-	.sticker.shovel :global(svg) {
-		height: calc(var(--lockup-h) * 2.3);
-		margin-bottom: calc(var(--lockup-h) * -1.1);
-	}
-
-	/* Full-bleed between the two rows, as the reference draws it. */
+	/* Full-bleed between the two rows, as the reference draws it. The item
+	   itself is zero wide so the line never widens the grid's columns; its
+	   art overflows from the centre to both edges. */
 	.yellow-line {
 		position: relative;
-		width: 100vw;
-		margin: calc(var(--lockup-h) * -0.12) 0 calc(var(--lockup-h) * -0.1);
+		grid-area: 2 / 1 / 3 / 4;
+		justify-self: center;
+		width: 0;
 	}
 
 	.yellow-line :global(svg) {
-		width: 100%;
+		width: 100vw;
+		margin-left: -50vw;
 		height: auto;
 		display: block;
 	}
