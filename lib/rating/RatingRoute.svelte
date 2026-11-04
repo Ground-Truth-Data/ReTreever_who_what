@@ -2,7 +2,7 @@
 import type { ScoreTally, WeedsTable, WhoWhatEndpoints, WhoWhatRoutes } from "../whoWhatTypes";
 import type { SearchResult } from "./resultLoad";
 import RatingPage from "./RatingPage.svelte";
-import { setStageClipRoot } from "./DogStage.svelte";
+import { setStageClipRoots } from "./DogStage.svelte";
 import { LiveList } from "../search/liveList.svelte";
 import { loadOrgList, loadProjectList, recordSearchHit } from "../search/searchLists";
 import { resolveSearchKey } from "../search/searchResolve";
@@ -43,7 +43,7 @@ $effect(() => {
 
 // The host's endpoints are fixed for the page's life; the dog reads its root once.
 // svelte-ignore state_referenced_locally
-setStageClipRoot(endpoints.stageClipRoot);
+setStageClipRoots({ phone: endpoints.stageClipRoot, desktop: endpoints.windowClipRoot, reach: endpoints.reachClipRoot });
 
 // The top bar searches again from the rating page; the list warms up in idle time.
 const list = new LiveList((q, signal) =>

@@ -74,6 +74,10 @@ export type WhoWhatEndpoints = {
 	clipRoot?: string;
 	/** The dog's clips cut to its stage window and sized for a phone, with their own clips.json. Absent → phones crop clipRoot's frames. */
 	stageClipRoot?: string;
+	/** The dog's clips cut to its stage window at the window's own size, with their own clips.json. Absent → wider screens crop clipRoot's frames. */
+	windowClipRoot?: string;
+	/** The dog's walk on cut on past its stage window's right edge, native size, with its own clips.json. Absent → it walks in at the stage's edge. */
+	reachClipRoot?: string;
 };
 
 // The host's `error`: a standalone child has no @sveltejs/kit to import it from.

@@ -217,9 +217,9 @@ let periodIn = $state(false);
 let heroEl = $state<HTMLElement | null>(null);
 let numberEl = $state<HTMLElement | null>(null);
 
-// The mouth, as a fraction of the dog stage: the point the lesson hand taps.
-const MOUTH_X = 0.42;
-const MOUTH_Y = 0.5;
+// The mouth of the dog watching in profile, as a fraction of the dog stage: where the lob starts.
+const MOUTH_X = 0.18;
+const MOUTH_Y = 0.48;
 
 // The screen offset from the number's centre to the dog's mouth, or to the
 // hero's centre when there is no dog on stage. Measured at the reveal, when
@@ -269,7 +269,7 @@ $effect(() => {
 	if (!periodIn) return;
 	const beat = setTimeout(() => {
 		armed = true;
-	}, 500);
+	}, 200);
 	return () => clearTimeout(beat);
 });
 
@@ -699,7 +699,7 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 	   growing to full size while the glyphs hop in an arc on the way; the
 	   offsets are set inline at the reveal. Reduced motion keeps the fade. */
 	.number {
-		--from: var(--lob-from, 0.4);
+		--from: var(--lob-from, 0.2);
 		--rise: var(--lob-rise, 110px);
 		--ms: var(--lob-ms, 600ms);
 	}
