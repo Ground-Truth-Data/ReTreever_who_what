@@ -482,6 +482,7 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 	.rating-hero {
 		--stage-w: clamp(200px, 34vw, 480px);
 		--stage-h: calc(var(--stage-w) * 900 / 940);
+		--dog-lift: calc(var(--soil-overlap) - var(--stage-h) * 20 / 900);
 		position: relative;
 		width: 100%;
 		box-sizing: border-box;
@@ -752,13 +753,14 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		}
 	}
 
-	/* The dog sits in the grass band, between its green wash and the tufts, so
-	   the paws and the planted sapling stand in the grass. Its paws are 65.5%
-	   down the stage; they land 72% down the band. */
+	/* The dog sits in the grass band, between its green wash and the tufts.
+	   Its lowest pixel in any clip (the sapling's plug, frame row 1300) is 20
+	   of the stage's 900 rows above its foot, and lands where the grass starts
+	   fading into the soil: the ground never covers the paws or the planting. */
 	.dog-column {
 		position: absolute;
 		right: clamp(12px, 8vw, 140px);
-		bottom: calc(var(--upper-band) * 0.72 - var(--stage-h) * 0.655);
+		bottom: var(--dog-lift);
 		width: var(--stage-w);
 		z-index: 2;
 	}
@@ -891,13 +893,14 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 	}
 
 	/* One column: the hero hugs its content, since a phone's 100vh is taller
-	   than what a reader sees. The -64px raises the dog's head behind the crest
-	   to just under the number's foot (the grid stacks over the dog); any more
-	   and it reaches the number. That puts the whole dog on the first screen. */
+	   than what a reader sees. The padding is the stage's top plus a quarter
+	   stage; the -64px raises the dog's head behind the crest to just under
+	   the number's foot (the grid stacks over the dog); any more and it
+	   reaches the number. That puts the whole dog on the first screen. */
 	@media (max-width: 720px) {
 		.rating-hero {
 			min-height: 0;
-			padding-bottom: calc(var(--upper-band) * 0.72 + var(--stage-h) * 0.61 - 64px);
+			padding-bottom: calc(var(--dog-lift) + var(--stage-h) * 1.265 - 64px);
 		}
 
 		/* Held while the record streams: a one-line name (49px), the row gap and
