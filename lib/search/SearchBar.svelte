@@ -71,6 +71,24 @@ export function clear(): void {
 	dropdownOpen = false;
 }
 
+// WebKit can drop a foreignObject's control from its hit test for a moment after the press, so the release
+// lands on the svg and the click goes there, not to the button. A click that lands on the art where a
+// button was just pressed is that button's.
+let press: { button: HTMLButtonElement; x: number; y: number } | null = null;
+
+function notePress(e: PointerEvent) {
+	const button = (e.target as Element).closest("button");
+	press = button ? { button, x: e.clientX, y: e.clientY } : null;
+}
+
+function forwardStrayClick(e: MouseEvent) {
+	const from = press;
+	press = null;
+	if (!from || (e.target as Element).closest("foreignObject")) return;
+	if (Math.hypot(e.clientX - from.x, e.clientY - from.y) > 8) return;
+	from.button.click();
+}
+
 function handleSubmit(event: SubmitEvent) {
 	event.preventDefault();
 	onsearch?.(value);
@@ -85,6 +103,8 @@ function handleSubmit(event: SubmitEvent) {
 	role="search"
 	onsubmit={handleSubmit}
 	onpointerenter={() => onactivate?.()}
+	onpointerdowncapture={notePress}
+	onclick={forwardStrayClick}
 >
 	<svg
 		class="search-bar-svg"
