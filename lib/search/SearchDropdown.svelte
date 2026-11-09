@@ -315,20 +315,9 @@ $effect(() => {
 		white-space: nowrap;
 	}
 
-	.row-hint,
-	.row-state {
+	.row-hint {
 		color: #8d93a6;
 		font-size: max(11px, calc(8 * var(--u)));
-	}
-
-	.row-state {
-		text-transform: capitalize;
-	}
-
-	.row-rating {
-		color: var(--rtvr-on-dark);
-		font-size: max(12px, calc(9 * var(--u)));
-		font-variant-numeric: tabular-nums;
 	}
 
 	@media (max-width: 600px) {
