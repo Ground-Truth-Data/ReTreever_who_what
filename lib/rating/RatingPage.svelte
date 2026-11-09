@@ -753,13 +753,20 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 	/* The dog sits in the grass band, between its green wash and the tufts.
 	   The stage's foot, where the sapling goes in, is 20 of its 900 rows below
 	   the clips' lowest pixel and lands where the grass starts fading into the
-	   soil. No z-index: DogStage stacks its layers in the band's context, the
+	   soil. No z-index: DogStage stacks its layers in the hero's context, the
 	   dog under the tufts and the sapling over them. */
 	.dog-column {
 		position: absolute;
 		right: clamp(12px, 8vw, 140px);
 		bottom: var(--dog-lift);
 		width: var(--stage-w);
+	}
+
+	/* The band's own z-index (3) would cap the running dog under the hero's
+	   words. Unset, its washes (0, 1) and tufts (3) still stack under them,
+	   and the dog can rise over them while it runs. */
+	.rating-hero :global(.wildflower-band) {
+		z-index: auto;
 	}
 
 	/* Below the grass the page is underground: one ground picture, drawn once
