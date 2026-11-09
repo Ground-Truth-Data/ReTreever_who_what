@@ -751,15 +751,15 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 	}
 
 	/* The dog sits in the grass band, between its green wash and the tufts.
-	   Its lowest pixel in any clip (the sapling's plug, frame row 1300) is 20
-	   of the stage's 900 rows above its foot, and lands where the grass starts
-	   fading into the soil: the ground never covers the paws or the planting. */
+	   The stage's foot, where the sapling goes in, is 20 of its 900 rows below
+	   the clips' lowest pixel and lands where the grass starts fading into the
+	   soil. No z-index: DogStage stacks its layers in the band's context, the
+	   dog under the tufts and the sapling over them. */
 	.dog-column {
 		position: absolute;
 		right: clamp(12px, 8vw, 140px);
 		bottom: var(--dog-lift);
 		width: var(--stage-w);
-		z-index: 2;
 	}
 
 	/* Below the grass the page is underground: one ground picture, drawn once

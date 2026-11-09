@@ -42,6 +42,7 @@ import { ratingState } from "./ratingState";
 import hillWebp from "../assets/hill_pattern.webp";
 import hillAvif from "../assets/hill_pattern.avif";
 import hillPhone from "../assets/hill_pattern-1290.avif";
+import groundWebp from "../assets/pub-Rtvr/rating/ground.webp";
 import tuft3 from "../assets/pub-Rtvr/home/tufts/tuft-3.webp";
 import tuft7Flipped from "../assets/pub-Rtvr/home/tufts/tuft-7-flipped.webp";
 import tuft9 from "../assets/pub-Rtvr/home/tufts/tuft-9.webp";
@@ -68,7 +69,7 @@ let at = $state(0);
 let blink = $state<string | null>(null);
 let standing = $state(false);
 // The entrance ends with the sapling set down beside the dog; no other clip
-// draws it, so its patch of the entrance's last frame stays on stage underneath.
+// draws it, so its patch of the entrance's last frame stays on stage, over the dog.
 let planted = $state(false);
 // The last step has played out: coming back from a blink shows its final frame, not a replay.
 let settled = $state(false);
@@ -109,6 +110,8 @@ const held = $derived(!!current && (!!current.hold || (settled && !blink && !idl
 const reaching = $derived(!!reach && current?.clip === ENTRANCE);
 const heldFrame = $derived(current && manifest ? (current.frames?.at(-1) ?? manifest.clips[current.clip].frameCount) : 1);
 const breathing = $derived(settled && !idling && dogState === "opaque");
+// The held watching frame still draws the sapling where it was set down; it sinks in once the dog turns away.
+const sunk = $derived(planted && current?.clip !== ENTRANCE);
 const saplingSrc = $derived.by(() => {
 	const facts = manifest?.clips[ENTRANCE];
 	return root && facts ? frameUrl(root, ENTRANCE, facts, facts.frameCount) : null;
@@ -356,9 +359,6 @@ onDestroy(() => {
 	style="--art-hill-webp: url({hillWebp}); --art-hill-avif: url({hillAvif}); --art-hill-phone: url({hillPhone});"
 ></div>
 <div class="dog-stage" class:cropped class:breathing aria-hidden="true">
-	{#if planted && saplingSrc}
-		<img class="sapling" src={saplingSrc} alt="" draggable="false" />
-	{/if}
 	{#if manifest && root && current}
 		<!-- One player for every clip, not one per clip: a fresh <img> paints blank until its frame
 		     decodes, which flashed the dog out between clips. Swapping src keeps the last frame up. -->
@@ -376,16 +376,19 @@ onDestroy(() => {
 		/>
 	{/if}
 </div>
-<div
-	class="earth lip"
-	aria-hidden="true"
-	style="--art-hill-webp: url({hillWebp}); --art-hill-avif: url({hillAvif}); --art-hill-phone: url({hillPhone});"
-></div>
-{#if planted}
+<div class="soil" aria-hidden="true" style="--art-soil: url({groundWebp});"></div>
+{#if sunk}
 	<div class="sprouts" aria-hidden="true">
 		<img class="sprout" style="--at: 62%; --h: 8%; --ratio: 320 / 226; --delay: 0ms" src={tuft7Flipped} alt="" draggable="false" />
 		<img class="sprout" style="--at: 71%; --h: 14%; --ratio: 320 / 252; --delay: 90ms" src={tuft9} alt="" draggable="false" />
 		<img class="sprout" style="--at: 79%; --h: 9%; --ratio: 320 / 216; --delay: 180ms" src={tuft3} alt="" draggable="false" />
+	</div>
+{/if}
+{#if planted && saplingSrc}
+	<div class="planting" class:cropped aria-hidden="true">
+		<div class="tree" class:sunk>
+			<img class="sapling" src={saplingSrc} alt="" draggable="false" />
+		</div>
 	</div>
 {/if}
 
@@ -395,23 +398,21 @@ onDestroy(() => {
 	   x 2464. The stage shows that window (x 940-1880, y 420-1320), open on its
 	   right for the walk on, so the dog reads at the comp's size instead of as
 	   a speck. Clips share the frame, so one crop serves them all. */
-	.dog-stage {
+	.dog-stage,
+	.planting {
 		--win-x: 940;
 		--win-y: 420;
 		--win-w: 940;
 		--win-h: 900;
+	}
+
+	.dog-stage {
 		position: relative;
 		width: 100%;
 		aspect-ratio: 940 / 900;
 		/* Open on the right: the walk on starts off the screen, and the page clips it at the screen's edge. */
 		clip-path: inset(0 -100vw 0 0);
 		pointer-events: none;
-	}
-
-	/* The sapling's box in the shared frame: x 1484-1610, y 885-1285 of 2732x2048.
-	   It sits under the player, so a paw that reaches it draws over it. */
-	.sapling {
-		clip-path: inset(43.2% 41.1% 37.3% 54.3%);
 	}
 
 	.dog-stage :global(.frame-clip),
@@ -433,7 +434,7 @@ onDestroy(() => {
 		top: 0;
 	}
 
-	.cropped .sapling {
+	.planting.cropped .sapling {
 		width: 100% !important;
 		left: 0;
 		top: 0;
@@ -448,17 +449,48 @@ onDestroy(() => {
 		transform-origin: 38.7% 93.4%;
 	}
 
-	/* The sapling's box again, in the window's own coordinates. */
-	.cropped .sapling {
-		clip-path: inset(51.7% 28.7% 3.9% 57.9%);
+	/* The ground line is the stage's foot, a paw's depth under the paws. The
+	   tree draws over the dog and everything else here, and sinks until its
+	   root collar (window y 718) is on that line; the line clips the plug. */
+	.planting {
+		position: absolute;
+		inset: 0;
+		clip-path: inset(-50% -50% 0);
+		pointer-events: none;
+		z-index: 4;
 	}
 
-	/* Ground for the dog and the sapling where a valley of the crest would
-	   leave them on the sky: the hills' own texture at the crest's scale,
-	   running down past the stage into the soil fade. Positions are in the
-	   window: paws end 93.4% down, the plug spans x 57.9-65.6%, y 79.8-95.3%.
-	   Both layers share one box and one background, so the lip in front of
-	   the plug's base is the same ground the dog sits on. */
+	/* These stack in Greenery's grass band, whose tufts are z-index 3. */
+	.earth,
+	.dog-stage,
+	.soil,
+	.sprouts {
+		z-index: 2;
+	}
+
+	.tree {
+		position: absolute;
+		inset: 0;
+	}
+
+	.tree.sunk {
+		translate: 0 calc(100% * (900 - 718) / 900);
+	}
+
+	/* Only the tree's own pixels in the entrance's last frame: the leaves reach
+	   x 531, the dog's haunch x 541 below them. Window x 527-670, y 460-866. */
+	.planting.cropped .sapling {
+		clip-path: polygon(56.06% 51.11%, 71.28% 51.11%, 71.28% 96.22%, 58.3% 96.22%, 58.3% 76.67%, 56.06% 73.56%);
+	}
+
+	/* The same outline in the full 2732x2048 frame. */
+	.planting:not(.cropped) .sapling {
+		clip-path: polygon(53.7% 42.97%, 58.93% 42.97%, 58.93% 62.79%, 54.47% 62.79%, 54.47% 54.2%, 53.7% 52.83%);
+	}
+
+	/* Ground for the dog where a valley of the crest would leave it on the
+	   sky: the hills' own texture at the crest's scale, running down past the
+	   stage into the soil fade. Paws end 93.4% down the window. */
 	.earth {
 		position: absolute;
 		left: -10%;
@@ -482,9 +514,19 @@ onDestroy(() => {
 		clip-path: ellipse(55% 92% at 50% 100%);
 	}
 
-	/* From 91% down: the plug's last tenth goes into the ground. */
-	.earth.lip {
-		clip-path: ellipse(4.6% 87% at 60% 100%);
+	/* Bare soil from the ground line down to the roots the page fades into, so
+	   no grass of the band shows under the planting. Its soft rim rises just
+	   above the line; it is solid where the trunk (x 62.8%) goes in. */
+	.soil {
+		position: absolute;
+		left: 43%;
+		width: 40%;
+		top: 97.6%;
+		height: 24%;
+		pointer-events: none;
+		background: var(--art-soil) 36% 18% / 800% auto no-repeat;
+		-webkit-mask-image: radial-gradient(50% 100% at 50% 100%, #000 90%, transparent);
+		mask-image: radial-gradient(50% 100% at 50% 100%, #000 90%, transparent);
 	}
 
 	/* Grass shoots out of the planting once the dog sits beside it. */
@@ -497,7 +539,7 @@ onDestroy(() => {
 	.sprout {
 		position: absolute;
 		left: var(--at);
-		top: 93.5%;
+		top: 100%;
 		height: var(--h);
 		aspect-ratio: var(--ratio);
 		translate: -50% -100%;
@@ -505,8 +547,13 @@ onDestroy(() => {
 	}
 
 	@media (prefers-reduced-motion: no-preference) {
+		/* The shoots come up once the tree is in. */
+		.tree {
+			transition: translate 420ms cubic-bezier(0.5, 0, 0.75, 0);
+		}
+
 		.sprout {
-			animation: shoot 520ms cubic-bezier(0.2, 0.9, 0.3, 1.25) var(--delay) both;
+			animation: shoot 520ms cubic-bezier(0.2, 0.9, 0.3, 1.25) calc(var(--delay) + 420ms) both;
 		}
 
 		/* The sad dog has no breath drawn; a slow rise from the paw line stands in for one. */
