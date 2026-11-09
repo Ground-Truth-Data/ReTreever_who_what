@@ -73,8 +73,9 @@ let {
 } = $props();
 
 // The tally reads the lit tab from the weeds and shows only while the reader
-// is underground: a quarter of the viewport on the soil, and the track's end
-// not yet above the viewport's middle. The observer gates the scroll work.
+// is in the weeds: from the moment "Truth is in the weeds" pins under the nav
+// until the track's end rises above the viewport's middle. Any earlier and it
+// floats over the hills. The observer gates the scroll work.
 let litIndex = $state(0);
 let tallyVisible = $state(false);
 let undergroundEl = $state<HTMLElement | null>(null);
@@ -89,10 +90,8 @@ $effect(() => {
 			tallyVisible = false;
 			return;
 		}
-		const vh = window.innerHeight;
-		const r = el.getBoundingClientRect();
-		const onScreen = Math.min(r.bottom, vh) - Math.max(r.top, 0);
-		tallyVisible = onScreen >= vh * 0.25 && r.bottom >= vh / 2;
+		const pin = weeds?.stagePin() ?? null;
+		tallyVisible = pin !== null && window.scrollY >= pin - 1 && el.getBoundingClientRect().bottom >= window.innerHeight / 2;
 	};
 	const onScroll = () => {
 		if (!raf) raf = requestAnimationFrame(read);
