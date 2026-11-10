@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-	HEADLINE,
 	MIN_GUTTER,
-	HOME,
 	MAX_PARALLAX_RATE,
+	SHARDS,
 	SCALE_MAX,
 	SCALE_MIN,
 	bounds,
@@ -15,6 +14,9 @@ import {
 	type Placed,
 	type ShardSpec,
 } from "./shardLayout";
+
+const HOME = SHARDS.filter((s) => !s.low);
+const HEADLINE = SHARDS.filter((s) => s.low);
 
 const WIDTHS = [360, 430, 768, 1024, 1440, 1920, 2560];
 

@@ -19,8 +19,7 @@ import hillFillWebp from "../assets/pub-Rtvr/home/hill_fill.webp";
 import hillFillAvif from "../assets/pub-Rtvr/home/hill_fill.avif";
 import hillFillPhone from "../assets/pub-Rtvr/home/hill_fill-1290.avif";
 import {
-	HEADLINE,
-	HOME,
+	SHARDS,
 	depthOf,
 	layoutPage,
 	parallaxY,
@@ -177,9 +176,9 @@ function measure() {
 			// Plus the sections' 16px side padding, so the gutter lane is the bare strip
 			// outside the content and a phone shows no sliver beside the card.
 			[shards, headlineShards] = layoutPage(vw, [
-				{ height: heroH, clearW: cardEl.clientWidth + 32, specs: HOME },
+				{ height: heroH, clearW: cardEl.clientWidth + 32, specs: SHARDS.filter((s) => !s.low) },
 				// On a phone this section is tall and empty; its shards keep a tablet's size.
-				{ height: headH, clearW: lockupEl.clientWidth + 32, specs: HEADLINE, scaleMin: 640 },
+				{ height: headH, clearW: lockupEl.clientWidth + 32, specs: SHARDS.filter((s) => s.low), scaleMin: 640 },
 			]);
 		}
 	}

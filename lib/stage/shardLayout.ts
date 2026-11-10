@@ -40,6 +40,8 @@ export type ShardSpec = {
 	rot?: number;
 	/** viewport px; narrower than this, the shard isn't drawn */
 	hideBelow?: number;
+	/** drawn in the lower section ("ReTreever counts."), under its hill and grass; y is % of that section */
+	low?: true;
 };
 
 export const SCALE_MIN = 360;
@@ -50,34 +52,27 @@ export function scaleWidth(vw: number): number {
 	return Math.max(SCALE_MIN, Math.min(SCALE_MAX, vw));
 }
 
-// Every /who shard, by number. A shard belongs to the section it is drawn in;
-// shard 26 is the divider strip between the two, placed by the page.
-
-/** Top section: sky, search bar, hill. */
-export const HOME: ShardSpec[] = [
-	{ id: 1,  side: "left",  lane: "edge",   reach: 40,  y: 4,   w: 55, aspect: 1.63924, rot: 0 },   // top-left, trees and snow
-	{ id: 6,  side: "left",  lane: "edge",   reach: 47,  y: 74.9, from: "middle", w: 66, aspect: 1.90656, rot: 5 },   // left, green hillside
-	// { id: 3,  side: "left",  lane: "edge",   reach: 88,  y: 45,  w: 33, aspect: 1.14372, rot: 216 }, // hidden
+// Every /who shard, top of the page to the bottom. Shard 26 is the divider
+// strip between the two sections, placed by the page.
+export const SHARDS: ShardSpec[] = [
 	{ id: 4,  side: "right", lane: "gutter", reach: 120, y: -3,  w: 66, aspect: 1.70643, rot: -10 }, // top-right, blue sky
+	{ id: 1,  side: "left",  lane: "edge",   reach: 40,  y: 4,   w: 55, aspect: 1.63924, rot: 0 },   // top-left, trees and snow
+	// { id: 3,  side: "left",  lane: "edge",   reach: 88,  y: 45,  w: 33, aspect: 1.14372, rot: 216 }, // hidden
+	{ id: 6,  side: "left",  lane: "edge",   reach: 46,  y: 74.9, from: "middle", w: 66, aspect: 1.90656, rot: 5 },   // left, forest and palms
 	{ id: 7,  side: "right", lane: "gutter", reach: 128, y: 75.9, from: "middle", w: 45, aspect: 1.75093, rot: 4 },   // right, clear-cut
-];
-
-/** Lower section: dark hill, "ReTreever counts." */
-export const HEADLINE: ShardSpec[] = [
-	{ id: 2,  side: "right", lane: "gutter", reach: 120, y: 48,  w: 27, aspect: 0.67299, rot: 11 },  // right, tall aerial
-	// { id: 5,  side: "right", lane: "gutter", reach: 104, y: 56,  w: 48, aspect: 2.43367, rot: 10 },  // hidden
-	{ id: 12, side: "right", lane: "gutter", reach: 128, y: 6,   w: 45, aspect: 2.26411, rot: -9 },  // top-right, branches
-	// { id: 13, side: "left",  lane: "gutter", reach: 110, y: 8,   w: 43, aspect: 2.02096, rot: 12 },  // hidden
-	{ id: 15, side: "left", lane: "edge",   reach: 43,  y: 7,   w: 44, aspect: 1.1521,  rot: -5, hideBelow: 200 }, // the planters, behind the slogan
-	// { id: 15, side: "right", lane: "edge",   reach: 99,  y: 9,   w: 44, aspect: 1.1521,  rot: -5, hideBelow: 200 }, // the planters, behind the slogan
-	{ id: 14, side: "left",  lane: "gutter", reach: 170, y: 76,  w: 49, aspect: 2.45141, rot: 10 },  // lower-left, slash pile
+	{ id: 12, low: true, side: "right", lane: "gutter", reach: 128, y: 6,   w: 45, aspect: 2.26411, rot: -9 },  // top-right, branches
+	// { id: 13, low: true, side: "left",  lane: "gutter", reach: 110, y: 8,   w: 43, aspect: 2.02096, rot: 12 },  // hidden
+	{ id: 15, low: true, side: "left",  lane: "edge",   reach: 43,  y: 7,   w: 44, aspect: 1.1521,  rot: -5, hideBelow: 200 }, // the planters, behind the slogan
+	{ id: 2,  low: true, side: "right", lane: "gutter", reach: 120, y: 48,  w: 27, aspect: 0.67299, rot: 11 },  // right, tall aerial
+	// { id: 5,  low: true, side: "right", lane: "gutter", reach: 104, y: 56,  w: 48, aspect: 2.43367, rot: 10 },  // hidden
+	{ id: 14, low: true, side: "left",  lane: "gutter", reach: 170, y: 76,  w: 49, aspect: 2.45141, rot: 10 },  // lower-left, slash pile
 ];
 
 export type Placed = {
 	id: number;
 	x: number;
 	y: number;
-	w: number;
+	w: number; 
 	h: number;
 	rot?: number;
 };
