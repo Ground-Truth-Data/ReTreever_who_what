@@ -41,11 +41,17 @@ describe("scaleWidth", () => {
 describe("place", () => {
 	it("sizes every shard as a fixed share of the scale width", () => {
 		for (const vw of WIDTHS) {
-			for (const s of HOME) {
+			for (const s of HOME.filter((s) => vw >= (s.hideBelow ?? 0))) {
 				const p = at(place(HOME, vw, 700, cardW(vw)), s.id);
 				expect(p.w).toBeCloseTo((s.w / 100) * scaleWidth(vw), 6);
 			}
 		}
+	});
+
+	it("drops a shard narrower than its hideBelow, and only then", () => {
+		const spec: ShardSpec = { id: 9, side: "left", lane: "edge", reach: 20, y: 10, w: 20, aspect: 1, hideBelow: 768 };
+		expect(place([spec], 767, 700, 576)).toHaveLength(0);
+		expect(place([spec], 768, 700, 576)).toHaveLength(1);
 	});
 
 	it("stops growing past SCALE_MAX", () => {
@@ -71,7 +77,7 @@ describe("place", () => {
 			const P = place(HOME, vw, 700, cardW(vw));
 			const ref = scaleWidth(vw);
 			const gutter = Math.max(0, (ref - cardW(vw)) / 2);
-			for (const s of HOME) {
+			for (const s of HOME.filter((s) => vw >= (s.hideBelow ?? 0))) {
 				const p = at(P, s.id);
 				const inner = (s.reach / 100) * (s.lane === "gutter" ? gutter : ref);
 				if (s.side === "left") expect(p.x + p.w).toBeCloseTo(inner, 6);

@@ -3,6 +3,7 @@
 // closes with the card, so a side shard slides off a phone, not behind the bar.
 
 export type ShardSpec = {
+	/** shardIndex.ts number — the page's `search_shard-<id>` */
 	id: number;
 	side: "left" | "right";
 	/**
@@ -21,7 +22,8 @@ export type ShardSpec = {
 	aspect: number;
 	/** degrees; keep within ~±14 or it reads as broken, not scattered */
 	rot?: number;
-	art?: number;
+	/** viewport px; narrower than this, the shard isn't drawn */
+	hideBelow?: number;
 };
 
 export const SCALE_MIN = 360;
@@ -33,21 +35,21 @@ export function scaleWidth(vw: number): number {
 }
 
 export const HOME: ShardSpec[] = [
-	{ id: 3, side: "left", lane: "edge", reach: 8, y: 2, w: 12, aspect: 1.14372, rot: 8 },
-	{ id: 4, side: "left", lane: "gutter", reach: 66, y: 26, w: 24, aspect: 1.70643, rot: -6 },
-	{ id: 11, side: "left", lane: "gutter", reach: 48, y: 57, w: 15, aspect: 1.75093, rot: 4 },
-	{ id: 9, side: "left", lane: "edge", reach: 17, y: 78, w: 20, aspect: 1.90656, rot: 7 },
-	{ id: 1, side: "right", lane: "edge", reach: 14, y: 4, w: 24, aspect: 1.63924, rot: 7 },
-	{ id: 2, side: "right", lane: "gutter", reach: 20, y: 38, w: 7, aspect: 0.67299, rot: 11 },
-	{ id: 8, side: "right", lane: "edge", reach: 16, y: 64, w: 19, aspect: 1.1521, rot: -5 },
+	{ id: 1, side: "left", lane: "edge",     reach: 30, y: 4, w: 55, aspect: 1.63924, rot: 0 },
+	{ id: 6, side: "left", lane: "edge",     reach: 44, y: 44, w: 66, aspect: 1.90656, rot: 5 },
+	// { id: 3, side: "left", lane: "edge",     reach: 88, y: 45, w: 33, aspect: 1.14372, rot: 216 }, 
+	{ id: 4, side: "right", lane: "gutter",  reach: 120, y: -3, w: 66, aspect: 1.70643, rot: -10 },
+	{ id: 7, side: "right", lane: "gutter", reach: 128, y: 53, w: 45, aspect: 1.75093, rot: 4 },
+	{ id: 2, side: "right", lane: "gutter",  reach: 120, y: 150, w: 27, aspect: 0.67299, rot: 11 },
+	{ id: 15, side: "right", lane: "edge",   reach: 99, y: 120, w: 44, aspect: 1.1521, rot: -5, hideBelow: 768 },
 ];
 
 
 export const HEADLINE: ShardSpec[] = [
-	{ id: 7, side: "right", lane: "gutter", reach: 58, y: 6, w: 25, aspect: 2.26411, rot: -9 },
-	{ id: 6, side: "left", lane: "gutter", reach: 60, y: 18, w: 23, aspect: 2.02096, rot: 12 },
-	{ id: 10, side: "left", lane: "gutter", reach: 50, y: 64, w: 19, aspect: 2.45141, rot: -13 },
-	{ id: 5, side: "right", lane: "gutter", reach: 44, y: 66, w: 18, aspect: 2.43367, rot: 10 },
+	{ id: 12, side: "right", lane: "gutter", reach: 128, y: 6, w: 45, aspect: 2.26411, rot: -9 },
+	// { id: 5, side: "right", lane: "gutter", reach: 104, y: 56, w: 48, aspect: 2.43367, rot: 10 },
+	{ id: 13, side: "left", lane: "gutter", reach: 110, y: 8, w: 43, aspect: 2.02096, rot: 12 },
+	{ id: 14, side: "left", lane: "gutter", reach: 110, y: 66, w: 49, aspect: 2.45141, rot: 10 },
 ];
 
 export type Placed = {
@@ -57,7 +59,6 @@ export type Placed = {
 	w: number;
 	h: number;
 	rot?: number;
-	art?: number;
 };
 
 export function place(
@@ -66,7 +67,7 @@ export function place(
 	const ref = scaleWidth(vw);
 	// From ref, not vw: past SCALE_MAX the whole collage freezes against the edges.
 	const gutter = Math.max(0, (ref - clearW) / 2);
-	return specs.map((s) => {
+	return specs.filter((s) => vw >= (s.hideBelow ?? 0)).map((s) => {
 		const w = (s.w / 100) * ref;
 		const h = w / s.aspect;
 		const lane = s.lane === "gutter" ? gutter : ref;
@@ -78,7 +79,6 @@ export function place(
 			w,
 			h,
 			rot: s.rot,
-			art: s.art,
 		};
 	});
 }

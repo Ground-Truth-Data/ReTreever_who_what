@@ -29,7 +29,7 @@ import {
 	parallaxY,
 	type Placed,
 } from "../stage/shardLayout";
-import { byArt, shard, shardId } from "../stage/shardIndex";
+import { shard, shardId } from "../stage/shardIndex";
 import { withLocalPhotos, withPhonePhotos } from "../stage/svgPhotos";
 import type { WhoWhatRoutes } from "../whoWhatTypes";
 import type { SearchListItem } from "./searchTypes";
@@ -155,6 +155,14 @@ const shardArt: Record<number, string> = Object.fromEntries(
 	).map(([path, svg]) => [Number(/poly_(\d+)\.svg$/.exec(path)![1]), shardPhotos(svg)]),
 );
 
+// The SVG files name their clip by photo number; renamed to the layout id so the inspector shows one number.
+const artFor = (n: number) => {
+	const art = shard(n).art!;
+	return shardArt[art]
+		.replaceAll(`search_shard-${art}-clip`, `search_shard-${n}-clip`)
+		.replace("<svg ", `<svg id="search_shard-${n}-svg" `);
+};
+
 let shards = $state<Placed[]>([]);
 let headlineShards = $state<Placed[]>([]);
 let heroEl = $state<HTMLElement | null>(null);
@@ -174,12 +182,6 @@ const widestShard = $derived(
 	),
 );
 
-const searchShards = byArt("search");
-
-const idForArt = (art: number) => {
-	const entry = searchShards.get(art);
-	return entry ? shardId(entry) : `search_shard-UNREGISTERED-art${art}`;
-};
 
 let headlineOffset = $state(0);
 
@@ -282,20 +284,20 @@ $effect(() => {
 });
 </script>
 
-{#snippet polyShard(shard: Placed, scroll: number)}
-	{@const depth = depthOf(shard, widestShard)}
+{#snippet polyShard(p: Placed, scroll: number)}
+	{@const depth = depthOf(p, widestShard)}
 	<div
-		id={idForArt(shard.id)}
+		id={shardId(shard(p.id))}
 		class="bg-poly"
 		aria-hidden="true"
-		style:left="{shard.x}px"
-		style:top="{shard.y}px"
-		style:width="{shard.w}px"
+		style:left="{p.x}px"
+		style:top="{p.y}px"
+		style:width="{p.w}px"
 		style:--depth={depth}
-		style:transform="translateY({parallaxY(depth, scroll)}px) rotate({shard.rot ?? 0}deg)"
+		style:transform="translateY({parallaxY(depth, scroll)}px) rotate({p.rot ?? 0}deg)"
 	>
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-		{@html shardArt[shard.id]}
+		{@html artFor(p.id)}
 	</div>
 {/snippet}
 
