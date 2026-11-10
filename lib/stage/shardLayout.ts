@@ -28,8 +28,10 @@ export type ShardSpec = {
 	lane: "gutter" | "edge";
 	/** % of the lane the inner edge reaches to; 100 = touching the content */
 	reach: number;
-	/** % of the section's height */
+	/** % of the section's height to the shard's top, or its middle with `from: "middle"` */
 	y: number;
+	/** "middle": pin the centre, so a hill shard sinks with the hill as a phone shrinks it, not floats above */
+	from?: "middle";
 	/** % of the scale width */
 	w: number;
 	/** the artwork's width ÷ height, measured from its SVG viewBox */
@@ -53,11 +55,11 @@ export function scaleWidth(vw: number): number {
 
 /** Top section: sky, search bar, hill. */
 export const HOME: ShardSpec[] = [
-	{ id: 1,  side: "left",  lane: "edge",   reach: 30,  y: 4,   w: 55, aspect: 1.63924, rot: 0 },   // top-left, trees and snow
+	{ id: 1,  side: "left",  lane: "edge",   reach: 40,  y: 4,   w: 55, aspect: 1.63924, rot: 0 },   // top-left, trees and snow
+	{ id: 6,  side: "left",  lane: "edge",   reach: 47,  y: 74.9, from: "middle", w: 66, aspect: 1.90656, rot: 5 },   // left, green hillside
 	// { id: 3,  side: "left",  lane: "edge",   reach: 88,  y: 45,  w: 33, aspect: 1.14372, rot: 216 }, // hidden
 	{ id: 4,  side: "right", lane: "gutter", reach: 120, y: -3,  w: 66, aspect: 1.70643, rot: -10 }, // top-right, blue sky
-	{ id: 6,  side: "left",  lane: "edge",   reach: 44,  y: 44,  w: 66, aspect: 1.90656, rot: 5 },   // left, green hillside
-	{ id: 7,  side: "right", lane: "gutter", reach: 128, y: 53,  w: 45, aspect: 1.75093, rot: 4 },   // right, clear-cut
+	{ id: 7,  side: "right", lane: "gutter", reach: 128, y: 75.9, from: "middle", w: 45, aspect: 1.75093, rot: 4 },   // right, clear-cut
 ];
 
 /** Lower section: dark hill, "ReTreever counts." */
@@ -94,7 +96,7 @@ export function place(
 		return {
 			id: s.id,
 			x: s.side === "left" ? inner - w : vw - inner,
-			y: (s.y / 100) * sectionH,
+			y: (s.y / 100) * sectionH - (s.from === "middle" ? h / 2 : 0),
 			w,
 			h,
 			rot: s.rot,

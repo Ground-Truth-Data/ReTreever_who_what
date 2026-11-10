@@ -98,7 +98,8 @@ describe("place", () => {
 	it("places y as a share of the section height", () => {
 		for (const s of HOME) {
 			const p = at(place(HOME, 1440, 700, 576), s.id);
-			expect(p.y).toBeCloseTo((s.y / 100) * 700, 6);
+			const lift = s.from === "middle" ? p.h / 2 : 0;
+			expect(p.y).toBeCloseTo((s.y / 100) * 700 - lift, 6);
 		}
 	});
 

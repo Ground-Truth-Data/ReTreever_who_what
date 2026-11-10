@@ -683,19 +683,9 @@ $effect(() => {
 		56%, 100% { opacity: 0; }
 	}
 
-	/* Slogan and globe side by side, centred as a pair; under the globe once narrow. */
+	/* Slogan and globe side by side at every width — never stacked (Chris, 10 Nov 2026). */
 	.slogan-know {
 		margin: 0;
-	}
-
-	@media (max-width: 999px) {
-		.caption-row {
-			flex-direction: column;
-		}
-
-		.slogan-know {
-			order: 1;
-		}
 	}
 
 	/* Wider than the viewport so both jagged ends are cut by the page edge. */
