@@ -73,8 +73,9 @@ let {
 } = $props();
 
 // The tally reads the lit tab from the weeds and shows only while the reader
-// is underground: a quarter of the viewport on the soil, and the track's end
-// not yet above the viewport's middle. The observer gates the scroll work.
+// is in the weeds: from the moment "Truth is in the weeds" pins under the nav
+// until the track's end rises above the viewport's middle. Any earlier and it
+// floats over the hills. The observer gates the scroll work.
 let litIndex = $state(0);
 let tallyVisible = $state(false);
 let undergroundEl = $state<HTMLElement | null>(null);
@@ -89,10 +90,8 @@ $effect(() => {
 			tallyVisible = false;
 			return;
 		}
-		const vh = window.innerHeight;
-		const r = el.getBoundingClientRect();
-		const onScreen = Math.min(r.bottom, vh) - Math.max(r.top, 0);
-		tallyVisible = onScreen >= vh * 0.25 && r.bottom >= vh / 2;
+		const pin = weeds?.stagePin() ?? null;
+		tallyVisible = pin !== null && window.scrollY >= pin - 1 && el.getBoundingClientRect().bottom >= window.innerHeight / 2;
 	};
 	const onScroll = () => {
 		if (!raf) raf = requestAnimationFrame(read);
@@ -752,15 +751,22 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 	}
 
 	/* The dog sits in the grass band, between its green wash and the tufts.
-	   Its lowest pixel in any clip (the sapling's plug, frame row 1300) is 20
-	   of the stage's 900 rows above its foot, and lands where the grass starts
-	   fading into the soil: the ground never covers the paws or the planting. */
+	   The stage's foot, where the sapling goes in, is 20 of its 900 rows below
+	   the clips' lowest pixel and lands where the grass starts fading into the
+	   soil. No z-index: DogStage stacks its layers in the hero's context, the
+	   dog under the tufts and the sapling over them. */
 	.dog-column {
 		position: absolute;
 		right: clamp(12px, 8vw, 140px);
 		bottom: var(--dog-lift);
 		width: var(--stage-w);
-		z-index: 2;
+	}
+
+	/* The band's own z-index (3) would cap the running dog under the hero's
+	   words. Unset, its washes (0, 1) and tufts (3) still stack under them,
+	   and the dog can rise over them while it runs. */
+	.rating-hero :global(.wildflower-band) {
+		z-index: auto;
 	}
 
 	/* Below the grass the page is underground: one ground picture, drawn once
