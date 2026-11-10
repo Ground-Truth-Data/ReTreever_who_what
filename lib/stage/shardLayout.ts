@@ -1,16 +1,30 @@
 // Lengths are % of the scale width, so the collage keeps its proportions and
-// freezes past SCALE_MAX. A shard hangs off its own side, and the gutter lane
-// closes with the card, so a side shard slides off a phone, not behind the bar.
+// freezes past SCALE_MAX. A shard hangs off its own side.
+//
+// lane + reach set how far in from its side a shard's INNER edge comes:
+//
+//   screen edge                                             screen edge
+//   |<-- gutter -->|<------ content (search bar) ------>|<-- gutter -->|
+//   |<----------------------------- edge ------------------------------>|
+//
+//   gutter: reach 100 = the inner edge touches the content; 50 = halfway
+//           out to the screen edge. Shrinks as the screen narrows, so on
+//           a phone it is only MIN_GUTTER wide.
+//   edge:   reach 100 = the inner edge is all the way across the screen.
+//           Ignores the content; for shards above or below it.
+//
+//   A right shard with reach 30 shows its left 30% of the lane; the rest
+//   hangs off the right side of the screen.
+
+/** Lever: the gutter is never narrower than this % of the screen, so gutter
+ *  shards still peek in on a phone. Raise it to pull them toward the centre. */
+export const MIN_GUTTER = 15;
 
 export type ShardSpec = {
 	/** shardIndex.ts number — the page's `search_shard-<id>` */
 	id: number;
 	side: "left" | "right";
-	/**
-	 * Which strip the shard's inner edge is measured in:
-	 * gutter — between the viewport edge and the centered content; vanishes on a phone.
-	 * edge — the viewport, for shards above or below the content.
-	 */
+	/** which strip `reach` is measured in; see the diagram above */
 	lane: "gutter" | "edge";
 	/** % of the lane the inner edge reaches to; 100 = touching the content */
 	reach: number;
@@ -53,7 +67,8 @@ export const HEADLINE: ShardSpec[] = [
 	{ id: 12, side: "right", lane: "gutter", reach: 128, y: 6,   w: 45, aspect: 2.26411, rot: -9 },  // top-right, branches
 	// { id: 13, side: "left",  lane: "gutter", reach: 110, y: 8,   w: 43, aspect: 2.02096, rot: 12 },  // hidden
 	{ id: 14, side: "left",  lane: "gutter", reach: 110, y: 66,  w: 49, aspect: 2.45141, rot: 10 },  // lower-left, slash pile
-	{ id: 15, side: "right", lane: "edge",   reach: 99,  y: 9,   w: 44, aspect: 1.1521,  rot: -5, hideBelow: 200 }, // the planters, behind the slogan
+	// { id: 15, side: "right", lane: "edge",   reach: 99,  y: 9,   w: 44, aspect: 1.1521,  rot: -5, hideBelow: 200 }, // the planters, behind the slogan
+	{ id: 15, side: "left", lane: "edge",   reach: 44,  y: 9,   w: 44, aspect: 1.1521,  rot: -5, hideBelow: 200 }, // the planters, behind the slogan
 ];
 
 export type Placed = {
@@ -70,7 +85,7 @@ export function place(
 ): Placed[] {
 	const ref = scaleWidth(vw);
 	// From ref, not vw: past SCALE_MAX the whole collage freezes against the edges.
-	const gutter = Math.max(0, (ref - clearW) / 2);
+	const gutter = Math.max((MIN_GUTTER / 100) * ref, (ref - clearW) / 2);
 	return specs.filter((s) => vw >= (s.hideBelow ?? 0)).map((s) => {
 		const w = (s.w / 100) * ref;
 		const h = w / s.aspect;
