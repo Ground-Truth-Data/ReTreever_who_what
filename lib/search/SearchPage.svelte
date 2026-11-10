@@ -25,7 +25,6 @@ import {
 	HEADLINE,
 	HOME,
 	depthOf,
-	layerOf,
 	layoutPage,
 	parallaxY,
 	type Placed,
@@ -293,7 +292,6 @@ $effect(() => {
 		style:top="{shard.y}px"
 		style:width="{shard.w}px"
 		style:--depth={depth}
-		style:--layer={layerOf(depth)}
 		style:transform="translateY({parallaxY(depth, scroll)}px) rotate({shard.rot ?? 0}deg)"
 	>
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -485,9 +483,8 @@ $effect(() => {
 		position: absolute;
 		pointer-events: none;
 		color: var(--color-gold-shard);
-		/* --layer is 0..-2: z-index would round a fractional calc into a hard
-		   cut, so it's an offset instead — nearest band stays under grass (3). */
-		z-index: calc(2 + var(--layer, 0));
+		/* Above the hill (0), under the grass (3), whatever the shard's size. */
+		z-index: 1;
 		will-change: transform;
 	}
 

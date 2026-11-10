@@ -108,13 +108,6 @@ export function parallaxY(depth: number, scrolled: number): number {
 	return -scrolled * MAX_PARALLAX_RATE * depth;
 }
 
-// Negative: the grass sits at z 3 and must stay in front of every shard.
-export function layerOf(depth: number): number {
-	if (depth >= 0.66) return 0;
-	if (depth >= 0.33) return -1;
-	return -2;
-}
-
 export type SectionInput = {
 	height: number;
 	/** width of the centered content the gutter lane keeps clear of */

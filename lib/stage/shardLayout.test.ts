@@ -7,7 +7,6 @@ import {
 	SCALE_MIN,
 	bounds,
 	depthOf,
-	layerOf,
 	layoutPage,
 	parallaxY,
 	place,
@@ -288,15 +287,6 @@ describe("depth", () => {
 			const d = depthOf({ id: 1, x: 0, y: 0, w, h: 100 }, 500);
 			expect(d).toBeGreaterThanOrEqual(0);
 			expect(d).toBeLessThanOrEqual(1);
-		}
-	});
-
-	it("bands depth into three integer layers", () => {
-		expect(layerOf(1)).toBe(0);
-		expect(layerOf(0.5)).toBe(-1);
-		expect(layerOf(0)).toBe(-2);
-		for (const d of [0, 0.2, 0.4, 0.7, 1]) {
-			expect(Number.isInteger(layerOf(d))).toBe(true);
 		}
 	});
 });
