@@ -321,15 +321,14 @@ $effect(() => {
 			</div>
 
 			<div class="caption-row">
+				<p class="slogan slogan-know">
+					<span class="ribbon ribbon-a">{m.ww_search_slogan_know()}</span>
+					<span class="ribbon ribbon-b">{m.ww_search_slogan_whos_who()}</span>
+					<span class="ribbon ribbon-c"><small>{m.ww_search_slogan_in()}</small><span>{m.ww_search_slogan_restoration()}<span class="gold">.</span></span></span>
+				</p>
 				<GlobeSpinIcon class="globe-icon" href={localized(mapHref ?? routes.whoMap)} />
 			</div>
 		</div>
-
-		<p class="slogan slogan-know">
-			<span class="ribbon ribbon-a">{m.ww_search_slogan_know()}</span>
-			<span class="ribbon ribbon-b">{m.ww_search_slogan_whos_who()}</span>
-			<span class="ribbon ribbon-c"><small>{m.ww_search_slogan_in()}</small><span>{m.ww_search_slogan_restoration()}<span class="gold">.</span></span></span>
-		</p>
 	</section>
 
 	<div class="middle-divider" id={dividerId}>
@@ -592,7 +591,7 @@ $effect(() => {
 			drop-shadow(9px 12px 18px rgb(12 8 1 / 0.38));
 	}
 
-	/* Torn-tape ribbons. Absolute beside the card on a wide screen, stacked under it below 1000px. */
+	/* Torn-tape ribbons. */
 	.slogan {
 		position: relative;
 		z-index: 4;
@@ -684,13 +683,18 @@ $effect(() => {
 		56%, 100% { opacity: 0; }
 	}
 
-	@media (min-width: 1000px) {
-		/* Hung from the card's top (the section's top padding): just under the bar, left of the globe. */
+	/* Slogan and globe side by side, centred as a pair; under the globe once narrow. */
+	.slogan-know {
+		margin: 0;
+	}
+
+	@media (max-width: 999px) {
+		.caption-row {
+			flex-direction: column;
+		}
+
 		.slogan-know {
-			position: absolute;
-			margin: 0;
-			left: calc(50% - min(30.5vw, 440px));
-			top: calc(clamp(28px, 7vh, 80px) + 150px);
+			order: 1;
 		}
 	}
 
