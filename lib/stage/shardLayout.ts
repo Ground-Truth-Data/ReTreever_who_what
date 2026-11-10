@@ -83,9 +83,9 @@ export type Placed = {
 };
 
 export function place(
-	specs: ShardSpec[], vw: number, sectionH: number, clearW: number,
+	specs: ShardSpec[], vw: number, sectionH: number, clearW: number, scaleMin = SCALE_MIN,
 ): Placed[] {
-	const ref = scaleWidth(vw);
+	const ref = Math.max(scaleMin, scaleWidth(vw));
 	// From ref, not vw: past SCALE_MAX the whole collage freezes against the edges.
 	const gutter = Math.max((MIN_GUTTER / 100) * ref, (ref - clearW) / 2);
 	return specs.filter((s) => vw >= (s.hideBelow ?? 0)).map((s) => {
@@ -134,10 +134,12 @@ export type SectionInput = {
 	/** width of the centered content the gutter lane keeps clear of */
 	clearW: number;
 	specs: ShardSpec[];
+	/** narrower screens size and lane this section's shards as if this wide, so they stay big on a phone */
+	scaleMin?: number;
 };
 
 export function layoutPage(
 	vw: number, sections: SectionInput[],
 ): Placed[][] {
-	return sections.map((s) => place(s.specs, vw, s.height, s.clearW));
+	return sections.map((s) => place(s.specs, vw, s.height, s.clearW, s.scaleMin));
 }

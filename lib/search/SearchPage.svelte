@@ -178,7 +178,8 @@ function measure() {
 			// outside the content and a phone shows no sliver beside the card.
 			[shards, headlineShards] = layoutPage(vw, [
 				{ height: heroH, clearW: cardEl.clientWidth + 32, specs: HOME },
-				{ height: headH, clearW: lockupEl.clientWidth + 32, specs: HEADLINE },
+				// On a phone this section is tall and empty; its shards keep a tablet's size.
+				{ height: headH, clearW: lockupEl.clientWidth + 32, specs: HEADLINE, scaleMin: 640 },
 			]);
 		}
 	}
