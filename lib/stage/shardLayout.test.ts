@@ -272,7 +272,8 @@ describe("layoutPage", () => {
 
 describe("depth", () => {
 	it("gives the widest shard depth 1 and the narrowest near 0", () => {
-		const P = place(HOME, 1440, 700, 576);
+		// Both sections, as the page measures depth.
+		const P = [...place(HOME, 1440, 700, 576), ...place(HEADLINE, 1440, 600, 606)];
 		const widest = Math.max(...P.map((p) => p.w));
 		const narrowest = P.reduce((a, b) => (a.w <= b.w ? a : b));
 		const biggest = P.reduce((a, b) => (a.w >= b.w ? a : b));

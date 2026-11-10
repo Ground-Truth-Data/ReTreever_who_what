@@ -34,22 +34,26 @@ export function scaleWidth(vw: number): number {
 	return Math.max(SCALE_MIN, Math.min(SCALE_MAX, vw));
 }
 
+// Every /who shard, by number. A shard belongs to the section it is drawn in;
+// shard 26 is the divider strip between the two, placed by the page.
+
+/** Top section: sky, search bar, hill. */
 export const HOME: ShardSpec[] = [
-	{ id: 1, side: "left", lane: "edge",     reach: 30, y: 4, w: 55, aspect: 1.63924, rot: 0 },
-	{ id: 6, side: "left", lane: "edge",     reach: 44, y: 44, w: 66, aspect: 1.90656, rot: 5 },
-	// { id: 3, side: "left", lane: "edge",     reach: 88, y: 45, w: 33, aspect: 1.14372, rot: 216 }, 
-	{ id: 4, side: "right", lane: "gutter",  reach: 120, y: -3, w: 66, aspect: 1.70643, rot: -10 },
-	{ id: 7, side: "right", lane: "gutter", reach: 128, y: 53, w: 45, aspect: 1.75093, rot: 4 },
-	{ id: 2, side: "right", lane: "gutter",  reach: 120, y: 150, w: 27, aspect: 0.67299, rot: 11 },
-	{ id: 15, side: "right", lane: "edge",   reach: 99, y: 120, w: 44, aspect: 1.1521, rot: -5, hideBelow: 768 },
+	{ id: 1,  side: "left",  lane: "edge",   reach: 30,  y: 4,   w: 55, aspect: 1.63924, rot: 0 },   // top-left, trees and snow
+	// { id: 3,  side: "left",  lane: "edge",   reach: 88,  y: 45,  w: 33, aspect: 1.14372, rot: 216 }, // hidden
+	{ id: 4,  side: "right", lane: "gutter", reach: 120, y: -3,  w: 66, aspect: 1.70643, rot: -10 }, // top-right, blue sky
+	{ id: 6,  side: "left",  lane: "edge",   reach: 44,  y: 44,  w: 66, aspect: 1.90656, rot: 5 },   // left, green hillside
+	{ id: 7,  side: "right", lane: "gutter", reach: 128, y: 53,  w: 45, aspect: 1.75093, rot: 4 },   // right, clear-cut
 ];
 
-
+/** Lower section: dark hill, "ReTreever counts." */
 export const HEADLINE: ShardSpec[] = [
-	{ id: 12, side: "right", lane: "gutter", reach: 128, y: 6, w: 45, aspect: 2.26411, rot: -9 },
-	// { id: 5, side: "right", lane: "gutter", reach: 104, y: 56, w: 48, aspect: 2.43367, rot: 10 },
-	{ id: 13, side: "left", lane: "gutter", reach: 110, y: 8, w: 43, aspect: 2.02096, rot: 12 },
-	{ id: 14, side: "left", lane: "gutter", reach: 110, y: 66, w: 49, aspect: 2.45141, rot: 10 },
+	{ id: 2,  side: "right", lane: "gutter", reach: 120, y: 48,  w: 27, aspect: 0.67299, rot: 11 },  // right, tall aerial
+	// { id: 5,  side: "right", lane: "gutter", reach: 104, y: 56,  w: 48, aspect: 2.43367, rot: 10 },  // hidden
+	{ id: 12, side: "right", lane: "gutter", reach: 128, y: 6,   w: 45, aspect: 2.26411, rot: -9 },  // top-right, branches
+	// { id: 13, side: "left",  lane: "gutter", reach: 110, y: 8,   w: 43, aspect: 2.02096, rot: 12 },  // hidden
+	{ id: 14, side: "left",  lane: "gutter", reach: 110, y: 66,  w: 49, aspect: 2.45141, rot: 10 },  // lower-left, slash pile
+	{ id: 15, side: "right", lane: "edge",   reach: 99,  y: 9,   w: 44, aspect: 1.1521,  rot: -5, hideBelow: 1000 }, // the planters, behind the slogan
 ];
 
 export type Placed = {
