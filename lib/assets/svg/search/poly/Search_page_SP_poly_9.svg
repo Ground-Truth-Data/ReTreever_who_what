@@ -5,7 +5,7 @@
 		</clipPath>
 	</defs>
 	<g transform="translate(-55.247984,-1093.3959)">
-		<image width="355.68975" height="185.10173" x="54.65359" y="1093.6111" preserveAspectRatio="none" clip-path="url(#search_shard-9-clip)" href="../../pub-Rtvr/home/poly/shard-9.webp" />
+		<g clip-path="url(#search_shard-9-clip)"><image width="799" height="532" transform="matrix(0.48247 0.00996 -0.00996 0.48247 64.187 1013.220)" preserveAspectRatio="none" href="../../pub-Rtvr/home/poly/great-forest.webp" /></g>
 		<path d="m 387.53655,1098.0208 -318.277728,126.8445 114.393018,47.4694 216.33615,-105.8333 z m -6.26525,7.8016 10.85464,54.2737 -207.59612,103.1198 -92.536469,-38.3989 z" style="opacity:1;fill:#171d31;fill-opacity:1;stroke:none;stroke-width:5.29167;stroke-linecap:round;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;paint-order:normal" />
 		<path d="m 62.41453,1223.8675 324.28419,-126.8643 14.24678,69.1987 -215.73717,107.1901 z" style="display:inline;fill:none;fill-opacity:0;stroke:currentColor;stroke-width:5.29167;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1" />
 	</g>
