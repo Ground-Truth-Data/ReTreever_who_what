@@ -10,19 +10,3 @@ export function svgWords(raw: string, swaps: readonly (readonly [english: string
 	return out;
 }
 
-/** Squeezes a translated word whose real width overruns its art's box; the budgets are in each tspan's own units. */
-export function fitWords(node: HTMLElement, budgets: Record<string, number>) {
-	const fit = () => {
-		for (const [id, max] of Object.entries(budgets)) {
-			const word = node.querySelector<SVGTextContentElement>(`#${id}`);
-			if (!word) continue;
-			word.removeAttribute("textLength");
-			word.removeAttribute("lengthAdjust");
-			if (word.getComputedTextLength() <= max) continue;
-			word.setAttribute("textLength", String(max));
-			word.setAttribute("lengthAdjust", "spacingAndGlyphs");
-		}
-	};
-	fit();
-	void document.fonts?.ready.then(fit);
-}

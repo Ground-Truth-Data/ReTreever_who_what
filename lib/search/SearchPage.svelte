@@ -1,6 +1,4 @@
 <script lang="ts">
-import FindRaw from "../assets/svg/search/Search_page_Find.svg?raw";
-import TruthInReforestationRaw from "../assets/svg/search/Search_page_Truth_in_Reforestation.svg?raw";
 import OrgsSelectedRaw from "../assets/svg/search/Search_page_Orgs_Selected.svg?raw";
 import OrgsUnselectedRaw from "../assets/svg/search/Search_page_Orgs_Unselected.svg?raw";
 import ProjectsSelectedRaw from "../assets/svg/search/Search_page_Projects_Selected.svg?raw";
@@ -10,12 +8,11 @@ import Greenery from "../stage/Greenery.svelte";
 import GlobeSpinIcon from "../stage/GlobeSpinIcon.svelte";
 import SearchBar from "./SearchBar.svelte";
 import SearchDropdown from "./SearchDropdown.svelte";
-import LessonHand from "../stage/LessonHand.svelte";
-import HelpSticker from "../stage/HelpSticker.svelte";
+import dogUrl from "$rt/assets/ReTreever_logo_sm.webp";
 import MiddleDividerRaw from "../assets/svg/search/poly/Search_page_Middle_Divider.svg?raw";
 import { m } from "$parent/src/lib/paraglide/messages";
-import { getLocale, localizeHref } from "$parent/src/lib/paraglide/runtime";
-import { fitWords, svgWords } from "./svgWords";
+import { localizeHref } from "$parent/src/lib/paraglide/runtime";
+import { svgWords } from "./svgWords";
 
 import skyUrl from "../assets/golden_sky_background.webp";
 import hillFillWebp from "../assets/pub-Rtvr/home/hill_fill.webp";
@@ -76,30 +73,9 @@ const searchLabel = $derived(activeTab === "orgs" ? m.ww_search_label_orgs() : m
 
 const localized = (href: string | undefined) => (href ? localizeHref(href) : undefined);
 
-const findArt = svgWords(FindRaw, [["Find", m.ww_search_art_find()]]);
-const truthArt = svgWords(TruthInReforestationRaw, [
-	["Truth", m.ww_search_art_truth()],
-	["in", m.ww_search_art_in()],
-	["Reforestation", m.ww_search_art_reforestation()],
-]);
-// Each word's room inside its black box, measured on the English art; English never needs squeezing.
-const english = getLocale() === "en";
-const FIND_FIT: Record<string, number> = english ? {} : { "search-page-find-tspan1": 193 };
-const TRUTH_FIT: Record<string, number> = english
-	? {}
-	: {
-			"search-page-truth-in-reforestation-tspan1": 224,
-			"search-page-truth-in-reforestation-tspan2": 120,
-			"search-page-truth-in-reforestation-tspan3": 575,
-		};
-
 const LIST_ID = "home-search-list";
-let bar = $state<SearchBar | null>(null);
 let list = $state<SearchDropdown | null>(null);
-let tabsEl = $state<HTMLElement | null>(null);
-// The lesson lights the other tab without navigating; null is the page's own.
-let litOverride = $state<number | null>(null);
-const litTab = $derived(litOverride ?? (activeTab === "orgs" ? 0 : 1));
+const litTab = $derived(activeTab === "orgs" ? 0 : 1);
 const orgsArt = $derived(svgWords(litTab === 0 ? OrgsSelectedRaw : OrgsUnselectedRaw, [["Organizations", m.ww_search_tab_orgs()]]));
 const projectsArt = $derived(svgWords(litTab === 1 ? ProjectsSelectedRaw : ProjectsUnselectedRaw, [["Projects", m.ww_search_tab_projects()]]));
 let activeDescendant = $state<string | undefined>(undefined);
@@ -186,27 +162,6 @@ const widestShard = $derived(
 let headlineOffset = $state(0);
 
 const headlineScrolled = $derived(Math.max(0, scrolled - headlineOffset));
-let lessonHand = $state<LessonHand | null>(null);
-const lessonPlaying = $derived(lessonHand?.playing() ?? false);
-const pressHelp = () => (lessonPlaying ? lessonHand?.cancel() : void lessonHand?.play());
-
-const lessonDoors = {
-	// The art, not the link: on a phone the link's box reaches above it.
-	tabs: () => (tabsEl ? [...tabsEl.querySelectorAll<HTMLElement>(".tab-sticker > svg")] : []),
-	litTab: () => litTab,
-	setLitTab: (i: number | null) => (litOverride = i),
-	input: () => searchWrapEl?.querySelector<HTMLElement>(".search-input") ?? null,
-	row: (i: number) => (list ? document.getElementById(list.rowId(i)) : null),
-	globe: () => heroEl?.querySelector<HTMLElement>(".globe-icon") ?? null,
-	typeIn: (text: string, ms: number) => bar?.typeIn(text, ms) ?? Promise.resolve(),
-	clear: () => bar?.clear(),
-	highlight: (i: number) => void list?.highlight(i),
-};
-const lessonFacts = () => ({
-	focusWithin: !!searchWrapEl?.contains(document.activeElement),
-	dropdownOpen,
-	pageReady: listItems.length > 0,
-});
 
 // Resolved here: `{#each shards as shard}` shadows the imported shard() below.
 const dividerId = shardId(shard(26));
@@ -313,7 +268,7 @@ $effect(() => {
 		</Greenery>
 
 		<div class="search-card" bind:this={cardEl}>
-			<nav class="tabs" aria-label={m.ww_search_tabs_label()} bind:this={tabsEl}>
+			<nav class="tabs" aria-label={m.ww_search_tabs_label()}>
 				<a
 					href={localized(routes.who) ?? null}
 					class="tab-sticker"
@@ -334,7 +289,6 @@ $effect(() => {
 
 			<div class="search-bar-wrap" bind:this={searchWrapEl}>
 				<SearchBar
-					bind:this={bar}
 					bind:value={query}
 					bind:dropdownOpen
 					{placeholder}
@@ -367,11 +321,15 @@ $effect(() => {
 			</div>
 
 			<div class="caption-row">
-				<p class="search-caption">{m.ww_search_caption()}</p>
 				<GlobeSpinIcon class="globe-icon" href={localized(mapHref ?? routes.whoMap)} />
-				<HelpSticker playing={lessonPlaying} onpress={pressHelp} />
 			</div>
 		</div>
+
+		<p class="slogan slogan-know">
+			<span class="ribbon ribbon-a">{m.ww_search_slogan_know()}</span>
+			<span class="ribbon ribbon-b">{m.ww_search_slogan_whos_who()}</span>
+			<span class="ribbon ribbon-c"><small>{m.ww_search_slogan_in()}</small><span>{m.ww_search_slogan_restoration()}<span class="gold">.</span></span></span>
+		</p>
 	</section>
 
 	<div class="middle-divider" id={dividerId}>
@@ -381,8 +339,6 @@ $effect(() => {
 		</div>
 	</div>
 
-	<LessonHand bind:this={lessonHand} name="search" facts={lessonFacts} search={lessonDoors} />
-
 	<section class="headline-section" bind:this={headlineEl}>
 		<div class="headline-greenery" aria-hidden="true"></div>
 
@@ -391,15 +347,10 @@ $effect(() => {
 		{/each}
 
 		<div class="headline" bind:this={lockupEl}>
-			<div class="headline-find" aria-hidden="true" use:fitWords={FIND_FIT}>
-				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				{@html findArt}
-			</div>
-			<div class="headline-truth" aria-hidden="true" use:fitWords={TRUTH_FIT}>
-				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				{@html truthArt}
-			</div>
-			<h1 class="visually-hidden">{m.ww_search_headline()}</h1>
+			<h1 class="slogan slogan-counts">
+				<span class="ribbon ribbon-name"><img src={dogUrl} alt="" /><span>Re<span class="gold">Tree</span>ver</span></span>
+				<span class="ribbon ribbon-counts"><span>{m.ww_search_slogan_counts()}<span class="gold blink">.</span></span></span>
+			</h1>
 		</div>
 	</section>
 </div>
@@ -632,21 +583,6 @@ $effect(() => {
 		width: 100%;
 	}
 
-	/* Caption font-size uses the bar's SVG user units so it tracks the input
-	   at every width. */
-	.search-caption {
-		flex: 0 1 auto;
-		max-width: 420px;
-		text-align: center;
-		color: #1d1405;
-		font-size: calc(18 * var(--bar-scale));
-		line-height: 1.35;
-		margin: 0;
-		text-shadow:
-			0 1px 1px rgb(255 255 255 / 0.35),
-			1px 2px 3px rgb(12 8 1 / 0.4);
-	}
-
 	.caption-row :global(.globe-icon) {
 		width: calc(74 * var(--bar-scale));
 		flex-shrink: 0;
@@ -656,9 +592,106 @@ $effect(() => {
 			drop-shadow(9px 12px 18px rgb(12 8 1 / 0.38));
 	}
 
-	/* As tall as the globe: its width on the sprite's 213:160 frame. */
-	.caption-row :global(.help-sticker) {
-		height: calc(74 * var(--bar-scale) * 160 / 213);
+	/* Torn-tape ribbons. Absolute beside the card on a wide screen, stacked under it below 1000px. */
+	.slogan {
+		position: relative;
+		z-index: 4;
+		margin: 16px 0 0;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		font-family: var(--rt-font-web);
+		line-height: 1;
+		color: #fff;
+		filter: drop-shadow(0 6px 8px rgb(40 25 0 / 0.35));
+	}
+
+	.ribbon {
+		display: inline-flex;
+		align-items: center;
+		background: #0e0e0e;
+		white-space: nowrap;
+	}
+
+	.gold {
+		color: #f2c14e;
+	}
+
+	.ribbon-a {
+		padding: 0.15em 0.65em 0.25em 0.5em;
+		font-size: clamp(26px, 2.8vw, 40px);
+		font-weight: 600;
+		clip-path: polygon(0 10%, 96% 0, 100% 86%, 4% 100%);
+		transform: rotate(-2deg);
+	}
+
+	.ribbon-b {
+		margin: -4px 0 0 1.75em;
+		padding: 0.17em 0.66em 0.25em 0.55em;
+		font-size: clamp(24px, 2.5vw, 36px);
+		font-weight: 700;
+		background: #f2c14e;
+		color: #0e0e0e;
+		clip-path: polygon(3% 0, 100% 12%, 97% 100%, 0 90%);
+		transform: rotate(1.5deg);
+	}
+
+	.ribbon-c {
+		gap: 0.25em;
+		margin: -2px 0 0 0.5em;
+		padding: 0.2em 0.76em 0.3em 0.65em;
+		font-size: clamp(22px, 2.4vw, 34px);
+		font-weight: 500;
+		clip-path: polygon(0 4%, 100% 0, 97% 100%, 5% 92%);
+		transform: rotate(-1deg);
+	}
+
+	.ribbon-c small {
+		font-size: 0.7em;
+	}
+
+	.slogan-counts {
+		font-size: clamp(44px, 6.7vw, 96px);
+		font-weight: 600;
+		filter: drop-shadow(0 8px 12px rgb(0 0 0 / 0.5));
+	}
+
+	.ribbon-name {
+		gap: 0.15em;
+		padding: 0.12em 0.4em 0.19em 0.25em;
+		clip-path: polygon(0 6%, 97% 0, 100% 92%, 3% 100%);
+		transform: rotate(-2.5deg);
+	}
+
+	.ribbon-name img {
+		height: 1em;
+		width: auto;
+	}
+
+	.ribbon-counts {
+		margin: -0.1em 0 0 2.6em;
+		padding: 0.1em 0.38em 0.17em 0.3em;
+		clip-path: polygon(4% 0, 100% 10%, 95% 100%, 0 88%);
+		transform: rotate(2deg);
+	}
+
+	.blink {
+		animation: slogan-blink 1.1s infinite;
+	}
+
+	@keyframes slogan-blink {
+		0%, 55% { opacity: 1; }
+		56%, 100% { opacity: 0; }
+	}
+
+	@media (min-width: 1000px) {
+		/* Hung from the card's top (the section's top padding): just under the bar, left of the globe. */
+		.slogan-know {
+			position: absolute;
+			margin: 0;
+			left: calc(50% - min(30.5vw, 440px));
+			top: calc(clamp(28px, 7vh, 80px) + 150px);
+		}
 	}
 
 	/* Wider than the viewport so both jagged ends are cut by the page edge. */
@@ -688,27 +721,10 @@ $effect(() => {
 
 	.headline {
 		position: relative;
-		display: flex;
-		align-items: center;
-		gap: clamp(8px, 2vw, 24px);
-		flex-wrap: wrap;
-		justify-content: center;
 		z-index: 5;
 	}
 
-	.headline-find :global(svg),
-	.headline-truth :global(svg) {
-		height: clamp(64px, 9vw, 130px);
-		width: auto;
-		display: block;
-	}
-
 	@media (max-width: 640px) {
-		.headline {
-			flex-direction: column;
-			gap: 4px;
-		}
-
 		.caption-row {
 			gap: 10px;
 		}
@@ -741,16 +757,8 @@ $effect(() => {
 
 	/* 550px is the Get Cache breakpoint, where the bar spans the screen. */
 	@media (max-width: 550px) {
-		.search-caption {
-			font-size: max(13px, calc(14.3 * var(--bar-scale)));
-		}
-
 		.caption-row :global(.globe-icon) {
 			width: max(40px, calc(44.5 * var(--bar-scale)));
-		}
-
-		.caption-row :global(.help-sticker) {
-			height: calc(max(40px, calc(44.5 * var(--bar-scale))) * 160 / 213);
 		}
 	}
 </style>
