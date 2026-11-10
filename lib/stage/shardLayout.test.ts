@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	HEADLINE,
+	MIN_GUTTER,
 	HOME,
 	MAX_PARALLAX_RATE,
 	SCALE_MAX,
@@ -76,7 +77,7 @@ describe("place", () => {
 		for (const vw of WIDTHS) {
 			const P = place(HOME, vw, 700, cardW(vw));
 			const ref = scaleWidth(vw);
-			const gutter = Math.max(0, (ref - cardW(vw)) / 2);
+			const gutter = Math.max((MIN_GUTTER / 100) * ref, (ref - cardW(vw)) / 2);
 			for (const s of HOME.filter((s) => vw >= (s.hideBelow ?? 0))) {
 				const p = at(P, s.id);
 				const inner = (s.reach / 100) * (s.lane === "gutter" ? gutter : ref);
@@ -86,12 +87,12 @@ describe("place", () => {
 		}
 	});
 
-	it("slides a gutter shard off screen as the card fills the viewport", () => {
+	it("keeps a gutter shard peeking in on a phone, at MIN_GUTTER", () => {
 		const spec: ShardSpec = { id: 4, side: "left", lane: "gutter", reach: 60, y: 20, w: 24, aspect: 1.7 };
 		const wide = at(place([spec], 1440, 700, 576), 4);
 		const phone = at(place([spec], 390, 504, 354), 4);
 		expect(wide.x + wide.w).toBeGreaterThan(200);
-		expect(phone.x + phone.w).toBeLessThan(16);
+		expect(phone.x + phone.w).toBeCloseTo(0.6 * (MIN_GUTTER / 100) * 390, 6);
 	});
 
 	it("places y as a share of the section height", () => {
