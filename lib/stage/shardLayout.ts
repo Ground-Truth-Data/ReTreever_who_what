@@ -66,9 +66,9 @@ export const HEADLINE: ShardSpec[] = [
 	// { id: 5,  side: "right", lane: "gutter", reach: 104, y: 56,  w: 48, aspect: 2.43367, rot: 10 },  // hidden
 	{ id: 12, side: "right", lane: "gutter", reach: 128, y: 6,   w: 45, aspect: 2.26411, rot: -9 },  // top-right, branches
 	// { id: 13, side: "left",  lane: "gutter", reach: 110, y: 8,   w: 43, aspect: 2.02096, rot: 12 },  // hidden
-	{ id: 14, side: "left",  lane: "gutter", reach: 110, y: 66,  w: 49, aspect: 2.45141, rot: 10 },  // lower-left, slash pile
+	{ id: 15, side: "left", lane: "edge",   reach: 43,  y: 7,   w: 44, aspect: 1.1521,  rot: -5, hideBelow: 200 }, // the planters, behind the slogan
 	// { id: 15, side: "right", lane: "edge",   reach: 99,  y: 9,   w: 44, aspect: 1.1521,  rot: -5, hideBelow: 200 }, // the planters, behind the slogan
-	{ id: 15, side: "left", lane: "edge",   reach: 44,  y: 9,   w: 44, aspect: 1.1521,  rot: -5, hideBelow: 200 }, // the planters, behind the slogan
+	{ id: 14, side: "left",  lane: "gutter", reach: 170, y: 76,  w: 49, aspect: 2.45141, rot: 10 },  // lower-left, slash pile
 ];
 
 export type Placed = {
