@@ -119,7 +119,7 @@ const localPhotos = (svg: string) => withLocalPhotos(svg, PHOTOS, "home/poly");
 // renders on the server and the pick costs no second fetch.
 const phone = typeof matchMedia === "function" && matchMedia("(max-width: 480px)").matches;
 const shardPhotos = (svg: string) =>
-	phone ? withPhonePhotos(svg, PHONE_PHOTOS, "home/poly") : localPhotos(svg);
+	localPhotos(phone ? withPhonePhotos(svg, PHONE_PHOTOS, "home/poly") : svg);
 
 const shardArt: Record<number, string> = Object.fromEntries(
 	Object.entries(
