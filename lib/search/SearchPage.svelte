@@ -26,7 +26,7 @@ import {
 	type Placed,
 } from "../stage/shardLayout";
 import { shard, shardId } from "../stage/shardIndex";
-import { withLocalPhotos, withPhonePhotos } from "../stage/svgPhotos";
+import { withLocalPhotos } from "../stage/svgPhotos";
 import type { WhoWhatRoutes } from "../whoWhatTypes";
 import type { SearchListItem } from "./searchTypes";
 
@@ -109,16 +109,7 @@ const PHOTOS = import.meta.glob<string>(
 	"../assets/pub-Rtvr/home/poly/*.webp",
 	{ eager: true, query: "?url", import: "default" },
 );
-const PHONE_PHOTOS = import.meta.glob<string>(
-	"../assets/pub-Rtvr/home/poly/*-phone.webp",
-	{ eager: true, query: "?url", import: "default" },
-);
 const localPhotos = (svg: string) => withLocalPhotos(svg, PHOTOS, "home/poly");
-// Picked once, at mount: the shards lay out from DOM measurements, so none
-// renders on the server and the pick costs no second fetch.
-const phone = typeof matchMedia === "function" && matchMedia("(max-width: 480px)").matches;
-const shardPhotos = (svg: string) =>
-	localPhotos(phone ? withPhonePhotos(svg, PHONE_PHOTOS, "home/poly") : svg);
 
 const shardArt: Record<number, string> = Object.fromEntries(
 	Object.entries(
@@ -127,7 +118,7 @@ const shardArt: Record<number, string> = Object.fromEntries(
 			query: "?raw",
 			import: "default",
 		}),
-	).map(([path, svg]) => [Number(/poly_(\d+)\.svg$/.exec(path)![1]), shardPhotos(svg)]),
+	).map(([path, svg]) => [Number(/poly_(\d+)\.svg$/.exec(path)![1]), localPhotos(svg)]),
 );
 
 // The SVG files name their clip by photo number; renamed to the layout id so the inspector shows one number.
@@ -601,7 +592,7 @@ $effect(() => {
 		align-items: flex-start;
 		font-family: var(--rt-font-web);
 		line-height: 1;
-		color: #fff;
+		color: var(--rtvr-on-dark);
 		filter: drop-shadow(0 6px 8px rgb(40 25 0 / 0.35));
 	}
 
