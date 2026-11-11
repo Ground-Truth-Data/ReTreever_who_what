@@ -32,6 +32,7 @@
 	"ww_rating_weeds_failed": "Não foi possível carregar esta tabela.",
 	"ww_rating_weeds_digging": "Cavando…",
 	"ww_rating_weeds_rows_capped": "{count} de mais — as primeiras {count} linhas são exibidas",
+	"ww_rating_weeds_link_dead": "link quebrado · verificado em {date}",
 	"ww_rating_table_projects": "Projetos",
 	"ww_rating_table_crop": "Cultivo",
 	"ww_rating_table_planting": "Plantio",

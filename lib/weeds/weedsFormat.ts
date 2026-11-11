@@ -44,13 +44,23 @@ export function formatCell(value: string | number | null | undefined, kind: Weed
 	}
 }
 
+/** A column the table draws; `key` and `dead` ride along unseen. */
+export const isDrawn = (c: WeedsColumn): boolean => c.kind !== "key" && c.kind !== "dead";
+
+/** When the row's link answered 404/410, the day it was checked; else null and the link is live. */
+export function deadOn(row: WeedsRow, columns: WeedsColumn[]): string | null {
+	const at = columns.find((c) => c.kind === "dead");
+	const v = at && row[at.key];
+	return v ? formatWeedsDate(String(v)) : null;
+}
+
 /** The weeds bar: keeps rows where any drawn cell, as shown or as a link's full URL, contains the text. */
 export function filterRows(rows: WeedsRow[], columns: WeedsColumn[], query: string): WeedsRow[] {
 	const q = query.trim().toLowerCase();
 	if (!q) return rows;
 	return rows.filter((row) =>
 		columns.some((c) => {
-			if (c.kind === "key") return false;
+			if (!isDrawn(c)) return false;
 			const v = row[c.key];
 			if (v === null || v === undefined) return false;
 			if (formatCell(v, c.kind).toLowerCase().includes(q)) return true;

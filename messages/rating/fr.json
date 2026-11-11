@@ -32,6 +32,7 @@
 	"ww_rating_weeds_failed": "Impossible de charger ce tableau.",
 	"ww_rating_weeds_digging": "On creuse…",
 	"ww_rating_weeds_rows_capped": "{count} sur davantage — les {count} premières lignes sont affichées",
+	"ww_rating_weeds_link_dead": "lien mort · vérifié le {date}",
 	"ww_rating_table_projects": "Projets",
 	"ww_rating_table_crop": "Culture",
 	"ww_rating_table_planting": "Plantation",

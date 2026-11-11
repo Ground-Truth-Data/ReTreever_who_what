@@ -1,6 +1,7 @@
 <script lang="ts">
 import { untrack } from "svelte";
-import { formatCell } from "./weedsFormat";
+import { m } from "$parent/src/lib/paraglide/messages";
+import { deadOn, formatCell, isDrawn } from "./weedsFormat";
 import { columnLabel } from "./columnLabels";
 import { focusIndex } from "./weedsFocus";
 import type { WeedsColumn, WeedsRow } from "../whoWhatTypes";
@@ -16,7 +17,7 @@ let {
 	open?: { column: string; on: (row: WeedsRow) => void };
 } = $props();
 
-const drawn = $derived(columns.filter((c) => c.kind !== "key"));
+const drawn = $derived(columns.filter(isDrawn));
 
 let wrap = $state<HTMLDivElement>();
 let table = $state<HTMLTableElement>();
@@ -174,8 +175,12 @@ $effect(() => {
 							{#each drawn as c, j (c.key)}
 								{@const v = row[c.key]}
 								{@const shown = formatCell(v, c.kind)}
+								{@const dead = c.kind === "link" && v ? deadOn(row, columns) : null}
 								<td class={c.kind} class:cross={i === activeRow && j === activeCol && j > 0}>
-									{#if c.kind === "link" && v}
+									{#if dead}
+										<span class="dead">{shown}</span>
+										<small class="dead-note">{m.ww_rating_weeds_link_dead({ date: dead })}</small>
+									{:else if c.kind === "link" && v}
 										<a href={String(v)} rel="noopener" target="_blank">{shown}</a>
 									{:else if open && c.key === open.column && v}
 										<button type="button" class="row-open" onclick={() => open.on(row)}>{shown}</button>
@@ -379,6 +384,12 @@ $effect(() => {
 		color: var(--color-gold-shard);
 		text-decoration: underline;
 		text-underline-offset: 2px;
+	}
+
+	.dead-note {
+		margin-left: 8px;
+		font-size: 0.85em;
+		opacity: 0.7;
 	}
 
 	.row-open {

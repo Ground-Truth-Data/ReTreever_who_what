@@ -28,8 +28,8 @@ export const WEEDS_TABLES = [
 ] as const;
 export type WeedsTable = (typeof WEEDS_TABLES)[number];
 
-/** How a cell is drawn; the answer says, so the page never knows the schema. A `key` column is never drawn: it is what opens a row. */
-export type WeedsKind = "text" | "number" | "date" | "link" | "score" | "key";
+/** How a cell is drawn; the answer says, so the page never knows the schema. A `key` column is never drawn: it is what opens a row; nor is `dead`, the date the row's link answered 404/410. */
+export type WeedsKind = "text" | "number" | "date" | "link" | "score" | "key" | "dead";
 export type WeedsColumn = { key: string; label: string; kind: WeedsKind };
 export type WeedsRow = Record<string, string | number | null>;
 /** One table's answer from the host: `total` is `rows.length`; `more` says the cap cut it short. */

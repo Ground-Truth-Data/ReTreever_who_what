@@ -32,6 +32,7 @@
 	"ww_rating_weeds_failed": "Could not load this table.",
 	"ww_rating_weeds_digging": "Digging…",
 	"ww_rating_weeds_rows_capped": "{count} of more — the first {count} rows are shown",
+	"ww_rating_weeds_link_dead": "link dead · checked {date}",
 	"ww_rating_table_projects": "Projects",
 	"ww_rating_table_crop": "Crop",
 	"ww_rating_table_planting": "Planting",
