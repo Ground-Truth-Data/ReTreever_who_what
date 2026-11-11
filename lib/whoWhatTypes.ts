@@ -4,7 +4,8 @@ import { getLocale } from "$parent/src/lib/paraglide/runtime";
 export function toTransparencyScore(raw: unknown): number | null {
 	if (raw === null || raw === undefined) return null;
 	const n = Number(raw);
-	return Number.isFinite(n) ? Math.round(n * 1000) / 10 : null;
+	// An org's stored score can pass 1 (an uncapped disclosure ratio); the shown number never leaves 0–100.
+	return Number.isFinite(n) ? Math.min(100, Math.max(0, Math.round(n * 1000) / 10)) : null;
 }
 
 /** "73.3%" (fr "73,3 %") or "—"; coerces because Mapbox hands properties back as strings. */
