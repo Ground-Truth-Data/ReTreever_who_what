@@ -3,6 +3,7 @@ import { untrack } from "svelte";
 import { m } from "$parent/src/lib/paraglide/messages";
 import { deadOn, formatCell, isDrawn } from "./weedsFormat";
 import { columnLabel } from "./columnLabels";
+import { safeHref } from "./safeHref";
 import { focusIndex } from "./weedsFocus";
 import type { WeedsColumn, WeedsRow } from "../whoWhatTypes";
 
@@ -176,12 +177,15 @@ $effect(() => {
 								{@const v = row[c.key]}
 								{@const shown = formatCell(v, c.kind)}
 								{@const dead = c.kind === "link" && v ? deadOn(row, columns) : null}
+								{@const href = c.kind === "link" ? safeHref(v) : null}
 								<td class={c.kind} class:cross={i === activeRow && j === activeCol && j > 0}>
 									{#if dead}
 										<span class="dead">{shown}</span>
 										<small class="dead-note">{m.ww_rating_weeds_link_dead({ date: dead })}</small>
+									{:else if href}
+										<a {href} rel="noopener" target="_blank">{shown}</a>
 									{:else if c.kind === "link" && v}
-										<a href={String(v)} rel="noopener" target="_blank">{shown}</a>
+										{shown || String(v)}
 									{:else if open && c.key === open.column && v}
 										<button type="button" class="row-open" onclick={() => open.on(row)}>{shown}</button>
 									{:else}

@@ -25,4 +25,13 @@ describe("the weeds sources table", () => {
 		expect(html).not.toMatch(/<th[^>]*>[^<]*Link dead/);
 		expect(html.match(/<th[ >]/g)).toHaveLength(2);
 	});
+
+	it("a link that is not http or https is text, never an anchor", () => {
+		for (const url of ["javascript:alert(1)", "data:text/html,hi", "/who/acme"]) {
+			const html = draw({ url, sourceDesc: null, linkDeadAt: null });
+			expect(html).not.toContain("<a");
+			expect(html).not.toContain("href=");
+		}
+		expect(draw({ url: "javascript:alert(1)", sourceDesc: null, linkDeadAt: null })).toContain("javascript:alert(1)");
+	});
 });
