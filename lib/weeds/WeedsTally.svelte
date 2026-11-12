@@ -30,13 +30,17 @@ const goal = $derived(tallyTargets(tally, litIndex));
 const brokenDown = $derived(tally.kind === "project" || (tally.org?.projects ?? 0) > 0);
 
 let shown = $state({ scored: 0, available: 0, big: 0 });
+let wasLanded = false;
 $effect(() => {
 	const to = { ...goal };
 	if (!landed) {
 		shown = { scored: 0, available: 0, big: tally.rating ?? 0 };
+		wasLanded = false;
 		return;
 	}
-	const from = untrack(() => ({ ...shown }));
+	// The landing number drops to 0 and counts up, so the reader sees the tables build it.
+	const from = wasLanded ? untrack(() => ({ ...shown })) : { scored: 0, available: 0, big: 0 };
+	wasLanded = true;
 	if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
 		shown = to;
 		return;
