@@ -1,17 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { RATING_STATES, RATING_STATE_CEILINGS, ratingState } from "./ratingState";
+import { RATING_STATES, RATING_STATE_FLOORS, ratingState } from "./ratingState";
 
 describe("ratingState", () => {
-	it("maps each boundary to the right state, inclusive both ends", () => {
+	it("cuts the percentile into equal quarters, each floor inclusive", () => {
+		expect(RATING_STATE_FLOORS).toEqual({ opaque: 0, partial: 25, open: 50, transparent: 75 });
 		expect(ratingState(0)).toBe("opaque");
-		expect(ratingState(29)).toBe("opaque");
-		expect(ratingState(29.4)).toBe("opaque");
-		expect(ratingState(29.5)).toBe("partial");
-		expect(ratingState(30)).toBe("partial");
-		expect(ratingState(59)).toBe("partial");
-		expect(ratingState(60)).toBe("open");
-		expect(ratingState(85)).toBe("open");
-		expect(ratingState(86)).toBe("transparent");
+		expect(ratingState(24.9)).toBe("opaque");
+		expect(ratingState(25)).toBe("partial");
+		expect(ratingState(49.9)).toBe("partial");
+		expect(ratingState(50)).toBe("open");
+		expect(ratingState(74.9)).toBe("open");
+		expect(ratingState(75)).toBe("transparent");
 		expect(ratingState(100)).toBe("transparent");
 	});
 
@@ -20,9 +19,9 @@ describe("ratingState", () => {
 		expect(ratingState(Number.NaN)).toBeNull();
 	});
 
-	it("covers 0–100 in order, the last state closing at 100", () => {
-		const ceilings = RATING_STATES.map((s) => RATING_STATE_CEILINGS[s]);
-		expect([...ceilings].sort((a, b) => a - b)).toEqual(ceilings);
-		expect(ceilings.at(-1)).toBe(100);
+	it("gives every state a band of the same width, in order", () => {
+		const floors = RATING_STATES.map((s) => RATING_STATE_FLOORS[s]);
+		const widths = [...floors.slice(1), 100].map((top, i) => top - floors[i]);
+		expect(new Set(widths).size).toBe(1);
 	});
 });
