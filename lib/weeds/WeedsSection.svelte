@@ -7,9 +7,11 @@ import { loadClips, type ClipManifest } from "$gc/frameClips";
 import WeedsBarArt from "../assets/svg/rating/Rating_page_weeds_search_bar.svg?raw";
 import WeedsTable from "./WeedsTable.svelte";
 import WeedsTabs from "./WeedsTabs.svelte";
-import { filterRows } from "./weedsFormat";
+import { filterRows, splitPublished } from "./weedsFormat";
+import { columnLabel } from "./columnLabels";
 import { TABLE_LABELS } from "./tallyMath";
 import { m } from "$parent/src/lib/paraglide/messages";
+import { getLocale } from "$parent/src/lib/paraglide/runtime";
 import { scrollTopFor, tabIndexFor } from "./weedsScroll";
 import { WEEDS_TABLES, type WeedsAnswer, type WeedsRow, type WeedsTable as WeedsTableName } from "../whoWhatTypes";
 
@@ -204,6 +206,14 @@ $effect(() => {
 
 const answer = $derived(answers[active]);
 const rows = $derived(answer ? filterRows(answer.rows, answer.columns, query) : []);
+// The project column is context, not a field: a table publishing nothing else says so instead of drawing it.
+const split = $derived(answer ? splitPublished(answer.columns, answer.rows) : null);
+const bare = $derived(!!split && split.shown.every((c) => c.key === "project"));
+const from = $derived(
+	answer?.platforms.length
+		? m.ww_rating_weeds_from({ platforms: new Intl.ListFormat(getLocale(), { type: "conjunction" }).format(answer.platforms) })
+		: null,
+);
 const fetchClip = $derived(manifest && clipRoot ? manifest.clips[FETCH_CLIP] : undefined);
 const open = $derived(
 	tab === "orgs" && active === "projects" && onopenproject
@@ -257,10 +267,20 @@ function barKeydown(e: KeyboardEvent) {
 
 	<div id={PANEL_ID} class="panel" role="tabpanel" aria-labelledby="weeds-tab-{active}" aria-busy={!!loading[active]}>
 		{#if answer}
+			{#if from && answer.rows.length > 0}
+				<p class="from">{from}</p>
+			{/if}
 			{#if answer.rows.length === 0}
 				<p class="note">{m.ww_rating_weeds_empty()}</p>
+			{:else if bare && split}
+				<p class="note">
+					{m.ww_rating_weeds_nothing_published({
+						rows: m.ww_rating_weeds_rows({ count: answer.rows.length }),
+						fields: split.missing.map(columnLabel).join(", "),
+					})}
+				</p>
 			{:else}
-				<WeedsTable columns={answer.columns} {rows} {open} />
+				<WeedsTable columns={answer.columns} {rows} all={answer.rows} sweep={active} {open} />
 				<p class="count" aria-live="polite">
 					{#if query}{m.ww_rating_weeds_rows_filtered({ shown: rows.length, total: answer.rows.length })}{:else if answer.more}{m.ww_rating_weeds_rows_capped({ count: answer.rows.length })}{:else}{m.ww_rating_weeds_rows({ count: answer.rows.length })}{/if}
 				</p>
@@ -476,6 +496,14 @@ function barKeydown(e: KeyboardEvent) {
 		margin: 8px 0 0;
 		color: #8d93a6;
 		font-size: 14px;
+	}
+
+	.from {
+		flex: none;
+		margin: 0 0 8px;
+		color: var(--color-gold-bar);
+		font-size: 13px;
+		letter-spacing: 0.02em;
 	}
 
 	.digging {

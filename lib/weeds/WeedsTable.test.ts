@@ -23,7 +23,18 @@ describe("the weeds sources table", () => {
 		expect(html).toContain('href="https://ok.example/a"');
 		expect(html).not.toContain("link dead");
 		expect(html).not.toMatch(/<th[^>]*>[^<]*Link dead/);
+		expect(html.match(/<th[ >]/g)).toHaveLength(1);
+		expect(html).toContain("Not published on any row: Description");
+	});
+
+	it("a column is judged published on every row, not on the filtered ones", () => {
+		const all = [
+			{ url: "https://ok.example/a", sourceDesc: null, linkDeadAt: null },
+			{ url: null, sourceDesc: "Annual report", linkDeadAt: null },
+		];
+		const html = render(WeedsTable, { props: { columns, rows: [all[0]], all } }).body;
 		expect(html.match(/<th[ >]/g)).toHaveLength(2);
+		expect(html).not.toContain("Not published");
 	});
 
 	it("a link that is not http or https is text, never an anchor", () => {
@@ -33,5 +44,31 @@ describe("the weeds sources table", () => {
 			expect(html).not.toContain("href=");
 		}
 		expect(draw({ url: "javascript:alert(1)", sourceDesc: null, linkDeadAt: null })).toContain("javascript:alert(1)");
+	});
+});
+
+describe("the weeds land table", () => {
+	const land: WeedsColumn[] = [
+		{ key: "landDesc", label: "Site", kind: "site", aside: "landName" },
+		{ key: "landName", label: "Site id", kind: "aside" },
+		{ key: "preparation", label: "Status", kind: "text" },
+		{ key: "hectares", label: "Hectares", kind: "number" },
+	];
+	const rows = [
+		{ landDesc: "ACTIVE TREES Planting Site Sakabusolo", landName: "site_gpNSH8W7R3Un64j", preparation: "planting", hectares: null },
+		{ landDesc: null, landName: "site_dEbhrbeGJdimr0Z", preparation: "planting", hectares: null },
+	];
+	const html = render(WeedsTable, { props: { columns: land, rows } }).body.replace(/<!--[\s\S]*?-->/g, "");
+
+	it("leads with the description; an unnamed site shows its id in small type, a named one none", () => {
+		expect(html).toContain("ACTIVE TREES Planting Site Sakabusolo");
+		expect(html).not.toContain("site_gpNSH8W7R3Un64j");
+		expect(html).toMatch(/Unnamed site<small class="site-id[^"]*">site_dEbhrbeGJdimr0Z<\/small>/);
+		expect(html.match(/site_/g)).toHaveLength(1);
+	});
+
+	it("draws no empty column and lists it under the table", () => {
+		expect(html.match(/<th[ >]/g)).toHaveLength(2);
+		expect(html).toContain("Not published on any row: Hectares");
 	});
 });

@@ -1,7 +1,7 @@
 <script lang="ts">
 import { untrack } from "svelte";
 import { m } from "$parent/src/lib/paraglide/messages";
-import { deadOn, formatCell, isDrawn } from "./weedsFormat";
+import { cellText, deadOn, splitPublished } from "./weedsFormat";
 import { columnLabel } from "./columnLabels";
 import { safeHref } from "./safeHref";
 import { focusIndex } from "./weedsFocus";
@@ -10,15 +10,22 @@ import type { WeedsColumn, WeedsRow } from "../whoWhatTypes";
 let {
 	columns,
 	rows,
+	all = undefined,
+	sweep = undefined,
 	open = undefined,
 }: {
 	columns: WeedsColumn[];
 	rows: WeedsRow[];
+	/** Every row the table has, filtered or not: what says a column is published. */
+	all?: WeedsRow[];
+	/** Each new value runs the highlight down the rows once, when the table is on screen. */
+	sweep?: unknown;
 	/** The column whose cell opens the row, and what opening does. */
 	open?: { column: string; on: (row: WeedsRow) => void };
 } = $props();
 
-const drawn = $derived(columns.filter(isDrawn));
+const split = $derived(splitPublished(columns, all ?? rows));
+const drawn = $derived(split.shown);
 
 let wrap = $state<HTMLDivElement>();
 let table = $state<HTMLTableElement>();
@@ -133,6 +140,51 @@ $effect(() => {
 	activeCol = -1;
 });
 
+// The sweep ends inside the tally's 750 ms count: each row lights at most 48 ms
+// after the one above, and the last by 330, so its 380 ms fade is over by 750
+// with the observer's callback and the first frame counted in.
+const LAST_ROW_MS = 330;
+const FADE_MS = 380;
+const STEP_MS = 48;
+let swept = $state(-1);
+
+$effect(() => {
+	void sweep;
+	const el = wrap;
+	if (!el) return;
+	let raf = 0;
+	const run = () => {
+		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+		const n = rows.length;
+		const step = n > 1 ? Math.min(STEP_MS, LAST_ROW_MS / (n - 1)) : 0;
+		const t0 = performance.now();
+		const tick = (now: number) => {
+			const t = now - t0;
+			if (t >= (n - 1) * step + FADE_MS) {
+				swept = -1;
+				return;
+			}
+			swept = step ? Math.min(n - 1, Math.floor(t / step)) : n - 1;
+			raf = requestAnimationFrame(tick);
+		};
+		raf = requestAnimationFrame(tick);
+	};
+	const seen = new IntersectionObserver(
+		([entry]) => {
+			if (!entry?.isIntersecting) return;
+			seen.disconnect();
+			run();
+		},
+		{ threshold: 0.25 },
+	);
+	seen.observe(el);
+	return () => {
+		seen.disconnect();
+		cancelAnimationFrame(raf);
+		swept = -1;
+	};
+});
+
 // Untracked: measuring lights a row, and a lit row must not re-run the measure that undoes a hover.
 $effect(() => {
 	void rows;
@@ -172,10 +224,10 @@ $effect(() => {
 			{#key columns}
 				<tbody>
 					{#each rows as row, i (i)}
-						<tr class:lit={i === activeRow} style="--i: {i}">
+						<tr class:lit={i === activeRow} class:sweep={i <= swept} style="--i: {i}">
 							{#each drawn as c, j (c.key)}
 								{@const v = row[c.key]}
-								{@const shown = formatCell(v, c.kind)}
+								{@const shown = cellText(row, c)}
 								{@const dead = c.kind === "link" && v ? deadOn(row, columns) : null}
 								{@const href = c.kind === "link" ? safeHref(v) : null}
 								<td class={c.kind} class:cross={i === activeRow && j === activeCol && j > 0}>
@@ -188,6 +240,8 @@ $effect(() => {
 										{shown || String(v)}
 									{:else if open && c.key === open.column && v}
 										<button type="button" class="row-open" onclick={() => open.on(row)}>{shown}</button>
+									{:else if c.kind === "site" && !v && c.aside && row[c.aside]}
+										{shown}<small class="site-id">{row[c.aside]}</small>
 									{:else}
 										{shown}
 									{/if}
@@ -203,6 +257,9 @@ $effect(() => {
 	<span class="fade right" aria-hidden="true"></span>
 	<span class="fade bottom" aria-hidden="true"></span>
 </div>
+{#if split.missing.length}
+	<p class="missing">{m.ww_rating_weeds_not_published({ fields: split.missing.map(columnLabel).join(", ") })}</p>
+{/if}
 
 <style>
 	/* The frame takes the wrapper's old place in the panel's column, so the
@@ -211,6 +268,7 @@ $effect(() => {
 	.weeds-frame {
 		--glide: 260ms cubic-bezier(0.2, 0.9, 0.25, 1.12);
 		--lit: color-mix(in srgb, var(--rt-yellow) 10%, #000);
+		--sweep: color-mix(in srgb, var(--rt-yellow) 10%, #000);
 		position: relative;
 		width: 100%;
 		max-width: 100%;
@@ -362,6 +420,16 @@ $effect(() => {
 		}
 	}
 
+	tbody tr.sweep td {
+		animation: weeds-sweep 380ms ease-out;
+	}
+
+	@keyframes weeds-sweep {
+		from {
+			background-color: var(--sweep);
+		}
+	}
+
 	tbody tr.lit td:first-child {
 		background: var(--lit);
 		box-shadow: inset 3px 0 0 var(--rt-yellow);
@@ -381,6 +449,34 @@ $effect(() => {
 
 	td.date {
 		font-variant-numeric: tabular-nums;
+	}
+
+	th.money,
+	td.money,
+	th.points,
+	td.points {
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* A site's name is read in full: it wraps, never ellipses. */
+	td.site {
+		white-space: normal;
+		min-width: 14rem;
+	}
+
+	.site-id {
+		display: block;
+		margin-top: 2px;
+		color: #8d93a6;
+		font-size: 12px;
+	}
+
+	.missing {
+		flex: none;
+		margin: 8px 0 0;
+		color: #8d93a6;
+		font-size: 14px;
 	}
 
 	a,
@@ -469,7 +565,8 @@ $effect(() => {
 			transition: none;
 		}
 
-		tbody tr {
+		tbody tr,
+		tbody tr.sweep td {
 			animation: none;
 		}
 	}

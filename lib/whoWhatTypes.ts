@@ -29,15 +29,21 @@ export const WEEDS_TABLES = [
 ] as const;
 export type WeedsTable = (typeof WEEDS_TABLES)[number];
 
-/** How a cell is drawn; the answer says, so the page never knows the schema. A `key` column is never drawn: it is what opens a row; nor is `dead`, the date the row's link answered 404/410. */
-export type WeedsKind = "text" | "number" | "date" | "link" | "score" | "key" | "dead";
-export type WeedsColumn = { key: string; label: string; kind: WeedsKind };
+/**
+ * How a cell is drawn; the answer says, so the page never knows the schema. A `key` column is never drawn: it is what
+ * opens a row; nor is `dead`, the date the row's link answered 404/410; nor `aside`, which rides in the cell of the
+ * column naming it: a `money` cell's currency, a `points` cell's points available, a `site`'s id.
+ */
+export type WeedsKind = "text" | "number" | "date" | "link" | "score" | "key" | "dead" | "money" | "points" | "site" | "aside";
+/** `optional`: drawn only when a row has it, and never listed as not published. */
+export type WeedsColumn = { key: string; label: string; kind: WeedsKind; aside?: string; optional?: true };
 export type WeedsRow = Record<string, string | number | null>;
-/** One table's answer from the host: `total` is `rows.length`; `more` says the cap cut it short. */
+/** One table's answer from the host: `total` is `rows.length`; `more` says the cap cut it short; `platforms` are the rows' sources, named once. */
 export type WeedsAnswer = {
 	table: WeedsTable;
 	columns: WeedsColumn[];
 	rows: WeedsRow[];
+	platforms: string[];
 	total: number;
 	more: boolean;
 };

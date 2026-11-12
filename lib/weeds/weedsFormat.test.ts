@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY, filterRows, formatCell, formatWeedsDate, linkLabel } from "./weedsFormat";
+import { EMPTY, cellText, filterRows, formatCell, formatMoney, formatWeedsDate, linkLabel, splitPublished } from "./weedsFormat";
 import type { WeedsColumn } from "../whoWhatTypes";
 
 describe("weeds cells", () => {
@@ -23,6 +23,42 @@ describe("weeds cells", () => {
 		expect(formatCell(55.7, "score")).toBe("55.7%");
 		expect(formatCell("https://www.maearth.com/api/files/x?variant=web", "link")).toBe("maearth.com");
 		expect(linkLabel("no scheme")).toBe("no scheme");
+	});
+});
+
+describe("money, points and sites", () => {
+	it("every dollar is a plain $; € and £ keep their sign; any other currency reads its code", () => {
+		expect(formatMoney(8, "EUR")).toBe("€8.00");
+		expect(formatMoney(8, "GBP")).toBe("£8.00");
+		for (const code of ["USD", "CAD", "AUD", "NZD"]) expect(formatMoney(8, code)).toBe("$8.00");
+		expect(formatMoney(8, "BRL")).toBe("8.00 BRL");
+		expect(formatMoney(1200, "KES")).toBe("1,200.00 KES");
+		expect(formatMoney(8, "not a code")).toBe("8.00 not a code");
+		expect(formatMoney(8, null)).toBe("8.00");
+	});
+
+	it("a cell reads with its aside", () => {
+		const price: WeedsColumn = { key: "price", label: "Price per unit", kind: "money", aside: "currency" };
+		expect(cellText({ price: 8, currency: "EUR" }, price)).toBe("€8.00");
+		expect(cellText({ price: null, currency: "EUR" }, price)).toBe(EMPTY);
+		const points: WeedsColumn = { key: "scored", label: "Points", kind: "points", aside: "available" };
+		expect(cellText({ scored: 514, available: 1560 }, points)).toBe("514 of 1,560");
+		const site: WeedsColumn = { key: "desc", label: "Site", kind: "site", aside: "id" };
+		expect(cellText({ desc: "Ndaragwa", id: "site_1" }, site)).toBe("Ndaragwa");
+		expect(cellText({ desc: null, id: "site_1" }, site)).toBe("Unnamed site");
+		expect(cellText({ desc: null, id: null }, site)).toBe(EMPTY);
+	});
+
+	it("a column no row publishes is listed, unless it is optional; asides are never either", () => {
+		const columns: WeedsColumn[] = [
+			{ key: "a", label: "A", kind: "text" },
+			{ key: "b", label: "B", kind: "number" },
+			{ key: "u", label: "Unit", kind: "text", optional: true },
+			{ key: "c", label: "Currency", kind: "aside" },
+		];
+		const { shown, missing } = splitPublished(columns, [{ a: "x", b: null, u: null, c: null }, { a: null, b: "", u: null, c: "EUR" }]);
+		expect(shown.map((c) => c.key)).toEqual(["a"]);
+		expect(missing.map((c) => c.key)).toEqual(["b"]);
 	});
 });
 
@@ -54,6 +90,18 @@ describe("the weeds bar's filter", () => {
 	it("a key column is not searched: a visitor cannot see it", () => {
 		expect(filterRows(rows, columns, "m-teak")).toEqual([]);
 		expect(filterRows(rows, columns, "mangrove").map((r) => r.name)).toEqual(["Mangrove"]);
+	});
+
+	it("a site matches on its id, a price on its sign", () => {
+		const cols: WeedsColumn[] = [
+			{ key: "desc", label: "Site", kind: "site", aside: "id" },
+			{ key: "id", label: "Site id", kind: "aside" },
+			{ key: "price", label: "Price per unit", kind: "money", aside: "cur" },
+		];
+		const land = [{ desc: null, id: "site_dEbh", price: 8, cur: "EUR" }];
+		expect(filterRows(land, cols, "dEbh")).toHaveLength(1);
+		expect(filterRows(land, cols, "€8")).toHaveLength(1);
+		expect(filterRows(land, cols, "EUR")).toHaveLength(0);
 	});
 
 	it("a link matches on its host and on its full URL", () => {
