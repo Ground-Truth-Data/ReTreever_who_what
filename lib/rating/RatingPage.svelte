@@ -403,7 +403,10 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 							<RatingNumber rating={record.rating} settled={periodIn} />
 						</div>
 					{/if}
-					<TreesPlanted value={tally?.planted} {revealed} />
+					<!-- 0 is a project that published no count, never one that planted nothing. -->
+					{#if tally?.planted}
+						<TreesPlanted value={tally.planted} {revealed} />
+					{/if}
 				{/if}
 			</div>
 		</div>
