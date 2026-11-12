@@ -148,5 +148,28 @@
 				"countPlural=*": "moyenne de {count} projets"
 			}
 		}
-	]
+	],
+	"ww_rating_feedback_label": "Commentaires sur cette notation",
+	"ww_rating_feedback_open": "Une erreur ou un manque dans cette notation ? Dites-le-nous.",
+	"ww_rating_feedback_message_label": "Qu’est-ce qui semble faux, ou qu’est-ce qui manque ?",
+	"ww_rating_feedback_attached": "Le nom, la note et la page de cette notation accompagnent votre message : inutile de les répéter.",
+	"ww_rating_feedback_email_label": "Votre e-mail, si vous souhaitez une réponse",
+	"ww_rating_feedback_role_label": "Vous êtes",
+	"ww_rating_feedback_role_none": "Je préfère ne pas le dire",
+	"ww_rating_feedback_role_official": "Décideur public ou responsable",
+	"ww_rating_feedback_role_organization": "Membre de cette organisation",
+	"ww_rating_feedback_role_researcher": "Chercheur ou journaliste",
+	"ww_rating_feedback_role_funder": "Financeur ou acheteur",
+	"ww_rating_feedback_role_other": "Autre",
+	"ww_rating_feedback_send": "Envoyer",
+	"ww_rating_feedback_sending": "Envoi…",
+	"ww_rating_feedback_close": "Fermer",
+	"ww_rating_feedback_thanks": "Merci. Nous lisons chaque message.",
+	"ww_rating_feedback_another": "En envoyer un autre",
+	"ww_rating_feedback_failed": "Votre message n’a pas pu être envoyé.",
+	"ww_rating_feedback_failed_busy": "Trop de messages depuis ici pour le moment. Réessayez dans quelques minutes.",
+	"ww_rating_feedback_copy": "Copier votre message",
+	"ww_rating_feedback_copied": "Copié. Collez-le dans un e-mail à {address}.",
+	"ww_rating_feedback_copied_plain": "Copié.",
+	"ww_rating_feedback_copy_refused": "Votre navigateur a refusé de le copier. Écrivez-nous à {address}."
 }

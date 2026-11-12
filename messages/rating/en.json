@@ -148,5 +148,28 @@
 				"countPlural=*": "mean of {count} projects"
 			}
 		}
-	]
+	],
+	"ww_rating_feedback_label": "Feedback on this rating",
+	"ww_rating_feedback_open": "Something wrong or missing in this rating? Tell us.",
+	"ww_rating_feedback_message_label": "What looks wrong, or what is missing?",
+	"ww_rating_feedback_attached": "This rating's name, score and page are sent with your message, so there is no need to repeat them.",
+	"ww_rating_feedback_email_label": "Your email, if you would like a reply",
+	"ww_rating_feedback_role_label": "You are",
+	"ww_rating_feedback_role_none": "Prefer not to say",
+	"ww_rating_feedback_role_official": "Policymaker or official",
+	"ww_rating_feedback_role_organization": "From this organization",
+	"ww_rating_feedback_role_researcher": "Researcher or journalist",
+	"ww_rating_feedback_role_funder": "Funder or buyer",
+	"ww_rating_feedback_role_other": "Other",
+	"ww_rating_feedback_send": "Send",
+	"ww_rating_feedback_sending": "Sending…",
+	"ww_rating_feedback_close": "Close",
+	"ww_rating_feedback_thanks": "Thank you. We read every message.",
+	"ww_rating_feedback_another": "Send another",
+	"ww_rating_feedback_failed": "Your message could not be sent.",
+	"ww_rating_feedback_failed_busy": "Too many messages from here just now. Please try again in a few minutes.",
+	"ww_rating_feedback_copy": "Copy your message",
+	"ww_rating_feedback_copied": "Copied. Paste it into an email to {address}.",
+	"ww_rating_feedback_copied_plain": "Copied.",
+	"ww_rating_feedback_copy_refused": "Your browser would not copy it. Please write to {address}."
 }

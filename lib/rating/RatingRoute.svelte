@@ -158,5 +158,7 @@ async function search(q: string) {
 		{weedsHref}
 		{tally}
 		onopenproject={tab === "orgs" ? openProject : undefined}
+		feedbackHref={endpoints.feedback}
+		feedbackAddress={endpoints.feedbackAddress}
 	/>
 {/key}

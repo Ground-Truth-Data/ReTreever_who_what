@@ -148,5 +148,28 @@
 				"countPlural=*": "promedio de {count} proyectos"
 			}
 		}
-	]
+	],
+	"ww_rating_feedback_label": "Comentarios sobre esta calificación",
+	"ww_rating_feedback_open": "¿Algo está mal o falta en esta calificación? Díganos.",
+	"ww_rating_feedback_message_label": "¿Qué parece estar mal o qué falta?",
+	"ww_rating_feedback_attached": "El nombre, la puntuación y la página de esta calificación se envían con su mensaje; no hace falta repetirlos.",
+	"ww_rating_feedback_email_label": "Su correo, si desea una respuesta",
+	"ww_rating_feedback_role_label": "Usted es",
+	"ww_rating_feedback_role_none": "Prefiero no decirlo",
+	"ww_rating_feedback_role_official": "Responsable político o funcionario",
+	"ww_rating_feedback_role_organization": "De esta organización",
+	"ww_rating_feedback_role_researcher": "Investigador o periodista",
+	"ww_rating_feedback_role_funder": "Financiador o comprador",
+	"ww_rating_feedback_role_other": "Otro",
+	"ww_rating_feedback_send": "Enviar",
+	"ww_rating_feedback_sending": "Enviando…",
+	"ww_rating_feedback_close": "Cerrar",
+	"ww_rating_feedback_thanks": "Gracias. Leemos cada mensaje.",
+	"ww_rating_feedback_another": "Enviar otro",
+	"ww_rating_feedback_failed": "No se pudo enviar su mensaje.",
+	"ww_rating_feedback_failed_busy": "Demasiados mensajes desde aquí en este momento. Inténtelo de nuevo en unos minutos.",
+	"ww_rating_feedback_copy": "Copiar su mensaje",
+	"ww_rating_feedback_copied": "Copiado. Péguelo en un correo a {address}.",
+	"ww_rating_feedback_copied_plain": "Copiado.",
+	"ww_rating_feedback_copy_refused": "Su navegador no permitió copiarlo. Escríbanos a {address}."
 }

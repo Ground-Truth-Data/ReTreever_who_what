@@ -67,6 +67,22 @@ export type ScoreTally = {
 	org?: { projects: number; mean: number | null; claimed: number | null; planted: number | null; undisclosed: number | null };
 };
 
+/** Who a reader says they are, in the feedback form's order; the host words each for the mail. */
+export const FEEDBACK_ROLES = ["official", "organization", "researcher", "funder", "other"] as const;
+export type FeedbackRole = (typeof FEEDBACK_ROLES)[number];
+
+/** What the page posts to the host's feedback endpoint. `website` is the honeypot: a person leaves it empty. */
+export type FeedbackBody = {
+	message?: string;
+	email?: string;
+	role?: FeedbackRole;
+	website?: string;
+	url?: string;
+	locale?: string;
+	record?: { kind: "org" | "project"; key: string; name: string; rating: number | null; tab?: WeedsTable };
+	report?: { errorId?: string; status: number };
+};
+
 /** The host's API surface; an absent endpoint skips the fetch. */
 export type WhoWhatEndpoints = {
 	organizations?: string;
@@ -79,6 +95,10 @@ export type WhoWhatEndpoints = {
 	weeds?: (tab: "orgs" | "projects", key: string, table: WeedsTable) => string;
 	/** How a record's score adds up. Absent → no tally beside the weeds. */
 	score?: (tab: "orgs" | "projects", key: string) => string;
+	/** POST a reader's feedback on the record (a `FeedbackBody`). Absent → no feedback line on the rating page. */
+	feedback?: string;
+	/** The address a reader can write to when a send fails; named in the copied message. */
+	feedbackAddress?: string;
 	/** Where the frame clips (the dog, the page animations) and their clips.json are served from. Absent → no clip plays. */
 	clipRoot?: string;
 	/** The dog's clips cut to its stage window and sized for a phone, with their own clips.json. Absent → phones crop clipRoot's frames. */

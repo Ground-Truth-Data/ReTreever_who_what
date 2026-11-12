@@ -27,6 +27,7 @@ import SearchBar from "../search/SearchBar.svelte";
 import SearchDropdown from "../search/SearchDropdown.svelte";
 import WeedsSection from "../weeds/WeedsSection.svelte";
 import WeedsTally from "../weeds/WeedsTally.svelte";
+import RatingFeedback from "./RatingFeedback.svelte";
 import type { SearchResult } from "./resultLoad";
 import type { SearchListItem } from "../search/searchTypes";
 import { ratingState, type RatingState } from "./ratingState";
@@ -51,6 +52,8 @@ let {
 	weedsHref = undefined,
 	tally = null,
 	onopenproject = undefined,
+	feedbackHref = undefined,
+	feedbackAddress = undefined,
 }: {
 	tab: "orgs" | "projects";
 	/** Null while the host streams it: the shell paints and the dog is the loading state. */
@@ -70,6 +73,9 @@ let {
 	/** How the score adds up; null until the host answers, or when it cannot. */
 	tally?: ScoreTally | null;
 	onopenproject?: (projectKey: string) => void;
+	/** The host's feedback endpoint; absent, no feedback line. */
+	feedbackHref?: string;
+	feedbackAddress?: string;
 } = $props();
 
 // The tally reads the lit tab from the weeds and shows only while the reader
@@ -187,6 +193,15 @@ $effect(() => {
 		window.removeEventListener("resize", onScroll);
 		if (raf) cancelAnimationFrame(raf);
 	};
+});
+
+// Read at the press, so the lit tab is the one the reader is looking at.
+const feedbackAbout = () => ({
+	kind: tab === "orgs" ? ("org" as const) : ("project" as const),
+	key: record?.key ?? "",
+	name: record?.name ?? "",
+	rating: record?.rating ?? null,
+	tab: weedsHref ? WEEDS_TABLES[litIndex] : undefined,
 });
 
 const noun = $derived(tab === "orgs" ? m.ww_search_noun_orgs() : m.ww_search_noun_projects());
@@ -470,6 +485,10 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		{@render lockup()}
 	{/if}
 	</div>
+	<!-- Outside the underground: the tally shows while the underground fills the screen, and this foot is past the weeds. -->
+	{#if feedbackHref && record}
+		<RatingFeedback href={feedbackHref} address={feedbackAddress} about={feedbackAbout} />
+	{/if}
 	<LessonHand bind:this={lessonHand} name="rating" facts={lessonFacts} rating={lessonDoors} />
 </div>
 
