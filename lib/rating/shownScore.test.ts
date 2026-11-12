@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toTransparencyScore } from "./whoWhatTypes";
+import { toTransparencyScore } from "./shownScore";
 
 describe("toTransparencyScore", () => {
 	it("is 0–100 to one decimal, null when unscored", () => {

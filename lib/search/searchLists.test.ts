@@ -18,7 +18,7 @@ describe("loadOrgList", () => {
 		const url = new URL(fetch.mock.calls[0][0] as string, "http://x");
 		expect(url.pathname).toBe("/api/who/organizations");
 		expect(Object.fromEntries(url.searchParams)).toEqual({
-			fields: "organizationKey,organizationName,primaryStakeholderCategory,scoreOrgFinal",
+			fields: "organizationKey,organizationName,primaryStakeholderCategory,rating",
 			sort: "rating",
 			limit: String(LIST_LIMIT),
 		});
@@ -33,13 +33,13 @@ describe("loadOrgList", () => {
 		expect(q(1)).toBeNull();
 	});
 
-	it("maps a row to key, name, hint and a 0–100 rating, best first and unscored last", async () => {
+	it("maps a row to key, name, hint and the 0–100 rating as sent, best first and unscored last", async () => {
 		const fetch = fetchReturning({
 			organizations: [
-				{ organizationKey: "a", organizationName: "Aaranyak", primaryStakeholderCategoryName: "Developer", scoreOrgFinal: "0.5938697318007663" },
-				{ organizationKey: "b", organizationName: "Bare", primaryStakeholderCategoryName: null, scoreOrgFinal: null },
-				{ organizationKey: "c", organizationName: "Canopy", primaryStakeholderCategoryName: "Funder", scoreOrgFinal: "0.8525603122043519" },
-				{ organizationKey: "d", organizationName: "Dune", primaryStakeholderCategoryName: null, scoreOrgFinal: "0.59387" },
+				{ organizationKey: "a", organizationName: "Aaranyak", primaryStakeholderCategoryName: "Developer", rating: 59.4 },
+				{ organizationKey: "b", organizationName: "Bare", primaryStakeholderCategoryName: null, rating: null },
+				{ organizationKey: "c", organizationName: "Canopy", primaryStakeholderCategoryName: "Funder", rating: 85.3 },
+				{ organizationKey: "d", organizationName: "Dune", primaryStakeholderCategoryName: null, rating: 59.4 },
 			],
 		});
 		const rows = await loadOrgList(fetch, ENDPOINTS);
@@ -91,7 +91,7 @@ describe("loadProjectList", () => {
 		expect(url.pathname).toBe("/api/what/projects");
 		expect(Object.fromEntries(url.searchParams)).toEqual({
 			scored: "true",
-			fields: "projectKey,projectName,scoreProject",
+			fields: "projectKey,projectName,rating",
 			sort: "rating",
 			limit: String(LIST_LIMIT),
 			q: "mangrove",
@@ -101,9 +101,9 @@ describe("loadProjectList", () => {
 	it("maps a row to key, name and rating, best first", async () => {
 		const fetch = fetchReturning({
 			projects: [
-				{ projectKey: "p1", projectName: "Waterways", scoreProject: "0.5571428571428572" },
-				{ projectKey: "p2", projectName: "Commons", scoreProject: "0.5833333333333334" },
-				{ projectKey: "p3", projectName: "Zero", scoreProject: "0" },
+				{ projectKey: "p1", projectName: "Waterways", rating: 55.7 },
+				{ projectKey: "p2", projectName: "Commons", rating: 58.3 },
+				{ projectKey: "p3", projectName: "Zero", rating: 0 },
 			],
 		});
 		expect(await loadProjectList(fetch, ENDPOINTS)).toEqual([
@@ -135,5 +135,16 @@ describe("loadMostViewed", () => {
 		expect(fetch).not.toHaveBeenCalled();
 		vi.spyOn(console, "error").mockImplementation(() => {});
 		await expect(loadMostViewed(fetchReturning({}, false), { searchHits: "/x" }, "projects")).resolves.toEqual([]);
+	});
+
+	it("stays quiet when leaving the page aborts it", async () => {
+		const error = vi.spyOn(console, "error").mockImplementation(() => {});
+		const leaving = new AbortController();
+		leaving.abort();
+		const fetch = vi.fn(async () => {
+			throw new TypeError("Failed to fetch");
+		}) as unknown as typeof globalThis.fetch;
+		await expect(loadMostViewed(fetch, { searchHits: "/x" }, "orgs", leaving.signal)).resolves.toEqual([]);
+		expect(error).not.toHaveBeenCalled();
 	});
 });

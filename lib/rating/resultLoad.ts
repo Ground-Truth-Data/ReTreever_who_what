@@ -1,15 +1,19 @@
 import type { WhoWhatEndpoints, WhoWhatFail } from "../whoWhatTypes";
-import { toTransparencyScore } from "../whoWhatTypes";
+
+// Every endpoint emits 0–100 already; this only refuses what is not a number.
+const shown = (n: unknown) => (typeof n === "number" && Number.isFinite(n) ? n : null);
 
 // Awaited, unlike the streamed dropdown lists: the name and rating ARE the page.
 
 export interface SearchResult {
 	key: string;
 	name: string;
-	/** Transparency rating as a 0–100 percentage; null when unscored. */
+	/** The published percentile, 0–100; null when unscored or before a first publish. */
 	rating: number | null;
-	/** Percentile rank, raw from the API; null when unranked. */
-	rank: number | null;
+	/** "unreviewed": no reviewed claim, ranked among its own kind. Null for a project, or unscored. */
+	cohort: "reviewed" | "unreviewed" | null;
+	/** The published score run the rating was read from. */
+	scoreRunId: string | null;
 	/** Secondary line — an org's stakeholder category. Projects have none. */
 	hint?: string | null;
 }
@@ -22,7 +26,7 @@ async function fetchItem<T>(
 	envelopeKey: string,
 	notFoundMessage: string,
 	fail: WhoWhatFail,
-): Promise<T> {
+): Promise<{ item: T; scoreRunId: string | null }> {
 	let res: Response;
 	try {
 		res = await fetch(endpoint);
@@ -44,33 +48,40 @@ async function fetchItem<T>(
 		throw fail(500, "Could not load this record");
 	}
 
-	const payload = (await res.json()) as Record<string, T>;
-	const item = payload[envelopeKey];
+	const payload = (await res.json()) as Record<string, unknown>;
+	const item = payload[envelopeKey] as T | undefined;
 	// A 200 with an empty envelope is the missing record it is.
 	if (!item) {
 		throw fail(404, notFoundMessage);
 	}
-	return item;
+	return { item, scoreRunId: typeof payload.scoreRunId === "string" ? payload.scoreRunId : null };
 }
 
 interface OrgRow {
 	organizationKey: string;
 	organizationName: string;
-	scoreOrgFinal: unknown;
-	scoreRankOverall: number | null;
+	rating: unknown;
+	cohort: unknown;
 	primaryStakeholderCategoryName: string | null;
 }
 
-/** The org's rating is `scoreOrgFinal`, the final blended org score. */
+interface ProjectRow {
+	projectKey: string;
+	projectName: string;
+	rating: unknown;
+}
+
+const cohortOf = (raw: unknown) => (raw === "reviewed" || raw === "unreviewed" ? raw : null);
+
+/** The org's rating is its published percentile within its cohort. */
 export async function loadOrganization(
 	fetch: typeof globalThis.fetch,
 	organizationKey: string,
 	endpoints: WhoWhatEndpoints,
 	fail: WhoWhatFail,
 ): Promise<SearchResult> {
-	const fields =
-		"organizationKey,organizationName,scoreOrgFinal,scoreRankOverall,primaryStakeholderCategory";
-	const org = await fetchItem<OrgRow>(
+	const fields = "organizationKey,organizationName,rating,cohort,primaryStakeholderCategory";
+	const { item: org, scoreRunId } = await fetchItem<OrgRow>(
 		fetch,
 		`${endpoints.organization?.(organizationKey) ?? ""}?fields=${fields}`,
 		"organization",
@@ -81,29 +92,22 @@ export async function loadOrganization(
 	return {
 		key: org.organizationKey,
 		name: org.organizationName,
-		// scoreOrgFinal is a Prisma Decimal, a string over json().
-		rating: toTransparencyScore(org.scoreOrgFinal),
-		rank: org.scoreRankOverall,
+		rating: shown(org.rating),
+		cohort: cohortOf(org.cohort),
+		scoreRunId,
 		hint: org.primaryStakeholderCategoryName,
 	};
 }
 
-interface ProjectRow {
-	projectKey: string;
-	projectName: string;
-	scoreProject: unknown;
-	scoreProjectRank: number | null;
-}
-
-/** The project's rating is `scoreProject` — same 0–1 scale as the org score. */
+/** The project's rating is its published percentile among scored projects. */
 export async function loadProject(
 	fetch: typeof globalThis.fetch,
 	projectKey: string,
 	endpoints: WhoWhatEndpoints,
 	fail: WhoWhatFail,
 ): Promise<SearchResult> {
-	const fields = "projectKey,projectName,scoreProject,scoreProjectRank";
-	const project = await fetchItem<ProjectRow>(
+	const fields = "projectKey,projectName,rating";
+	const { item: project, scoreRunId } = await fetchItem<ProjectRow>(
 		fetch,
 		`${endpoints.project?.(projectKey) ?? ""}?fields=${fields}`,
 		"project",
@@ -114,7 +118,8 @@ export async function loadProject(
 	return {
 		key: project.projectKey,
 		name: project.projectName,
-		rating: toTransparencyScore(project.scoreProject),
-		rank: project.scoreProjectRank,
+		rating: shown(project.rating),
+		cohort: null,
+		scoreRunId,
 	};
 }

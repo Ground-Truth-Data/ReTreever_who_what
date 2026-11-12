@@ -39,7 +39,7 @@ const ACTIVE: TallyLine[] = [
 	{ table: "stakeholders", awarded: 6, available: 6 },
 	{ table: "sources", awarded: 9, available: 12 },
 ];
-const project: ScoreTally = { kind: "project", scored: true, rating: 91.8, pointsScored: 514, pointsAvailable: 560, planted: 20, measure: { kind: "trees", value: 20 }, tables: ACTIVE };
+const project: ScoreTally = { kind: "project", scored: true, rating: 91.8, score: 91.8, pointsScored: 514, pointsAvailable: 560, planted: 20, measure: { kind: "trees", value: 20 }, tables: ACTIVE };
 const org: ScoreTally = { ...project, kind: "org", rating: 90.4, org: { projects: 3, mean: 91.8, claimed: 0, planted: 20, undisclosed: 0 } };
 
 describe("tallyTargets", () => {

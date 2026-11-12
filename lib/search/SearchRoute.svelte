@@ -36,13 +36,12 @@ let mostViewed = $state<SearchListItem[]>([]);
 
 $effect(() => {
 	const t = tab;
-	let live = true;
-	void loadMostViewed(fetch, endpoints, t).then((items) => {
-		if (live) mostViewed = items;
+	// Aborted on leaving, or the browser cancels it into a "Failed to fetch" no loader can tell from an outage.
+	const leaving = new AbortController();
+	void loadMostViewed(fetch, endpoints, t, leaving.signal).then((items) => {
+		if (!leaving.signal.aborted) mostViewed = items;
 	});
-	return () => {
-		live = false;
-	};
+	return () => leaving.abort();
 });
 
 function activate() {

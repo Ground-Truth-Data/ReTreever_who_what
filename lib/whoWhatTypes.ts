@@ -1,13 +1,5 @@
 import { getLocale } from "$parent/src/lib/paraglide/runtime";
 
-/** Raw 0–1 score (a Prisma Decimal string) → 0–100 to one decimal; null, not 0, when unscored. */
-export function toTransparencyScore(raw: unknown): number | null {
-	if (raw === null || raw === undefined) return null;
-	const n = Number(raw);
-	// An org's stored score can pass 1 (an uncapped disclosure ratio); the shown number never leaves 0–100.
-	return Number.isFinite(n) ? Math.min(100, Math.max(0, Math.round(n * 1000) / 10)) : null;
-}
-
 /** "73.3%" (fr "73,3 %") or "—"; coerces because Mapbox hands properties back as strings. */
 export function formatTransparencyScore(score: unknown): string {
 	const n = Number(score);
@@ -53,8 +45,10 @@ export type ScoreTally = {
 	kind: "project" | "org";
 	/** False → every number below is null and no tally is drawn. */
 	scored: boolean;
-	/** 0–100 to one decimal, the hero's number. */
+	/** The published percentile, 0–100 to one decimal: the hero's number, where the ledger lands. */
 	rating: number | null;
+	/** The score the tables add up to, 0–100 to one decimal; for an org, after claims. */
+	score: number | null;
 	/** The stored totals, never recomputed. */
 	pointsScored: number | null;
 	pointsAvailable: number | null;

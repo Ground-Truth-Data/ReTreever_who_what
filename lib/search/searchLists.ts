@@ -1,5 +1,8 @@
-import { toTransparencyScore, type WhoWhatEndpoints } from "../whoWhatTypes";
+import type { WhoWhatEndpoints } from "../whoWhatTypes";
 import type { SearchListItem } from "./searchTypes";
+
+// Every endpoint emits the 0–100 rating already; this only refuses what is not a number.
+const shown = (n: unknown) => (typeof n === "number" && Number.isFinite(n) ? n : null);
 
 // Streamed, never awaited: these must never reject, an unhandled rejection crashes the page.
 
@@ -7,13 +10,13 @@ interface OrgListRow {
 	organizationKey: string;
 	organizationName: string;
 	primaryStakeholderCategoryName: string | null;
-	scoreOrgFinal: string | number | null;
+	rating: unknown;
 }
 
 interface ProjectListRow {
 	projectKey: string;
 	projectName: string;
-	scoreProject: string | number | null;
+	rating: unknown;
 }
 
 /** Best rating first, unscored last, ties by name: the API's order, kept by the client for a list it merges. */
@@ -45,7 +48,7 @@ export async function loadOrgList(
 ): Promise<SearchListItem[]> {
 	// Empty, not a fetch at "/undefined".
 	if (!endpoints.organizations) return [];
-	const endpoint = `${endpoints.organizations}?${listQuery("organizationKey,organizationName,primaryStakeholderCategory,scoreOrgFinal", query)}`;
+	const endpoint = `${endpoints.organizations}?${listQuery("organizationKey,organizationName,primaryStakeholderCategory,rating", query)}`;
 
 	try {
 		const res = await fetch(endpoint, { signal });
@@ -61,7 +64,7 @@ export async function loadOrgList(
 				key: org.organizationKey,
 				name: org.organizationName,
 				hint: org.primaryStakeholderCategoryName,
-				rating: toTransparencyScore(org.scoreOrgFinal),
+				rating: shown(org.rating),
 			}))
 			.sort(byRating);
 	} catch (error) {
@@ -78,8 +81,8 @@ export async function loadProjectList(
 	signal?: AbortSignal,
 ): Promise<SearchListItem[]> {
 	if (!endpoints.projects) return [];
-	// scored: only projects whose detail views have a score.
-	const endpoint = `${endpoints.projects}?${listQuery("projectKey,projectName,scoreProject", query, { scored: "true" })}`;
+	// scored: only projects the published run scored.
+	const endpoint = `${endpoints.projects}?${listQuery("projectKey,projectName,rating", query, { scored: "true" })}`;
 
 	try {
 		const res = await fetch(endpoint, { signal });
@@ -94,7 +97,7 @@ export async function loadProjectList(
 			.map((project) => ({
 				key: project.projectKey,
 				name: project.projectName,
-				rating: toTransparencyScore(project.scoreProject),
+				rating: shown(project.rating),
 			}))
 			.sort(byRating);
 	} catch (error) {
@@ -109,15 +112,17 @@ export async function loadMostViewed(
 	fetch: typeof globalThis.fetch,
 	endpoints: WhoWhatEndpoints,
 	tab: "orgs" | "projects",
+	signal?: AbortSignal,
 ): Promise<SearchListItem[]> {
 	if (!endpoints.searchHits) return [];
 	const endpoint = `${endpoints.searchHits}?tab=${tab}`;
 	try {
-		const res = await fetch(endpoint);
+		const res = await fetch(endpoint, { signal });
 		if (!res.ok) throw new Error(`${endpoint} responded ${res.status}`);
 		const { hits } = (await res.json()) as { hits: { key: string; name: string }[] };
 		return hits.map((hit) => ({ key: hit.key, name: hit.name, rating: null }));
 	} catch (error) {
+		if (signal?.aborted) return [];
 		console.error("search: failed to load the most viewed", error);
 		return [];
 	}

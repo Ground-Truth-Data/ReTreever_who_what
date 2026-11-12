@@ -58,9 +58,9 @@ $effect(() => {
 
 const whole = (n: number) => String(Math.round(n));
 const bigText = $derived(shown.big.toFixed(1));
-const ratingText = $derived((tally.rating ?? 0).toFixed(1));
-const ratingWords = $derived(
-	new Intl.NumberFormat(getLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1, useGrouping: false }).format(Number(ratingText)),
+const scoreText = $derived((tally.score ?? 0).toFixed(1));
+const scoreWords = $derived(
+	new Intl.NumberFormat(getLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1, useGrouping: false }).format(Number(scoreText)),
 );
 const label = $derived(TABLE_LABELS[lit.table]);
 const status = $derived(
@@ -71,7 +71,7 @@ const status = $derived(
 <p class="sr" role="status">{status}</p>
 
 <aside class="tally corner" class:on={visible} class:waiting={!landed} aria-hidden="true">
-	<p class="caption">{m.ww_rating_tally_caption({ rating: ratingWords })}</p>
+	<p class="caption">{m.ww_rating_tally_caption({ rating: scoreWords })}</p>
 	<div class="big"><RatingNumber text={bigText} /></div>
 	{#if brokenDown}
 		<p class="so-far"><span class="pts"><RatingNumber text={whole(shown.scored)} /></span> {m.ww_rating_tally_points_so_far({ available: whole(shown.available) })}</p>
@@ -100,7 +100,7 @@ const status = $derived(
 				</li>
 				<li class:dim={litIndex < LAST} class:lit={litIndex === LAST}>
 					<span class="name">{m.ww_rating_tally_after_claims()}</span>
-					<span class="value"><RatingNumber text={ratingText} /></span>
+					<span class="value"><RatingNumber text={scoreText} /></span>
 				</li>
 			{/if}
 		</ol>
