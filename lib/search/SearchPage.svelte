@@ -40,6 +40,7 @@ let {
 	mapHref = undefined,
 	orgs = [],
 	projects = [],
+	mostViewed = [],
 	onsearch,
 	onpick,
 	onactivate,
@@ -56,6 +57,8 @@ let {
 	routes?: WhoWhatRoutes;
 	orgs?: SearchListItem[];
 	projects?: SearchListItem[];
+	/** The active tab's most-viewed rows, led with while the bar is empty. */
+	mostViewed?: SearchListItem[];
 	onsearch?: (query: string, tab: "orgs" | "projects") => void;
 	/** `go` false: a modified click, the row's own link navigates and the route only counts the pick. */
 	onpick?: (item: SearchListItem, tab: "orgs" | "projects", go: boolean) => void;
@@ -296,6 +299,7 @@ $effect(() => {
 					bind:open={dropdownOpen}
 					bind:activeDescendant
 					items={listItems}
+					{mostViewed}
 					{query}
 					{listLoading}
 					{noun}

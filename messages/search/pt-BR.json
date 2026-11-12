@@ -21,6 +21,8 @@
 	"ww_search_bar_label": "Buscar",
 	"ww_search_bar_list": "Buscar na lista",
 	"ww_search_bar_clear": "Limpar busca",
+	"ww_search_list_most_viewed": "Mais vistos",
+	"ww_search_list_best_rated": "Mais bem classificados",
 	"ww_search_list_loading": "Carregando {noun}…",
 	"ww_search_list_no_match": "Não há {noun} correspondentes",
 	"ww_search_list_none_loaded": "Lista de {noun} vazia",

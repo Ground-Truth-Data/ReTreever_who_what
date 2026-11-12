@@ -89,7 +89,7 @@ export type WhoWhatEndpoints = {
 	projects?: string;
 	organization?: (key: string) => string;
 	project?: (key: string) => string;
-	/** Search-hit analytics: POST a landing. Absent → nothing logged. */
+	/** Search hits: POST a landing; GET ?tab= answers the most viewed. Absent → nothing logged, no most-viewed rows. */
 	searchHits?: string;
 	/** One weeds table of a record. Absent → the weeds section does not render. */
 	weeds?: (tab: "orgs" | "projects", key: string, table: WeedsTable) => string;

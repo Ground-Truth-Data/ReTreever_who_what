@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { LIST_LIMIT, loadOrgList, loadProjectList } from "./searchLists";
+import { LIST_LIMIT, loadMostViewed, loadOrgList, loadProjectList } from "./searchLists";
 
 const ENDPOINTS = { organizations: "/api/who/organizations", projects: "/api/what/projects" };
 
@@ -116,5 +116,24 @@ describe("loadProjectList", () => {
 	it("resolves to [] on a failed response", async () => {
 		vi.spyOn(console, "error").mockImplementation(() => {});
 		await expect(loadProjectList(fetchReturning({}, false), ENDPOINTS)).resolves.toEqual([]);
+	});
+});
+
+describe("loadMostViewed", () => {
+	it("asks the counter for the tab and keeps its order, keys and names", async () => {
+		const fetch = fetchReturning({ tab: "orgs", hits: [{ key: "b", name: "Birch" }, { key: "a", name: "Alder" }] });
+		expect(await loadMostViewed(fetch, { searchHits: "/api/search/hits" }, "orgs")).toEqual([
+			{ key: "b", name: "Birch", rating: null },
+			{ key: "a", name: "Alder", rating: null },
+		]);
+		expect(fetch.mock.calls[0][0]).toBe("/api/search/hits?tab=orgs");
+	});
+
+	it("asks nothing without the endpoint, and resolves to [] on a failed response", async () => {
+		const fetch = fetchReturning({});
+		expect(await loadMostViewed(fetch, {}, "projects")).toEqual([]);
+		expect(fetch).not.toHaveBeenCalled();
+		vi.spyOn(console, "error").mockImplementation(() => {});
+		await expect(loadMostViewed(fetchReturning({}, false), { searchHits: "/x" }, "projects")).resolves.toEqual([]);
 	});
 });

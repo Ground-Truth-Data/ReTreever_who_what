@@ -12,6 +12,7 @@ import { m } from "$parent/src/lib/paraglide/messages";
 
 let {
 	items = [],
+	mostViewed = [],
 	query = "",
 	open = $bindable(false),
 	listLoading = false,
@@ -24,6 +25,8 @@ let {
 	onpick,
 }: {
 	items?: SearchListItem[];
+	/** Led with under their own heading while the bar is empty. */
+	mostViewed?: SearchListItem[];
 	query?: string;
 	open?: boolean;
 	listLoading?: boolean;
@@ -44,10 +47,13 @@ let {
 const searchIndex = $derived(items.map((item) => ({ item, hay: item.name.toLowerCase() })));
 
 // Every row, in the order the list arrived (best rating first); a query only narrows it.
-const rows = $derived.by(() => {
+const listed = $derived.by(() => {
 	const q = query.trim().toLowerCase();
 	return q ? searchIndex.filter((e) => e.hay.includes(q)).map((e) => e.item) : items;
 });
+const lead = $derived(query.trim() ? [] : mostViewed);
+// One run for the keyboard: the most-viewed rows, then the list.
+const rows = $derived([...lead, ...listed]);
 
 // Thousands of projects: paint a window and grow it as the scroll nears its end.
 const WINDOW = 60;
@@ -184,8 +190,27 @@ $effect(() => {
 			style:--win-slice={WINDOW_SLICE}
 			style:--win-border={WINDOW_BORDER}
 		>
-			{#each painted as item, i (item.key)}
+			{#snippet empty()}
+				<li class="dropdown-empty" role="presentation">
+					{#if listLoading && clipRoot && fetchClip}
+						<span class="fetch-stage" aria-hidden="true" style:--clip-w="{fetchClip.widthRem}rem">
+							<FrameClipPlayer root={clipRoot} clip={FETCH_CLIP} facts={fetchClip} loop />
+						</span>
+						<span class="visually-hidden">{m.ww_search_list_loading({ noun })}</span>
+					{:else if listLoading}
+						{m.ww_search_list_loading({ noun })}
+					{:else}
+						{query.trim() ? m.ww_search_list_no_match({ noun }) : m.ww_search_list_none_loaded({ noun })}
+					{/if}
+				</li>
+			{/snippet}
+			{#each painted as item, i (`${i < lead.length ? "m" : "l"}:${item.key}`)}
 				{@const href = hrefOf(item)}
+				{#if lead.length && (i === 0 || i === lead.length)}
+					<li class="dropdown-heading" role="presentation">
+						{i === 0 ? m.ww_search_list_most_viewed() : m.ww_search_list_best_rated()}
+					</li>
+				{/if}
 				{#snippet rowBody()}
 					<span class="row-name">{item.name}</span>
 					<span class="row-finding">
@@ -206,19 +231,11 @@ $effect(() => {
 					{/if}
 				</li>
 			{:else}
-				<li class="dropdown-empty" role="presentation">
-					{#if listLoading && clipRoot && fetchClip}
-						<span class="fetch-stage" aria-hidden="true" style:--clip-w="{fetchClip.widthRem}rem">
-							<FrameClipPlayer root={clipRoot} clip={FETCH_CLIP} facts={fetchClip} loop />
-						</span>
-						<span class="visually-hidden">{m.ww_search_list_loading({ noun })}</span>
-					{:else if listLoading}
-						{m.ww_search_list_loading({ noun })}
-					{:else}
-						{query.trim() ? m.ww_search_list_no_match({ noun }) : m.ww_search_list_none_loaded({ noun })}
-					{/if}
-				</li>
+				{@render empty()}
 			{/each}
+			{#if lead.length && !listed.length}
+				{@render empty()}
+			{/if}
 			{#if shown < rows.length}
 				<li class="dropdown-sentinel" role="presentation" aria-hidden="true" {@attach watchEnd}></li>
 			{/if}
@@ -331,6 +348,18 @@ $effect(() => {
 			min-height: 44px;
 			align-items: center;
 		}
+	}
+
+	.dropdown-heading {
+		padding: calc(var(--row-y) * 1.2) var(--row-x) calc(var(--row-y) * 0.4);
+		color: var(--rt-yellow);
+		font-family: var(--rt-font-web);
+		font-size: max(10px, calc(7 * var(--u)));
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+	.search-dropdown li + .dropdown-heading::before {
+		background: var(--rt-border-white-glow);
 	}
 
 	.dropdown-empty {

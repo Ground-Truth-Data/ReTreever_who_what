@@ -104,6 +104,25 @@ export async function loadProjectList(
 	}
 }
 
+/** The tab's most-viewed rows, best first, from the search-hit counter; empty on any failure. */
+export async function loadMostViewed(
+	fetch: typeof globalThis.fetch,
+	endpoints: WhoWhatEndpoints,
+	tab: "orgs" | "projects",
+): Promise<SearchListItem[]> {
+	if (!endpoints.searchHits) return [];
+	const endpoint = `${endpoints.searchHits}?tab=${tab}`;
+	try {
+		const res = await fetch(endpoint);
+		if (!res.ok) throw new Error(`${endpoint} responded ${res.status}`);
+		const { hits } = (await res.json()) as { hits: { key: string; name: string }[] };
+		return hits.map((hit) => ({ key: hit.key, name: hit.name, rating: null }));
+	} catch (error) {
+		console.error("search: failed to load the most viewed", error);
+		return [];
+	}
+}
+
 /** Fire-and-forget: the page is about to navigate, so keepalive lets the request outlive it. */
 export function recordSearchHit(
 	fetch: typeof globalThis.fetch,

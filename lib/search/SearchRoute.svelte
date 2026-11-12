@@ -6,7 +6,7 @@ import { curtain } from "../stage/curtain.svelte";
 import type { WhoWhatEndpoints, WhoWhatRoutes } from "../whoWhatTypes";
 import SearchPage from "./SearchPage.svelte";
 import { LiveList } from "./liveList.svelte";
-import { loadOrgList, loadProjectList, recordSearchHit } from "./searchLists";
+import { loadMostViewed, loadOrgList, loadProjectList, recordSearchHit } from "./searchLists";
 import { resolveSearchKey } from "./searchResolve";
 import type { SearchListItem } from "./searchTypes";
 
@@ -32,6 +32,18 @@ const lists = {
 	projects: new LiveList((q, signal) => loadProjectList(fetch, endpoints, q, signal)),
 };
 let activated = false;
+let mostViewed = $state<SearchListItem[]>([]);
+
+$effect(() => {
+	const t = tab;
+	let live = true;
+	void loadMostViewed(fetch, endpoints, t).then((items) => {
+		if (live) mostViewed = items;
+	});
+	return () => {
+		live = false;
+	};
+});
 
 function activate() {
 	activated = true;
@@ -120,6 +132,7 @@ async function submitSearch(q: string, t: "orgs" | "projects") {
 	{routes}
 	orgs={lists.orgs.items}
 	projects={lists.projects.items}
+	{mostViewed}
 	listLoading={lists[tab].loading}
 	clipRoot={endpoints.clipRoot}
 	onsearch={submitSearch}

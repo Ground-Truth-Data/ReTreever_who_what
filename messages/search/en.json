@@ -21,6 +21,8 @@
 	"ww_search_bar_label": "Search",
 	"ww_search_bar_list": "Search by list",
 	"ww_search_bar_clear": "Clear search",
+	"ww_search_list_most_viewed": "Most viewed",
+	"ww_search_list_best_rated": "Best rated",
 	"ww_search_list_loading": "Loading {noun}…",
 	"ww_search_list_no_match": "No {noun} match",
 	"ww_search_list_none_loaded": "No {noun} loaded",
