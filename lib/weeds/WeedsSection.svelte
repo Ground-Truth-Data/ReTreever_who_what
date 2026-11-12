@@ -333,9 +333,10 @@ function barKeydown(e: KeyboardEvent) {
 		flex: none;
 	}
 
-	/* The page sets --stage-room when a tally stands at the right edge: the
+	/* The page sets --stage-room when a tally stands beside the stage: the
 	   stage gives it the column and leans only half that way, so it still
-	   reads as the page's centre under the head. */
+	   reads as the page's centre under the head. Which side is the page's
+	   call; it flips these paddings to match. */
 	.weeds-lean {
 		flex: 1 1 0;
 		min-height: 0;
