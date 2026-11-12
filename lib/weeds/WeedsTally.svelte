@@ -1,32 +1,41 @@
 <script lang="ts">
-// The rating adding up while the reader digs: written free on the soil at the
-// window's right edge, or a thin strip on a phone. Never a control.
+// The rating adding up while the reader digs: a panel at the window's left
+// edge, or a thin strip on a phone. Never a control.
 import { untrack } from "svelte";
 import RatingNumber from "../rating/RatingNumber.svelte";
-import { TABLE_LABELS, TABLE_SCORES, ladderValue, sumsThrough, tween } from "./tallyMath";
+import { TABLE_LABELS, TABLE_SCORES, barFill, ladderValue, tallyTargets, tween } from "./tallyMath";
 import { WEEDS_TABLES, type ScoreTally } from "../whoWhatTypes";
 import { m } from "$parent/src/lib/paraglide/messages";
 import { getLocale } from "$parent/src/lib/paraglide/runtime";
 
-let { tally, litIndex, visible }: { tally: ScoreTally; litIndex: number; visible: boolean } = $props();
+let {
+	tally,
+	litIndex,
+	visible,
+	landed = true,
+}: {
+	tally: ScoreTally;
+	litIndex: number;
+	visible: boolean;
+	/** False while the hero's number is still travelling into the panel: its slot holds the hero's figure, unseen. */
+	landed?: boolean;
+} = $props();
 
 const LAST = WEEDS_TABLES.length - 1;
-const COUNT_MS = 420;
+const COUNT_MS = 750;
 
 const lit = $derived(tally.tables[litIndex] ?? tally.tables[0]);
-const target = $derived(sumsThrough(tally.tables, litIndex));
+const goal = $derived(tallyTargets(tally, litIndex));
 // An org's score was not broken down when it averaged nothing.
 const brokenDown = $derived(tally.kind === "project" || (tally.org?.projects ?? 0) > 0);
-// The big figure: a project's counts to its rating; an org's holds the mean
-// of its projects until the last tab, then the number after claims.
-const bigTarget = $derived.by(() => {
-	if (tally.kind === "org") return (litIndex === LAST ? tally.rating : (tally.org?.mean ?? tally.rating)) ?? 0;
-	return target.pct ?? 0;
-});
 
 let shown = $state({ scored: 0, available: 0, big: 0 });
 $effect(() => {
-	const to = { scored: target.scored, available: target.available, big: bigTarget };
+	const to = { ...goal };
+	if (!landed) {
+		shown = { scored: 0, available: 0, big: tally.rating ?? 0 };
+		return;
+	}
 	const from = untrack(() => ({ ...shown }));
 	if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
 		shown = to;
@@ -51,13 +60,13 @@ const ratingWords = $derived(
 );
 const label = $derived(TABLE_LABELS[lit.table]);
 const status = $derived(
-	m.ww_rating_tally_status({ table: label, awarded: lit.awarded, available: lit.available, scored: target.scored, total: target.available }),
+	m.ww_rating_tally_status({ table: label, awarded: lit.awarded, available: lit.available, scored: goal.scored, total: goal.available }),
 );
 </script>
 
 <p class="sr" role="status">{status}</p>
 
-<aside class="tally corner" class:on={visible} aria-hidden="true">
+<aside class="tally corner" class:on={visible} class:waiting={!landed} aria-hidden="true">
 	<p class="caption">{m.ww_rating_tally_caption({ rating: ratingWords })}</p>
 	<div class="big"><RatingNumber text={bigText} /></div>
 	{#if brokenDown}
@@ -65,6 +74,7 @@ const status = $derived(
 		<ol class="ladder">
 			{#each tally.tables as line, i (line.table)}
 				{@const value = ladderValue(line, i, litIndex)}
+				{@const fill = barFill(line, i, landed ? litIndex : -1)}
 				<li class:dim={i > litIndex} class:lit={i === litIndex}>
 					<span class="name">{TABLE_LABELS[line.table]}</span>
 					<span class="value">
@@ -74,10 +84,13 @@ const status = $derived(
 							<RatingNumber text={String(value.awarded)} /><span class="slash">/</span><RatingNumber text={String(value.available)} />
 						{/if}
 					</span>
+					{#if fill !== null}
+						<span class="bar"><span class="fill" style:transform="scaleX({fill})"></span></span>
+					{/if}
 				</li>
 			{/each}
 			{#if tally.kind === "org" && tally.org}
-				<li class:dim={litIndex < LAST} class:lit={litIndex === LAST}>
+				<li class="org" class:dim={litIndex < LAST} class:lit={litIndex === LAST}>
 					<span class="name">{m.ww_rating_tally_mean({ count: tally.org.projects })}</span>
 					<span class="value"><RatingNumber text={(tally.org.mean ?? 0).toFixed(1)} /></span>
 				</li>
@@ -94,6 +107,11 @@ const status = $derived(
 </aside>
 
 <div class="tally strip" class:on={visible} aria-hidden="true">
+	<ol class="steps">
+		{#each tally.tables as line, i (line.table)}
+			<li class:done={i < litIndex} class:lit={i === litIndex}></li>
+		{/each}
+	</ol>
 	<span class="pct"><RatingNumber text={bigText} /></span>
 	{#if brokenDown}
 		<span class="row-pts">{m.ww_rating_tally_of({ scored: whole(shown.scored), total: whole(shown.available) })}</span>
@@ -137,20 +155,23 @@ const status = $derived(
 			visibility 0s;
 	}
 
+	/* A panel, not bare soil: the roots behind it are too busy to read over.
+	   The page sets its top under the pinned head. */
 	.corner {
 		display: none;
-		right: clamp(24px, 3vw, 48px);
-		top: 50%;
-		transform: translateY(-50%);
+		left: clamp(24px, 3vw, 48px);
+		top: var(--ledger-top, 25vh);
+		width: 232px;
+		box-sizing: border-box;
 		flex-direction: column;
-		align-items: flex-end;
+		align-items: stretch;
 		gap: 10px;
 		margin: 0;
-		padding: 0;
-		text-align: right;
-		text-shadow:
-			0 2px 6px rgb(0 0 0 / 0.8),
-			0 0 24px rgb(0 0 0 / 0.6);
+		padding: 18px 18px 16px;
+		text-align: left;
+		background: rgb(0 0 0 / 0.72);
+		border: 1px solid color-mix(in srgb, var(--color-gold-bar) 35%, transparent);
+		border-radius: 4px;
 	}
 
 	.corner p {
@@ -162,12 +183,21 @@ const status = $derived(
 		font-weight: 500;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
-		color: #f6a119;
+		color: var(--color-gold-bar);
 	}
 
 	.big {
 		--glyph-h: 64px;
 		line-height: 1;
+	}
+
+	/* Dim while the hero's number is on its way; its own slot stays empty till it lands. */
+	.tally.corner.on.waiting {
+		opacity: 0.25;
+	}
+
+	.corner.waiting .big {
+		visibility: hidden;
 	}
 
 	.so-far {
@@ -187,18 +217,39 @@ const status = $derived(
 		padding: 0;
 		display: flex;
 		flex-direction: column;
-		align-items: flex-end;
-		gap: 4px;
+		gap: 6px;
 		--glyph-h: 18px;
 	}
 
 	.ladder li {
-		display: flex;
+		display: grid;
+		grid-template-columns: 1fr auto;
 		align-items: baseline;
-		justify-content: flex-end;
-		gap: 14px;
+		column-gap: 14px;
+		row-gap: 3px;
 		font-size: 14px;
 		transition: opacity 260ms ease;
+	}
+
+	.bar {
+		grid-column: 1 / -1;
+		height: 3px;
+		background: color-mix(in srgb, var(--color-gold-shard) 18%, transparent);
+		overflow: hidden;
+	}
+
+	/* The count's own timing, so a line fills as its points arrive. */
+	.fill {
+		display: block;
+		height: 100%;
+		background: var(--color-gold-shard);
+		transform-origin: 0 50%;
+		transition: transform 750ms cubic-bezier(0.33, 1, 0.68, 1);
+	}
+
+	.ladder .org {
+		border-top: 1px solid color-mix(in srgb, var(--color-gold-bar) 20%, transparent);
+		padding-top: 6px;
 	}
 
 	.ladder .dim {
@@ -206,7 +257,7 @@ const status = $derived(
 	}
 
 	.ladder .lit .name {
-		color: #f6a119;
+		color: var(--color-gold-bar);
 	}
 
 	.value {
@@ -224,7 +275,6 @@ const status = $derived(
 	}
 
 	.scores {
-		max-width: 220px;
 		font-size: 12px;
 		opacity: 0.85;
 	}
@@ -246,6 +296,33 @@ const status = $derived(
 		overflow: hidden;
 	}
 
+	/* Seven segments along the strip's top: the tabs read, the lit one, the rest. */
+	.steps {
+		position: absolute;
+		top: 0;
+		left: 16px;
+		right: 16px;
+		display: flex;
+		gap: 3px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.steps li {
+		flex: 1 1 0;
+		height: 3px;
+		background: color-mix(in srgb, var(--rtvr-on-dark, #fff) 22%, transparent);
+	}
+
+	.steps .done {
+		background: color-mix(in srgb, var(--color-gold-shard) 60%, transparent);
+	}
+
+	.steps .lit {
+		background: var(--color-gold-bar);
+	}
+
 	.pct {
 		--glyph-h: 22px;
 		flex: 0 0 auto;
@@ -265,7 +342,7 @@ const status = $derived(
 	}
 
 	.row-lit .name {
-		color: #f6a119;
+		color: var(--color-gold-bar);
 	}
 
 	@media (min-width: 1100px) {

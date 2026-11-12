@@ -2,7 +2,8 @@
 // The hero's number with the name and state line, riding under the nav once
 // the real number has gone under it: born where that number stood and handed
 // back there, sticky in the page's dig-head track so the lockup's end lets it
-// go. Never a control.
+// go, unless the ledger waits for it: then it comes down into the ledger's
+// number as the page scrolls. Never a control.
 import { untrack } from "svelte";
 import RatingNumber from "./RatingNumber.svelte";
 import { m } from "$parent/src/lib/paraglide/messages";
@@ -14,6 +15,8 @@ let {
 	on,
 	overSoil,
 	numberEl,
+	land = 0,
+	landOn = () => null,
 }: {
 	rating: number;
 	name: string;
@@ -24,8 +27,13 @@ let {
 	overSoil: boolean;
 	/** The hero's real number, measured once at each flip. */
 	numberEl: HTMLElement | null;
+	/** How far down into the ledger, 0–1; at 1 the ledger's own number has it. */
+	land?: number;
+	/** The ledger's number, where the travel ends. */
+	landOn?: () => HTMLElement | null;
 } = $props();
 
+let wrap = $state<HTMLElement | null>(null);
 let body = $state<HTMLElement | null>(null);
 let glyphs = $state<HTMLElement | null>(null);
 let shown = $state(false);
@@ -47,6 +55,32 @@ function atNumber(): string | null {
 	const dy = real.top - b.top - s * (g.top - b.top);
 	return `translate(${dx}px, ${dy}px) scale(${s})`;
 }
+
+// Measured from the untransformed layout (the sticky wrapper and offsets), so
+// each scroll frame lerps from where the follower rides to where the ledger's
+// number stands, whatever this frame's transform is.
+$effect(() => {
+	const node = body;
+	const p = land;
+	if (!node || !wrap) return;
+	const src = glyphs?.querySelector<HTMLElement>(".rating-number");
+	const dest = p > 0 ? landOn()?.getBoundingClientRect() : null;
+	if (!src || !dest?.height || !src.offsetHeight) {
+		node.style.transform = "";
+		return;
+	}
+	const w = wrap.getBoundingClientRect();
+	const ox = w.left + node.offsetLeft;
+	const oy = w.top + node.offsetTop;
+	// Across and smaller first, then down: it clears the lockup's first word
+	// before the lockup rises past it, and settles into the ledger.
+	const ex = 1 - (1 - p) ** 4;
+	const ey = p < 0.5 ? 4 * p ** 3 : 1 - (2 - 2 * p) ** 3 / 2;
+	const k = 1 + ex * (dest.height / src.offsetHeight - 1);
+	const x = src.offsetLeft + ex * (dest.left - ox - src.offsetLeft);
+	const y = src.offsetTop + ey * (dest.top - oy - src.offsetTop);
+	node.style.transform = `translate(${x - k * src.offsetLeft}px, ${y - k * src.offsetTop}px) scale(${k})`;
+});
 
 $effect(() => {
 	const node = body;
@@ -74,10 +108,10 @@ $effect(() => {
 });
 </script>
 
-<div class="follower" aria-hidden="true">
-	<div class="body" class:shown class:soil={overSoil} bind:this={body}>
+<div class="follower" class:travelling={land > 0} aria-hidden="true" bind:this={wrap}>
+	<div class="body" class:shown class:soil={overSoil} class:landed={land >= 1} bind:this={body}>
 		<span class="glyphs" bind:this={glyphs}><RatingNumber text={rating.toFixed(1)} /></span>
-		<span class="words">
+		<span class="words" style:opacity={land > 0 ? Math.max(0, 1 - land * 3) : null}>
 			<span class="name">{m.ww_rating_name_line({ name })}</span>
 			<span class="state">{stateLine}</span>
 		</span>
@@ -85,13 +119,18 @@ $effect(() => {
 </div>
 
 <style>
-	/* Above the hero's top row (7) and the weeds track (6), under the tally (20). */
+	/* Above the hero's top row (7) and the weeds track (6), under the tally
+	   (20) until it travels into the tally's panel. */
 	.follower {
 		position: sticky;
 		top: calc(var(--host-chrome, 5rem) + 12px);
 		height: 0;
 		z-index: 8;
 		pointer-events: none;
+	}
+
+	.follower.travelling {
+		z-index: 21;
 	}
 
 	/* Where the number stood: the hero's gutter, its grid's centring margin
@@ -127,6 +166,13 @@ $effect(() => {
 			visibility 0s,
 			color 200ms ease,
 			text-shadow 200ms ease;
+	}
+
+	/* The ledger's number has it now: gone in the same frame, so it never shows twice. */
+	.body.shown.landed {
+		opacity: 0;
+		visibility: hidden;
+		transition: none;
 	}
 
 	.body.soil {

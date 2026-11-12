@@ -73,9 +73,10 @@ let {
 } = $props();
 
 // The tally reads the lit tab from the weeds and shows only while the reader
-// is in the weeds: from the moment "Truth is in the weeds" pins under the nav
-// until the track's end rises above the viewport's middle. Any earlier and it
-// floats over the hills. The observer gates the scroll work.
+// is in the weeds: from the moment "Truth is in the weeds" pins under the nav,
+// or the hero's number starts down into it, until the track's end rises above
+// the viewport's middle. Any earlier and it floats over the hills. The
+// observer gates the scroll work.
 let litIndex = $state(0);
 let tallyVisible = $state(false);
 let undergroundEl = $state<HTMLElement | null>(null);
@@ -120,9 +121,15 @@ $effect(() => {
 // over. The track's height is the one measured thing; the follower shows
 // once the real number has gone under the nav, and turns light once its own
 // top is past the crest of the hills, which is where the dark begins.
+// Beside the ledger (1100px up, motion allowed) the track runs on to the pin
+// instead: from where the lockup would have let it go until the stage pins,
+// the number comes down into the ledger's, and `land` says how far.
 let pageEl = $state<HTMLElement | null>(null);
 let following = $state(false);
 let overSoil = $state(false);
+let land = $state(0);
+let travels = $state(false);
+const ledgerNumber = () => pageEl?.querySelector<HTMLElement>(".tally.corner .big .rating-number") ?? null;
 $effect(() => {
 	const page = pageEl;
 	const soil = undergroundEl;
@@ -140,17 +147,34 @@ $effect(() => {
 	const bandTop = () => soil.getBoundingClientRect().top + parseFloat(getComputedStyle(soil).paddingTop);
 	const read = () => {
 		raf = 0;
-		const body = page.querySelector(".follower .body")?.getBoundingClientRect().height ?? 0;
-		const head = bandTop() - page.getBoundingClientRect().top - body;
+		const body = page.querySelector<HTMLElement>(".follower .body")?.offsetHeight ?? 0;
+		const nav = navBottom();
+		const pin = weeds?.stagePin() ?? null;
+		travels =
+			tally !== null &&
+			record?.rating != null &&
+			pin !== null &&
+			matchMedia("(min-width: 1100px)").matches &&
+			!matchMedia("(prefers-reduced-motion: reduce)").matches;
+		const from = bandTop() + window.scrollY - (nav + 12 + body);
+		const run = travels && pin !== null ? Math.max(1, pin - from) : 0;
+		land = run ? Math.min(1, Math.max(0, (window.scrollY - from) / run)) : 0;
+		const head = bandTop() - page.getBoundingClientRect().top - body + run;
 		if (Math.abs(head - lastHead) >= 1) {
 			lastHead = head;
 			page.style.setProperty("--dig-head-h", `${Math.round(head)}px`);
 		}
-		const nav = navBottom();
+		// The ledger stands under the pinned head, raised only as far as the window's foot needs.
+		const ledger = page.querySelector<HTMLElement>(".tally.corner");
+		if (ledger) {
+			const head = page.querySelector<HTMLElement>(".weeds-head")?.offsetHeight ?? 0;
+			const top = Math.max(nav + 12, Math.min(nav + head + 24, window.innerHeight - 16 - ledger.offsetHeight));
+			page.style.setProperty("--ledger-top", `${Math.round(top)}px`);
+		}
 		following = shown && number !== null && number.getBoundingClientRect().bottom <= nav;
-		const followerTop = Math.min(nav + 12, bandTop() - body);
+		const followerTop = Math.min(nav + 12, bandTop() - body + run);
 		const dark = page.querySelector(".crest") ?? soil;
-		overSoil = followerTop >= dark.getBoundingClientRect().top;
+		overSoil = land > 0 || followerTop >= dark.getBoundingClientRect().top;
 	};
 	const onScroll = () => {
 		if (!raf) raf = requestAnimationFrame(read);
@@ -328,7 +352,7 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 <div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl}); --art-pine-phone: url({pinePhoneUrl}); --art-ground: url({groundUrl});" bind:this={pageEl}>
 	{#if record && record.rating !== null}
 		<div class="dig-head">
-			<NumberFollower rating={record.rating} name={record.name} {stateLine} on={following} {overSoil} {numberEl} />
+			<NumberFollower rating={record.rating} name={record.name} {stateLine} on={following} {overSoil} {numberEl} {land} landOn={ledgerNumber} />
 		</div>
 	{/if}
 	<section class="rating-hero" bind:this={heroEl}>
@@ -441,7 +465,7 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 	{#if weedsHref}
 		<WeedsSection bind:this={weeds} {tab} href={weedsHref} head={lockup} {clipRoot} {onopenproject} onactive={(i) => (litIndex = i)} />
 		{#if tally}
-			<WeedsTally {tally} {litIndex} visible={tallyVisible} />
+			<WeedsTally {tally} {litIndex} visible={tallyVisible || (land > 0 && land < 1)} landed={!travels || land >= 1} />
 		{/if}
 	{:else}
 		{@render lockup()}
@@ -799,11 +823,17 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		--soil-y: calc(var(--soil-overlap) * -1);
 	}
 
-	/* The tally stands in the right margin from 1100px up (WeedsTally's own
-	   breakpoint); the weeds track keeps that column free. */
+	/* The tally stands in the left margin from 1100px up (WeedsTally's own
+	   breakpoint); the stage gives it that column and leans half as far the
+	   other way, so it still reads as centred under the head. */
 	@media (min-width: 1100px) {
 		.underground.has-tally {
 			--stage-room: 300px;
+		}
+
+		.underground.has-tally :global(.weeds-lean) {
+			padding-left: var(--stage-room);
+			padding-right: calc(var(--stage-room) / 2);
 		}
 	}
 

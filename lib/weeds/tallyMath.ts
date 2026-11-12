@@ -1,7 +1,7 @@
 // The tally's arithmetic: the running sums through the lit tab, the count's
 // easing, and the words each table gets. Pure, so the corner and the phone
 // strip draw one truth.
-import type { WeedsTable } from "../whoWhatTypes";
+import { WEEDS_TABLES, type ScoreTally, type WeedsTable } from "../whoWhatTypes";
 import { m } from "$parent/src/lib/paraglide/messages";
 
 export type TallyLine = { table: WeedsTable; awarded: number; available: number };
@@ -16,6 +16,32 @@ export function sumsThrough(tables: TallyLine[], index: number): Sums {
 		available += t.available;
 	}
 	return { scored, available, pct: available > 0 ? Math.round((scored / available) * 1000) / 10 : null };
+}
+
+export type Targets = { scored: number; available: number; big: number };
+
+/**
+ * What the ledger counts to with `index` lit. The last tab lands on the stored
+ * totals and the hero's number, not the tables' sum: some points fall outside
+ * the seven tables. An org's big figure holds its projects' mean until then.
+ */
+export function tallyTargets(tally: ScoreTally, index: number): Targets {
+	const sums = sumsThrough(tally.tables, index);
+	if (index >= WEEDS_TABLES.length - 1) {
+		return {
+			scored: tally.pointsScored ?? sums.scored,
+			available: tally.pointsAvailable ?? sums.available,
+			big: tally.rating ?? sums.pct ?? 0,
+		};
+	}
+	const big = tally.kind === "org" ? (tally.org?.mean ?? tally.rating) : sums.pct;
+	return { scored: sums.scored, available: sums.available, big: big ?? 0 };
+}
+
+/** A table's share filled, 0–1; null where nothing was on offer, so it gets no bar. */
+export function barFill(line: TallyLine, index: number, lit: number): number | null {
+	if (line.available === 0) return null;
+	return index > lit ? 0 : Math.min(1, line.awarded / line.available);
 }
 
 /** Cubic ease-out between two figures; `t` is clamped to 0–1. */
