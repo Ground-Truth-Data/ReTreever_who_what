@@ -15,6 +15,7 @@ const LABELS: Record<string, () => string> = {
 	"Listing id": m.ww_rating_column_listing_id,
 	Started: m.ww_rating_column_started,
 	Ends: m.ww_rating_column_ends,
+	"Last updated": m.ww_rating_column_last_updated,
 	Description: m.ww_rating_column_description,
 	Added: m.ww_rating_column_added,
 	Crop: m.ww_rating_column_crop,
