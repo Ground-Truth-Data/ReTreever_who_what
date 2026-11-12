@@ -1,18 +1,31 @@
 <script lang="ts">
-// The designer's "Trees Planted" box under the hero's number, the record's
-// published count in its lower two thirds. Never a control.
+// The designer's "Trees Planted" box under the hero's number, its label
+// swapped for the measure the score answer picked and the value in its lower
+// two thirds. Never a control.
 import BoxRaw from "../assets/svg/rating/Rating_page_trees_planted_box.svg?raw";
 import { svgFit } from "../stage/svgFit";
+import type { ScoreTally } from "../whoWhatTypes";
 import { m } from "$parent/src/lib/paraglide/messages";
 import { getLocale } from "$parent/src/lib/paraglide/runtime";
 
-let { value, revealed = false }: { value: number; revealed?: boolean } = $props();
+type Measure = NonNullable<ScoreTally["measure"]>;
 
-const boxArt = svgFit(BoxRaw, [["Trees Planted", m.ww_rating_art_trees_planted()]]);
-const text = $derived(value.toLocaleString(getLocale()));
+let { measure, revealed = false }: { measure: Measure; revealed?: boolean } = $props();
+
+const WORDS: Record<Measure["kind"], { art: () => string; label: (p: { count: string }) => string }> = {
+	trees: { art: m.ww_rating_art_trees_planted, label: m.ww_rating_trees_planted_label },
+	hectares: { art: m.ww_rating_art_hectares, label: m.ww_rating_hectares_label },
+	hectaresMapped: { art: m.ww_rating_art_hectares_mapped, label: m.ww_rating_hectares_mapped_label },
+	sites: { art: m.ww_rating_art_planting_sites, label: m.ww_rating_planting_sites_label },
+};
+
+const words = $derived(WORDS[measure.kind]);
+const boxArt = $derived(svgFit(BoxRaw, [["Trees Planted", words.art()]]));
+// Hectares keep their one decimal only below 10: "4.5", "1,240".
+const text = $derived(measure.value.toLocaleString(getLocale(), { maximumFractionDigits: measure.value < 10 ? 1 : 0 }));
 </script>
 
-<div class="box" class:revealed role="img" aria-label={m.ww_rating_trees_planted_label({ count: text })} style="--chars: {text.length}">
+<div class="box" class:revealed role="img" aria-label={words.label({ count: text })} style="--chars: {text.length}">
 	<span class="art" aria-hidden="true">
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 		{@html boxArt}

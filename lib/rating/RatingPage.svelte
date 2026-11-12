@@ -22,7 +22,7 @@ import NumberFollower from "./NumberFollower.svelte";
 import GlobeSpinIcon from "../stage/GlobeSpinIcon.svelte";
 import Greenery from "../stage/Greenery.svelte";
 import RatingNumber from "./RatingNumber.svelte";
-import TreesPlanted from "./TreesPlanted.svelte";
+import MeasureSticker from "./MeasureSticker.svelte";
 import SearchBar from "../search/SearchBar.svelte";
 import SearchDropdown from "../search/SearchDropdown.svelte";
 import WeedsSection from "../weeds/WeedsSection.svelte";
@@ -427,9 +427,8 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 							<RatingNumber rating={record.rating} settled={periodIn} />
 						</div>
 					{/if}
-					<!-- 0 is a project that published no count, never one that planted nothing. -->
-					{#if tally?.planted}
-						<TreesPlanted value={tally.planted} {revealed} />
+					{#if tally?.measure}
+						<MeasureSticker measure={tally.measure} {revealed} />
 					{/if}
 				{/if}
 			</div>
@@ -981,7 +980,7 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 
 	/* A phone: the header shares its row with the globe and the help sticker,
 	   so the bar spans the screen at the search page's size; the number stands
-	   beside its trees-planted box, which brings the dog onto the first screen. */
+	   beside its measure sticker, which brings the dog onto the first screen. */
 	@media (max-width: 720px) {
 		.rating-hero {
 			padding-top: 16px;
