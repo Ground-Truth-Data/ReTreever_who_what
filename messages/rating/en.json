@@ -86,8 +86,6 @@
 	"ww_rating_column_planted_on": "Planted on",
 	"ww_rating_column_site": "Site",
 	"ww_rating_column_hectares": "Hectares",
-	"ww_rating_column_latitude": "Latitude",
-	"ww_rating_column_longitude": "Longitude",
 	"ww_rating_column_status": "Status",
 	"ww_rating_column_surviving_pct": "Surviving (%)",
 	"ww_rating_column_price_per_tree": "Price per tree",

@@ -24,8 +24,6 @@ const LABELS: Record<string, () => string> = {
 	"Planted on": m.ww_rating_column_planted_on,
 	Site: m.ww_rating_column_site,
 	Hectares: m.ww_rating_column_hectares,
-	Latitude: m.ww_rating_column_latitude,
-	Longitude: m.ww_rating_column_longitude,
 	Status: m.ww_rating_column_status,
 	"Surviving (%)": m.ww_rating_column_surviving_pct,
 	"Price per tree": m.ww_rating_column_price_per_tree,
