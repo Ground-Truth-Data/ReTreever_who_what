@@ -6,18 +6,22 @@ const shown = (n: unknown) => (typeof n === "number" && Number.isFinite(n) ? n :
 
 // Streamed, never awaited: these must never reject, an unhandled rejection crashes the page.
 
-interface OrgListRow {
+/** One org as the list endpoint answers the fields the search bar asks for. */
+export type OrgListRow = {
 	organizationKey: string;
 	organizationName: string;
 	primaryStakeholderCategoryName: string | null;
-	rating: unknown;
-}
+	/** The published percentile, 0–100. */
+	rating: number | null;
+};
 
-interface ProjectListRow {
+/** One project as the list endpoint answers the fields the search bar asks for. */
+export type ProjectListRow = {
 	projectKey: string;
 	projectName: string;
-	rating: unknown;
-}
+	/** The published percentile, 0–100. */
+	rating: number | null;
+};
 
 /** Best rating first, unscored last, ties by name: the API's order, kept by the client for a list it merges. */
 function byRating(a: SearchListItem, b: SearchListItem): number {

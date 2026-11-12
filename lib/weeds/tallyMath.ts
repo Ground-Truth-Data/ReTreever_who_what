@@ -1,10 +1,9 @@
 // The tally's arithmetic: the running sums through the lit tab, the count's
 // easing, and the words each table gets. Pure, so the corner and the phone
 // strip draw one truth.
-import { WEEDS_TABLES, type ScoreTally, type WeedsTable } from "../whoWhatTypes";
+import { WEEDS_TABLES, type ScoreTally, type TallyLine, type WeedsTable } from "../whoWhatTypes";
 import { m } from "$parent/src/lib/paraglide/messages";
 
-export type TallyLine = { table: WeedsTable; awarded: number; available: number };
 export type Sums = { scored: number; available: number; pct: number | null };
 
 /** Points through the tab at `index` inclusive; `pct` is 0–100 to one decimal, null with nothing on offer yet. */

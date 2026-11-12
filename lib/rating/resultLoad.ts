@@ -11,7 +11,7 @@ export interface SearchResult {
 	/** The published percentile, 0–100; null when unscored or before a first publish. */
 	rating: number | null;
 	/** "unreviewed": no reviewed claim, ranked among its own kind. Null for a project, or unscored. */
-	cohort: "reviewed" | "unreviewed" | null;
+	cohort: Cohort | null;
 	/** The published score run the rating was read from. */
 	scoreRunId: string | null;
 	/** Secondary line — an org's stakeholder category. Projects have none. */
@@ -57,21 +57,27 @@ async function fetchItem<T>(
 	return { item, scoreRunId: typeof payload.scoreRunId === "string" ? payload.scoreRunId : null };
 }
 
-interface OrgRow {
+export type Cohort = "reviewed" | "unreviewed";
+
+/** One org as the record endpoint answers the fields this page asks for. */
+export type OrgRow = {
 	organizationKey: string;
 	organizationName: string;
-	rating: unknown;
-	cohort: unknown;
+	/** The published percentile, 0–100. */
+	rating: number | null;
+	cohort: Cohort | null;
 	primaryStakeholderCategoryName: string | null;
-}
+};
 
-interface ProjectRow {
+/** One project as the record endpoint answers the fields this page asks for. */
+export type ProjectRow = {
 	projectKey: string;
 	projectName: string;
-	rating: unknown;
-}
+	/** The published percentile, 0–100. */
+	rating: number | null;
+};
 
-const cohortOf = (raw: unknown) => (raw === "reviewed" || raw === "unreviewed" ? raw : null);
+const cohortOf = (raw: unknown): Cohort | null => (raw === "reviewed" || raw === "unreviewed" ? raw : null);
 
 /** The org's rating is its published percentile within its cohort. */
 export async function loadOrganization(

@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { ScoreTally, WeedsTable, WhoWhatEndpoints, WhoWhatRoutes } from "../whoWhatTypes";
+import type { ScoreAnswer, ScoreTally, WeedsTable, WhoWhatEndpoints, WhoWhatRoutes } from "../whoWhatTypes";
 import type { SearchResult } from "./resultLoad";
 import RatingPage from "./RatingPage.svelte";
 import { setStageClipRoots } from "./DogStage.svelte";
@@ -92,9 +92,9 @@ $effect(() => {
 	if (!key || !score) return;
 	let live = true;
 	fetch(score(tab, key))
-		.then((res) => (res.ok ? (res.json() as Promise<ScoreTally>) : null))
+		.then((res) => (res.ok ? (res.json() as Promise<ScoreAnswer>) : null))
 		.then((answer) => {
-			if (live && answer?.scored) tally = answer;
+			if (live && answer?.scored && answer.tables) tally = { ...answer, tables: answer.tables };
 		})
 		.catch(() => {});
 	return () => {

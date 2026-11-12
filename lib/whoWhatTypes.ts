@@ -40,8 +40,11 @@ export type WeedsAnswer = {
 	more: boolean;
 };
 
-/** How a stored score adds up, from the host's `/score` route: the seven tables in `WEEDS_TABLES` order, then an org's mean and claims. */
-export type ScoreTally = {
+/** One weeds table's points in a tally. */
+export type TallyLine = { table: WeedsTable; awarded: number; available: number };
+
+/** The host's `/score` answer: how a published score adds up, the seven tables in `WEEDS_TABLES` order, then an org's mean and claims. */
+export type ScoreAnswer = {
 	kind: "project" | "org";
 	/** False → every number below is null and no tally is drawn. */
 	scored: boolean;
@@ -56,10 +59,18 @@ export type ScoreTally = {
 	planted: number | null;
 	/** What the sticker under the number shows: trees, else hectares, else hectares mapped, else sites; null when none is above 0. */
 	measure: { kind: "trees" | "hectares" | "hectaresMapped" | "sites"; value: number } | null;
-	tables: { table: WeedsTable; awarded: number; available: number }[];
-	/** An org's step from the tables to its number; `projects` 0 means the score was not broken down. */
+	/** Null when this row's breakdown did not reconcile with its stored points when the run froze: it is not drawn. */
+	tables: TallyLine[] | null;
+	/** An org's step from the tables to its number; `projects` is the N of "mean of N", 0 when nothing was broken down. */
 	org?: { projects: number; mean: number | null; claimed: number | null; planted: number | null; undisclosed: number | null };
+	/** The published run the answer was read from; null before a first publish. */
+	scoreRunId: string | null;
+	/** Whether this row's breakdown reached its stored points when the run froze; null before a first publish. */
+	reconciled: boolean | null;
 };
+
+/** A tally the page draws: a scored answer whose breakdown reconciled. */
+export type ScoreTally = ScoreAnswer & { tables: TallyLine[] };
 
 /** Who a reader says they are, in the feedback form's order; the host words each for the mail. */
 export const FEEDBACK_ROLES = ["official", "organization", "researcher", "funder", "other"] as const;

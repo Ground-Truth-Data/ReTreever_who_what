@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { WEEDS_TABLES, type ScoreTally } from "../whoWhatTypes";
-import { TABLE_LABELS, TABLE_SCORES, type TallyLine, barFill, ladderValue, sumsThrough, tallyTargets, tween } from "./tallyMath";
+import { WEEDS_TABLES, type ScoreTally, type TallyLine } from "../whoWhatTypes";
+import { TABLE_LABELS, TABLE_SCORES, barFill, ladderValue, sumsThrough, tallyTargets, tween } from "./tallyMath";
 
 // The demo project e-ln5pa3mmvn39ogex, 594 / 672, as the host answers it.
 const DEMO: TallyLine[] = [
@@ -39,7 +39,7 @@ const ACTIVE: TallyLine[] = [
 	{ table: "stakeholders", awarded: 6, available: 6 },
 	{ table: "sources", awarded: 9, available: 12 },
 ];
-const project: ScoreTally = { kind: "project", scored: true, rating: 91.8, score: 91.8, pointsScored: 514, pointsAvailable: 560, planted: 20, measure: { kind: "trees", value: 20 }, tables: ACTIVE };
+const project: ScoreTally = { kind: "project", scored: true, rating: 91.8, score: 91.8, pointsScored: 514, pointsAvailable: 560, planted: 20, measure: { kind: "trees", value: 20 }, tables: ACTIVE, scoreRunId: "run-1", reconciled: true };
 const org: ScoreTally = { ...project, kind: "org", rating: 90.4, org: { projects: 3, mean: 91.8, claimed: 0, planted: 20, undisclosed: 0 } };
 
 describe("tallyTargets", () => {
