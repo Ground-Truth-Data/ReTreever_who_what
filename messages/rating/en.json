@@ -137,14 +137,15 @@
 		{
 			"declarations": [
 				"input count",
+				"input shown",
 				"local countPlural = count: plural"
 			],
 			"selectors": [
 				"countPlural"
 			],
 			"match": {
-				"countPlural=one": "mean of {count} project",
-				"countPlural=*": "mean of {count} projects"
+				"countPlural=one": "mean of {shown} project",
+				"countPlural=*": "mean of {shown} projects"
 			}
 		}
 	],

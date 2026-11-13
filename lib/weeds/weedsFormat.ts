@@ -12,6 +12,25 @@ function number(): Intl.NumberFormat {
 	return format;
 }
 
+const counts = new Map<string, Intl.NumberFormat>();
+function compactFormat(): Intl.NumberFormat {
+	const locale = getLocale();
+	let format = counts.get(locale);
+	if (!format) counts.set(locale, (format = new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 })));
+	return format;
+}
+
+/** A whole count grouped for the reader's language: "226,619". */
+export function fullCount(n: number): string {
+	return number().format(Math.round(n));
+}
+
+/** A whole count short enough for the tally: grouped below five digits, compact from there ("226.6K", fr "226,6 k"). */
+export function shortCount(n: number): string {
+	const whole = Math.round(n);
+	return Math.abs(whole) >= 10_000 ? compactFormat().format(whole) : fullCount(whole);
+}
+
 const cents = new Map<string, Intl.NumberFormat>();
 function twoPlaces(): Intl.NumberFormat {
 	const locale = getLocale();

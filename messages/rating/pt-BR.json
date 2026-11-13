@@ -137,14 +137,15 @@
 		{
 			"declarations": [
 				"input count",
+				"input shown",
 				"local countPlural = count: plural"
 			],
 			"selectors": [
 				"countPlural"
 			],
 			"match": {
-				"countPlural=one": "média de {count} projeto",
-				"countPlural=*": "média de {count} projetos"
+				"countPlural=one": "média de {shown} projeto",
+				"countPlural=*": "média de {shown} projetos"
 			}
 		}
 	],

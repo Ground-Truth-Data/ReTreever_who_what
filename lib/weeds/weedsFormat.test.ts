@@ -1,6 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { EMPTY, cellText, filterRows, formatCell, formatMoney, formatWeedsDate, linkLabel, splitPublished } from "./weedsFormat";
+import { describe, expect, it, vi } from "vitest";
+import { EMPTY, cellText, filterRows, formatCell, formatMoney, formatWeedsDate, fullCount, linkLabel, shortCount, splitPublished } from "./weedsFormat";
 import type { WeedsColumn } from "../whoWhatTypes";
+
+const lang = vi.hoisted(() => ({ locale: "en" }));
+vi.mock(import("$parent/src/lib/paraglide/runtime"), async (actual) => ({ ...(await actual()), getLocale: () => lang.locale as never }));
 
 describe("weeds cells", () => {
 	it("an empty cell is a dash, whatever its kind", () => {
@@ -107,5 +110,35 @@ describe("the weeds bar's filter", () => {
 	it("a link matches on its host and on its full URL", () => {
 		expect(filterRows(rows, columns, "ok.example")).toHaveLength(1);
 		expect(filterRows(rows, columns, "teak-plot")).toHaveLength(1);
+	});
+});
+
+describe("the tally's counts", () => {
+	const inLocale = (locale: string, f: () => void) => {
+		lang.locale = locale;
+		try {
+			f();
+		} finally {
+			lang.locale = "en";
+		}
+	};
+
+	it("keeps four digits whole and grouped, and shortens five or more to one decimal", () => {
+		expect(shortCount(5165)).toBe("5,165");
+		expect(shortCount(9999.6)).toBe("10K");
+		expect(shortCount(226619)).toBe("226.6K");
+		expect(shortCount(382268)).toBe("382.3K");
+		expect(shortCount(15454)).toBe("15.5K");
+		expect(shortCount(1_234_567)).toBe("1.2M");
+		expect(fullCount(226619)).toBe("226,619");
+	});
+
+	it("speaks the reader's language", () => {
+		inLocale("fr", () => {
+			expect(shortCount(226619).replace(/\s/g, " ")).toBe("226,6 k");
+			expect(fullCount(226619).replace(/\s/g, " ")).toBe("226 619");
+		});
+		inLocale("es", () => expect(shortCount(226619).replace(/\s/g, " ")).toBe("226,6 mil"));
+		inLocale("pt-BR", () => expect(shortCount(226619).replace(/\s/g, " ")).toBe("226,6 mil"));
 	});
 });

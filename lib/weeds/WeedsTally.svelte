@@ -4,6 +4,7 @@
 import { untrack } from "svelte";
 import RatingNumber from "../rating/RatingNumber.svelte";
 import { TABLE_LABELS, TABLE_SCORES, barFill, ladderValue, tallyTargets, tween } from "./tallyMath";
+import { fullCount, shortCount } from "./weedsFormat";
 import { WEEDS_TABLES, type ScoreTally } from "../whoWhatTypes";
 import { m } from "$parent/src/lib/paraglide/messages";
 import { getLocale } from "$parent/src/lib/paraglide/runtime";
@@ -56,7 +57,8 @@ $effect(() => {
 	return () => cancelAnimationFrame(raf);
 });
 
-const whole = (n: number) => String(Math.round(n));
+// Whole points: compact from five digits, the full figure in the title and the accessible name.
+const pair = (a: number, b: number) => `${fullCount(a)} / ${fullCount(b)}`;
 const bigText = $derived(shown.big.toFixed(1));
 const scoreText = $derived((tally.score ?? 0).toFixed(1));
 const scoreWords = $derived(
@@ -64,7 +66,13 @@ const scoreWords = $derived(
 );
 const label = $derived(TABLE_LABELS[lit.table]);
 const status = $derived(
-	m.ww_rating_tally_status({ table: label, awarded: lit.awarded, available: lit.available, scored: goal.scored, total: goal.available }),
+	m.ww_rating_tally_status({
+		table: label,
+		awarded: fullCount(lit.awarded),
+		available: fullCount(lit.available),
+		scored: fullCount(goal.scored),
+		total: fullCount(goal.available),
+	}),
 );
 </script>
 
@@ -74,20 +82,26 @@ const status = $derived(
 	<p class="caption">{m.ww_rating_tally_caption({ rating: scoreWords })}</p>
 	<div class="big"><RatingNumber text={bigText} /></div>
 	{#if brokenDown}
-		<p class="so-far"><span class="pts"><RatingNumber text={whole(shown.scored)} /></span> {m.ww_rating_tally_points_so_far({ available: whole(shown.available) })}</p>
+		<p class="so-far" title={pair(shown.scored, shown.available)}>
+			<span class="pts"><RatingNumber text={shortCount(shown.scored)} label={fullCount(shown.scored)} /></span>
+			<span>{m.ww_rating_tally_points_so_far({ available: shortCount(shown.available) })}</span>
+		</p>
 		<ol class="ladder">
 			{#each tally.tables as line, i (line.table)}
 				{@const value = ladderValue(line, i, litIndex)}
 				{@const fill = barFill(line, i, landed ? litIndex : -1)}
 				<li class:dim={i > litIndex} class:lit={i === litIndex}>
 					<span class="name">{TABLE_LABELS[line.table]}</span>
-					<span class="value">
-						{#if typeof value === "string"}
-							<span class="mark">{value}</span>
-						{:else}
-							<RatingNumber text={String(value.awarded)} /><span class="slash">/</span><RatingNumber text={String(value.available)} />
-						{/if}
-					</span>
+					{#if typeof value === "string"}
+						<span class="value"><span class="mark">{value}</span></span>
+					{:else}
+						<span class="value" title={pair(value.awarded, value.available)}>
+							<RatingNumber text={shortCount(value.awarded)} label={fullCount(value.awarded)} /><span class="slash">/</span><RatingNumber
+								text={shortCount(value.available)}
+								label={fullCount(value.available)}
+							/>
+						</span>
+					{/if}
 					{#if fill !== null}
 						<span class="bar"><span class="fill" style:transform="scaleX({fill})"></span></span>
 					{/if}
@@ -95,7 +109,7 @@ const status = $derived(
 			{/each}
 			{#if tally.kind === "org" && tally.org}
 				<li class="org" class:dim={litIndex < LAST} class:lit={litIndex === LAST}>
-					<span class="name">{m.ww_rating_tally_mean({ count: tally.org.projects })}</span>
+					<span class="name">{m.ww_rating_tally_mean({ count: tally.org.projects, shown: fullCount(tally.org.projects) })}</span>
 					<span class="value"><RatingNumber text={(tally.org.mean ?? 0).toFixed(1)} /></span>
 				</li>
 				<li class:dim={litIndex < LAST} class:lit={litIndex === LAST}>
@@ -118,8 +132,8 @@ const status = $derived(
 	</ol>
 	<span class="pct"><RatingNumber text={bigText} /></span>
 	{#if brokenDown}
-		<span class="row-pts">{m.ww_rating_tally_of({ scored: whole(shown.scored), total: whole(shown.available) })}</span>
-		<span class="row-lit"><span class="name">{label}</span> {lit.awarded}/{lit.available}</span>
+		<span class="row-pts" title={pair(shown.scored, shown.available)}>{m.ww_rating_tally_of({ scored: shortCount(shown.scored), total: shortCount(shown.available) })}</span>
+		<span class="row-lit" title={pair(lit.awarded, lit.available)}><span class="name">{label}</span> {shortCount(lit.awarded)}/{shortCount(lit.available)}</span>
 	{:else}
 		<span class="row-pts">{m.ww_rating_tally_not_broken_down()}</span>
 	{/if}
@@ -207,8 +221,9 @@ const status = $derived(
 	.so-far {
 		font-size: 15px;
 		display: flex;
+		flex-wrap: wrap;
 		align-items: baseline;
-		gap: 6px;
+		gap: 2px 6px;
 	}
 
 	.pts {
@@ -225,9 +240,10 @@ const status = $derived(
 		--glyph-h: 18px;
 	}
 
+	/* A line too long for one row puts its figure under its name, flush right; nothing runs past the panel. */
 	.ladder li {
-		display: grid;
-		grid-template-columns: 1fr auto;
+		display: flex;
+		flex-wrap: wrap;
 		align-items: baseline;
 		column-gap: 14px;
 		row-gap: 3px;
@@ -235,8 +251,14 @@ const status = $derived(
 		transition: opacity 260ms ease;
 	}
 
+	.ladder .name {
+		flex: 1 1 auto;
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+
 	.bar {
-		grid-column: 1 / -1;
+		flex: 0 0 100%;
 		height: 3px;
 		background: color-mix(in srgb, var(--color-gold-shard) 18%, transparent);
 		overflow: hidden;
@@ -266,10 +288,13 @@ const status = $derived(
 
 	.value {
 		display: inline-flex;
+		flex-wrap: wrap;
 		align-items: baseline;
 		justify-content: flex-end;
 		gap: 3px;
 		min-width: 64px;
+		max-width: 100%;
+		margin-left: auto;
 	}
 
 	.slash,
