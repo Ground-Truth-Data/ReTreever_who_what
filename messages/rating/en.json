@@ -1,9 +1,6 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
-	"ww_rating_basis_orgs": "Percentile among rated organizations",
-	"ww_rating_basis_projects": "Percentile among rated projects",
-	"ww_rating_basis_unreviewed": "Percentile among organizations whose claims are not yet reviewed",
-	"ww_rating_run": "Score run {run}",
+	"ww_rating_out_of": "{rating} out of 100",
 	"ww_rating_state_opaque": "Opaque data…",
 	"ww_rating_state_partial": "Partial data…",
 	"ww_rating_state_open": "Open data…",

@@ -35,7 +35,7 @@ import { WEEDS_TABLES, type ScoreTally, type WeedsTable, type WhoWhatRoutes } fr
 import { svgWords } from "../search/svgWords";
 import { svgFit } from "../stage/svgFit";
 import { m } from "$parent/src/lib/paraglide/messages";
-import { localizeHref } from "$parent/src/lib/paraglide/runtime";
+import { getLocale, localizeHref } from "$parent/src/lib/paraglide/runtime";
 
 let {
 	tab,
@@ -333,12 +333,10 @@ const lessonFacts = () => ({
 	pageReady: record !== null && dogStanding && (record.rating === null || revealed),
 });
 
-// One string per state until the wording is decided (RT 41 📣).
-const basis = $derived.by(() => {
-	if (!record || record.rating === null) return null;
-	if (record.cohort === "unreviewed") return m.ww_rating_basis_unreviewed();
-	return tab === "orgs" ? m.ww_rating_basis_orgs() : m.ww_rating_basis_projects();
-});
+const outOfLabel = (rating: number) =>
+	m.ww_rating_out_of({
+		rating: new Intl.NumberFormat(getLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1, useGrouping: false }).format(Number(rating.toFixed(1))),
+	});
 
 const STATE_LINES: Record<RatingState, () => string> = {
 	opaque: m.ww_rating_state_opaque,
@@ -444,14 +442,8 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 						<span class="state-line">{stateLine}</span>
 					</h1>
 					{#if record.rating !== null}
-						<p class="basis" class:revealed>
-							<span>{basis}</span>
-							{#if record.scoreRunId}
-								<span class="run" title={record.scoreRunId}>{m.ww_rating_run({ run: record.scoreRunId.slice(0, 8) })}</span>
-							{/if}
-						</p>
-						<div class="number" class:revealed bind:this={numberEl}>
-							<RatingNumber rating={record.rating} settled={periodIn} />
+						<div class="number" class:revealed class:wide={record.rating.toFixed(1).length > 4} bind:this={numberEl}>
+							<RatingNumber rating={record.rating} settled={periodIn} outOf={100} label={outOfLabel(record.rating)} />
 						</div>
 					{/if}
 					{#if tally?.measure}
@@ -734,34 +726,10 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		margin: clamp(4px, 1vh, 12px) 0;
 	}
 
-	.basis {
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-		max-width: 34ch;
-		margin: clamp(4px, 1vh, 10px) 0 0;
-		font-family: var(--rt-font-web);
-		font-size: clamp(12px, 1.1vw, 15px);
-		font-weight: 700;
-		line-height: 1.25;
-		color: var(--rtvr-ink);
-		opacity: 0;
-		transition: opacity 260ms ease-out;
-	}
-
-	.basis.revealed {
-		opacity: 1;
-	}
-
-	.basis .run {
-		font-weight: 400;
-		opacity: 0.75;
-	}
-
-	@media (scripting: none) {
-		.basis {
-			opacity: 1;
-		}
+	/* "100.0/100" is 3.8 glyph-heights wide, the widest four-character score 3.3:
+	   scaled to that footprint it clears the dog, and a phone's 16px gutters. */
+	.number.wide {
+		--glyph-h: min(calc(clamp(96px, 14vw, 210px) * 0.86), calc((100vw - 32px) / 3.85));
 	}
 
 	/* In the DOM from the moment the record lands, shown once the dog stands:

@@ -1,9 +1,6 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
-	"ww_rating_basis_orgs": "Centile parmi les organisations notées",
-	"ww_rating_basis_projects": "Centile parmi les projets notés",
-	"ww_rating_basis_unreviewed": "Centile parmi les organisations dont les déclarations ne sont pas encore examinées",
-	"ww_rating_run": "Calcul de la note {run}",
+	"ww_rating_out_of": "{rating} sur 100",
 	"ww_rating_state_opaque": "Données opaques…",
 	"ww_rating_state_partial": "Données partielles…",
 	"ww_rating_state_open": "Données ouvertes…",
