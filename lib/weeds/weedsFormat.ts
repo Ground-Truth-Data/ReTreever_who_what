@@ -82,8 +82,10 @@ export function formatCell(value: string | number | null | undefined, kind: Weed
 			return formatWeedsDate(String(value));
 		case "number":
 			return typeof value === "number" ? number().format(value) : String(value);
-		case "score":
-			return formatTransparencyScore(value);
+		case "score": {
+			const shown = formatTransparencyScore(value);
+			return shown === EMPTY ? EMPTY : `${shown}/100`;
+		}
 		case "link":
 			return linkLabel(String(value));
 		default:

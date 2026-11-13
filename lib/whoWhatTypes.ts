@@ -1,12 +1,23 @@
 import { getLocale } from "$parent/src/lib/paraglide/runtime";
+import { m } from "$parent/src/lib/paraglide/messages";
 
-/** "73.3%" (fr "73,3 %") or "—"; coerces because Mapbox hands properties back as strings. */
+/**
+ * A rating, which is out of 100 and never a percent: "73.3" (fr "73,3") or "—". Coerces because Mapbox hands
+ * properties back as strings. ReTreever_where's `whereTypes.ts` keeps a twin (a child cannot import another);
+ * ReTreever's `pageMeta.test.ts` pins the two equal.
+ */
 export function formatTransparencyScore(score: unknown): string {
 	const n = Number(score);
 	if (!Number.isFinite(n)) return "—";
 	// Rounded by toFixed first: Intl rounds a halfway hundredth the other way, and English must not move.
-	const percent = new Intl.NumberFormat(getLocale(), { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1, useGrouping: false });
-	return percent.format(Number(n.toFixed(1)) / 100);
+	const oneDecimal = new Intl.NumberFormat(getLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1, useGrouping: false });
+	return oneDecimal.format(Number(n.toFixed(1)));
+}
+
+/** "73.3 out of 100" (fr "73,3 sur 100"), or "—": a rating as text and speech say it. */
+export function formatRatingOutOf(score: unknown): string {
+	const shown = formatTransparencyScore(score);
+	return shown === "—" ? shown : m.ww_rating_out_of({ rating: shown });
 }
 
 /** The seven tables under a rating, in strip order. */

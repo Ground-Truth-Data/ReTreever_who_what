@@ -2,7 +2,7 @@
 // The score as the designer's numerals: one <img> per glyph, laid in a row.
 // Glyphs share one canvas height (scripts/import-rtvr-assets.py crops columns,
 // never rows), so a row of them keeps the baseline without any alignment math.
-import { formatTransparencyScore } from "../whoWhatTypes";
+import { formatRatingOutOf } from "../whoWhatTypes";
 
 const GLYPHS = import.meta.glob<string>("../assets/pub-Rtvr/rating/numbers/*.webp", {
 	eager: true,
@@ -29,7 +29,7 @@ let {
 	settled?: boolean;
 	/** A small "/100" on the number's baseline, so it reads as a share of that. */
 	outOf?: number;
-	/** What a screen reader hears; defaults to `text`, else the score as a percent. */
+	/** What a screen reader hears; defaults to `text`, else the rating out of 100. */
 	label?: string;
 } = $props();
 
@@ -49,7 +49,7 @@ function pieces(s: string): { glyph: boolean; s: string }[] {
 const shown = $derived(text ?? (rating ?? 0).toFixed(1));
 const parts = $derived(pieces(shown));
 const denominator = $derived(outOf === undefined ? [] : String(outOf).split(""));
-const spoken = $derived(label ?? text ?? formatTransparencyScore(rating));
+const spoken = $derived(label ?? text ?? formatRatingOutOf(rating));
 </script>
 
 <span class="rating-number" class:unsettled={!settled} role="img" aria-label={spoken}>

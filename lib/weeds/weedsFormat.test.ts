@@ -23,7 +23,7 @@ describe("weeds cells", () => {
 	it("numbers, scores and links", () => {
 		expect(formatCell(1234.5678, "number")).toBe("1,234.57");
 		expect(formatCell(12, "number")).toBe("12");
-		expect(formatCell(55.7, "score")).toBe("55.7%");
+		expect(formatCell(55.7, "score")).toBe("55.7/100");
 		expect(formatCell("https://www.maearth.com/api/files/x?variant=web", "link")).toBe("maearth.com");
 		expect(linkLabel("no scheme")).toBe("no scheme");
 	});

@@ -8,7 +8,7 @@ export type { SearchResult } from "./lib/rating/resultLoad";
 export { SHARDS, shard, shardId, shardsFor, byArt } from "./lib/stage/shardIndex";
 export type { ShardEntry, ShardPage } from "./lib/stage/shardIndex";
 
-export { toTransparencyScore, formatTransparencyScore } from "./lib/whoWhatTypes";
+export { toTransparencyScore, formatTransparencyScore, formatRatingOutOf } from "./lib/whoWhatTypes";
 export { ratingState } from "./lib/rating/ratingState";
 export type { RatingState } from "./lib/rating/ratingState";
 export type {

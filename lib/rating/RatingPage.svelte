@@ -32,11 +32,11 @@ import { rankUnits, type SearchResult } from "./resultLoad";
 import RankBadges from "./RankBadges.svelte";
 import type { SearchListItem } from "../search/searchTypes";
 import { ratingState, type RatingState } from "./ratingState";
-import { WEEDS_TABLES, type ScoreTally, type WeedsTable, type WhoWhatRoutes } from "../whoWhatTypes";
+import { WEEDS_TABLES, formatRatingOutOf, type ScoreTally, type WeedsTable, type WhoWhatRoutes } from "../whoWhatTypes";
 import { svgWords } from "../search/svgWords";
 import { svgFit } from "../stage/svgFit";
 import { m } from "$parent/src/lib/paraglide/messages";
-import { getLocale, localizeHref } from "$parent/src/lib/paraglide/runtime";
+import { localizeHref } from "$parent/src/lib/paraglide/runtime";
 
 let {
 	tab,
@@ -334,11 +334,6 @@ const lessonFacts = () => ({
 	pageReady: record !== null && dogStanding && (record.rating === null || revealed),
 });
 
-const outOfLabel = (rating: number) =>
-	m.ww_rating_out_of({
-		rating: new Intl.NumberFormat(getLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1, useGrouping: false }).format(Number(rating.toFixed(1))),
-	});
-
 const STATE_LINES: Record<RatingState, () => string> = {
 	opaque: m.ww_rating_state_opaque,
 	partial: m.ww_rating_state_partial,
@@ -447,7 +442,7 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 							<RankBadges units={rankUnits(record.rank)} {revealed} />
 						{/if}
 						<div class="number" class:revealed class:wide={record.rating.toFixed(1).length > 4} bind:this={numberEl}>
-							<RatingNumber rating={record.rating} settled={periodIn} outOf={100} label={outOfLabel(record.rating)} />
+							<RatingNumber rating={record.rating} settled={periodIn} outOf={100} label={formatRatingOutOf(record.rating)} />
 						</div>
 					{/if}
 					{#if tally?.measure}
