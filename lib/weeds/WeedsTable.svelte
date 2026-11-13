@@ -257,9 +257,6 @@ $effect(() => {
 	<span class="fade right" aria-hidden="true"></span>
 	<span class="fade bottom" aria-hidden="true"></span>
 </div>
-{#if split.missing.length}
-	<p class="missing">{m.ww_rating_weeds_not_published({ fields: split.missing.map(columnLabel).join(", ") })}</p>
-{/if}
 
 <style>
 	/* The frame takes the wrapper's old place in the panel's column, so the
@@ -470,13 +467,6 @@ $effect(() => {
 		margin-top: 2px;
 		color: #8d93a6;
 		font-size: 12px;
-	}
-
-	.missing {
-		flex: none;
-		margin: 8px 0 0;
-		color: #8d93a6;
-		font-size: 14px;
 	}
 
 	a,

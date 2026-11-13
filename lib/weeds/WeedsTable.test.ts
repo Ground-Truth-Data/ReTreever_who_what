@@ -24,7 +24,7 @@ describe("the weeds sources table", () => {
 		expect(html).not.toContain("link dead");
 		expect(html).not.toMatch(/<th[^>]*>[^<]*Link dead/);
 		expect(html.match(/<th[ >]/g)).toHaveLength(1);
-		expect(html).toContain("Not published on any row: Description");
+		expect(html).not.toMatch(/<th[^>]*>[^<]*Description/);
 	});
 
 	it("a column is judged published on every row, not on the filtered ones", () => {
@@ -34,7 +34,6 @@ describe("the weeds sources table", () => {
 		];
 		const html = render(WeedsTable, { props: { columns, rows: [all[0]], all } }).body;
 		expect(html.match(/<th[ >]/g)).toHaveLength(2);
-		expect(html).not.toContain("Not published");
 	});
 
 	it("a link that is not http or https is text, never an anchor", () => {
@@ -67,8 +66,9 @@ describe("the weeds land table", () => {
 		expect(html.match(/site_/g)).toHaveLength(1);
 	});
 
-	it("draws no empty column and lists it under the table", () => {
+	// The fields it leaves out are listed by the panel's footer (NeverPublished), not by the table.
+	it("draws no empty column", () => {
 		expect(html.match(/<th[ >]/g)).toHaveLength(2);
-		expect(html).toContain("Not published on any row: Hectares");
+		expect(html).not.toMatch(/<th[^>]*>[^<]*Hectares/);
 	});
 });

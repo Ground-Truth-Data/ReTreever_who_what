@@ -6,6 +6,8 @@ import FrameClipPlayer from "$gc/FrameClipPlayer.svelte";
 import { loadClips, type ClipManifest } from "$gc/frameClips";
 import WeedsBarArt from "../assets/svg/rating/Rating_page_weeds_search_bar.svg?raw";
 import WeedsTable from "./WeedsTable.svelte";
+import WeedsCount from "./WeedsCount.svelte";
+import NeverPublished from "./NeverPublished.svelte";
 import WeedsTabs from "./WeedsTabs.svelte";
 import { filterRows, splitPublished } from "./weedsFormat";
 import { columnLabel } from "./columnLabels";
@@ -271,22 +273,40 @@ function barKeydown(e: KeyboardEvent) {
 				<p class="from">{from}</p>
 			{/if}
 			{#if answer.rows.length === 0}
-				<p class="note">{m.ww_rating_weeds_empty()}</p>
+				<div class="state">
+					<WeedsCount count={0} text={m.ww_rating_weeds_rows({ count: 0 })} />
+					<p class="state-line">{m.ww_rating_weeds_empty()}</p>
+				</div>
 			{:else if bare && split}
-				<p class="note">
-					{m.ww_rating_weeds_nothing_published({
-						rows: m.ww_rating_weeds_rows({ count: answer.rows.length }),
-						fields: split.missing.map(columnLabel).join(", "),
-					})}
-				</p>
+				<div class="state">
+					<WeedsCount
+						count={answer.rows.length}
+						text={answer.more ? m.ww_rating_weeds_rows_capped({ count: answer.rows.length }) : m.ww_rating_weeds_rows({ count: answer.rows.length })}
+					/>
+					<NeverPublished fields={split.missing.map(columnLabel)} />
+				</div>
 			{:else}
 				<WeedsTable columns={answer.columns} {rows} all={answer.rows} sweep={active} {open} />
-				<p class="count" aria-live="polite">
-					{#if query}{m.ww_rating_weeds_rows_filtered({ shown: rows.length, total: answer.rows.length })}{:else if answer.more}{m.ww_rating_weeds_rows_capped({ count: answer.rows.length })}{:else}{m.ww_rating_weeds_rows({ count: answer.rows.length })}{/if}
-				</p>
+				<div class="foot">
+					<p class="count" aria-live="polite">
+						{#if query}
+							<WeedsCount count={rows.length} text={m.ww_rating_weeds_rows_filtered({ shown: rows.length, total: answer.rows.length })} />
+						{:else if answer.more}
+							<WeedsCount count={answer.rows.length} text={m.ww_rating_weeds_rows_capped({ count: answer.rows.length })} />
+						{:else}
+							<WeedsCount count={answer.rows.length} text={m.ww_rating_weeds_rows({ count: answer.rows.length })} />
+						{/if}
+					</p>
+					{#if split?.missing.length}
+						<NeverPublished fields={split.missing.map(columnLabel)} />
+					{/if}
+				</div>
 			{/if}
 		{:else if failed[active]}
-			<p class="note">{m.ww_rating_weeds_failed()}</p>
+			<div class="state">
+				<p class="state-line">{m.ww_rating_weeds_failed()}</p>
+				<button type="button" class="retry" onclick={() => void load(active)}>{m.ww_rating_weeds_retry()}</button>
+			</div>
 		{:else if fetchClip && clipRoot}
 			<div class="digging" aria-label={m.ww_rating_weeds_digging()}>
 				<FrameClipPlayer root={clipRoot} clip={FETCH_CLIP} facts={fetchClip} loop />
@@ -492,11 +512,72 @@ function barKeydown(e: KeyboardEvent) {
 		flex-direction: column;
 	}
 
-	.note,
-	.count {
+	.note {
 		margin: 8px 0 0;
-		color: #8d93a6;
+		color: color-mix(in srgb, var(--rtvr-on-dark) 65%, transparent);
 		font-size: 14px;
+	}
+
+	/* Under the table: the count, then the empty slots, divided from the rows by a gold hairline. */
+	.foot {
+		flex: none;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 10px 22px;
+		margin-top: 10px;
+		padding-top: 10px;
+		border-top: 1px solid color-mix(in srgb, var(--color-gold-bar) 30%, transparent);
+	}
+
+	.count {
+		margin: 0;
+	}
+
+	/* A tab with no table to show: one card in the rank badges' dress, so the
+	   state reads as an answer, not a leftover line. */
+	.state {
+		align-self: flex-start;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 10px;
+		max-width: min(100%, 640px);
+		box-sizing: border-box;
+		margin-top: 6px;
+		padding: 14px 18px 16px;
+		background: var(--rtvr-ink);
+		border: 2px solid var(--color-gold-shard);
+		border-radius: 3px;
+		box-shadow: 2px 3px 6px rgb(12 8 1 / 0.4);
+		--count-h: 30px;
+	}
+
+	.state-line {
+		margin: 0;
+		color: var(--rtvr-on-dark);
+		font-family: var(--rt-font-web);
+		font-size: 15px;
+	}
+
+	.retry {
+		padding: 6px 14px;
+		border: 1px solid var(--color-gold-bar);
+		border-radius: 3px;
+		background: transparent;
+		color: var(--color-gold-bar);
+		font: 600 13px var(--rt-font-web);
+		letter-spacing: 0.04em;
+		cursor: pointer;
+	}
+
+	.retry:hover {
+		background: color-mix(in srgb, var(--color-gold-bar) 14%, transparent);
+	}
+
+	.retry:focus-visible {
+		outline: 2px solid var(--color-gold-bar);
+		outline-offset: 2px;
 	}
 
 	.from {
