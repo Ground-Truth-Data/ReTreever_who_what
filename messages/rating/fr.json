@@ -141,6 +141,23 @@
 			}
 		}
 	],
+	"ww_rating_rank_all": [
+		{
+			"declarations": [
+				"input place",
+				"input total",
+				"input shown",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{place} sur {shown} organisation",
+				"totalPlural=*": "{place} sur {shown} organisations"
+			}
+		}
+	],
 	"ww_rating_rank_overall": "{place} sur {shown} au total",
 	"ww_rating_state_opaque": "Données opaques…",
 	"ww_rating_state_partial": "Données partielles…",

@@ -64,8 +64,9 @@ async function fetchItem<T>(
 export type Cohort = "reviewed" | "unreviewed";
 
 /**
- * `category` is the role id ("developer_ish"); null ranks the org among those with no main role. `overall` is its
- * place among every ranked org, null when the answer has none.
+ * `category` is the role id ("developer_ish"); null ranks the org among those with no main role; "all" means its
+ * group was too small, so it ranks among every ranked org. `overall` is its place among every ranked org, null when
+ * the answer has none.
  */
 export type Rank = { place: number; of: number; category: string | null; overall: { place: number; of: number } | null };
 
@@ -168,6 +169,9 @@ const ORDINALS = {
 	other: m.ww_rating_ordinal_other,
 } as const;
 
+/** The group an org ranks within when its own category has too few ranked orgs. */
+const ALL = "all";
+
 // Keyed by StakeholderCategoryTable ids, as the where drawer's role words are; an id with none here reads "of its kind".
 const RANK_WORDS: Record<string, typeof m.ww_rating_rank_developer> = {
 	developer_ish: m.ww_rating_rank_developer,
@@ -187,8 +191,10 @@ export function rankPhrases(rank: Rank): string[] {
 	const ordinal = new Intl.PluralRules(locale, { type: "ordinal" });
 	const count = new Intl.NumberFormat(locale);
 	const placeWords = (n: number) => (ORDINALS[ordinal.select(n) as keyof typeof ORDINALS] ?? ORDINALS.other)({ rank: n });
-	const words = rank.category === null ? m.ww_rating_rank_none : (RANK_WORDS[rank.category] ?? m.ww_rating_rank_other);
+	const words =
+		rank.category === null ? m.ww_rating_rank_none : rank.category === ALL ? m.ww_rating_rank_all : (RANK_WORDS[rank.category] ?? m.ww_rating_rank_other);
 	const inCategory = words({ place: placeWords(rank.place), total: rank.of, shown: count.format(rank.of) });
-	if (!rank.overall) return [inCategory];
+	// Ranked among all, its overall place is this one again.
+	if (!rank.overall || rank.category === ALL) return [inCategory];
 	return [inCategory, m.ww_rating_rank_overall({ place: placeWords(rank.overall.place), shown: count.format(rank.overall.of) })];
 }

@@ -53,6 +53,18 @@ describe("an org's rank in words", () => {
 		inLocale("fr", () => expect(rankWords(rank)).toBe("22e sur 46 développeurs · 41e sur 87 au total"));
 	});
 
+	it("says one place when a group too small ranks the org among all, never repeating it as overall", () => {
+		const rank = { place: 34, of: 86, category: "all", overall: { place: 34, of: 86 } };
+		expect(rankWords(rank)).toBe("34th of 86 organizations");
+		expect(rankWords({ ...rank, overall: null })).toBe("34th of 86 organizations");
+		inLocale("es", () => expect(rankWords(rank)).toBe("34.º de 86 organizaciones"));
+		inLocale("pt-BR", () => expect(rankWords(rank)).toBe("34º de 86 organizações"));
+		inLocale("fr", () => {
+			expect(rankWords(rank)).toBe("34e sur 86 organisations");
+			expect(rankWords({ place: 1, of: 86, category: "all", overall: null })).toBe("1er sur 86 organisations");
+		});
+	});
+
 	it("speaks es, pt-BR and fr", () => {
 		inLocale("es", () => expect(rankWords({ place: 3, of: 46, category: "developer_ish", overall: null })).toBe("3.º de 46 desarrolladores"));
 		inLocale("pt-BR", () => expect(rankWords({ place: 3, of: 46, category: "developer_ish", overall: null })).toBe("3º de 46 desenvolvedores"));
@@ -83,6 +95,11 @@ describe("the record's rank", () => {
 		expect(both.rank?.overall).toEqual({ place: 41, of: 87 });
 		const bad = await loadOrganization(org({ rank: 22, rankOf: 46, category: "developer_ish", rankOverall: 90, rankOverallOf: 87 }), "c-c", endpoints, fail);
 		expect(bad.rank?.overall).toBeNull();
+	});
+
+	it("keeps the all group an undersized category falls back to", async () => {
+		const r = await loadOrganization(org({ rank: 34, rankOf: 86, category: "all", rankOverall: 34, rankOverallOf: 86 }), "c-c", endpoints, fail);
+		expect(r.rank).toEqual({ place: 34, of: 86, category: "all", overall: { place: 34, of: 86 } });
 	});
 
 	it("keeps an uncategorised org's rank, with no category", async () => {
