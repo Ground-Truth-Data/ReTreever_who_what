@@ -1,6 +1,146 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
 	"ww_rating_out_of": "{rating} sur 100",
+	"ww_rating_ordinal_one": "{rank}er",
+	"ww_rating_ordinal_two": "{rank}e",
+	"ww_rating_ordinal_few": "{rank}e",
+	"ww_rating_ordinal_other": "{rank}e",
+	"ww_rating_rank_developer": [
+		{
+			"declarations": [
+				"input place",
+				"input total",
+				"input shown",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{place} sur {shown} développeur",
+				"totalPlural=*": "{place} sur {shown} développeurs"
+			}
+		}
+	],
+	"ww_rating_rank_producer": [
+		{
+			"declarations": [
+				"input place",
+				"input total",
+				"input shown",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{place} sur {shown} pépinière ou producteur",
+				"totalPlural=*": "{place} sur {shown} pépinières et producteurs"
+			}
+		}
+	],
+	"ww_rating_rank_landowner": [
+		{
+			"declarations": [
+				"input place",
+				"input total",
+				"input shown",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{place} sur {shown} propriétaire foncier",
+				"totalPlural=*": "{place} sur {shown} propriétaires fonciers"
+			}
+		}
+	],
+	"ww_rating_rank_sponsor": [
+		{
+			"declarations": [
+				"input place",
+				"input total",
+				"input shown",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{place} sur {shown} financeur",
+				"totalPlural=*": "{place} sur {shown} financeurs"
+			}
+		}
+	],
+	"ww_rating_rank_marketplace": [
+		{
+			"declarations": [
+				"input place",
+				"input total",
+				"input shown",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{place} sur {shown} plateforme de publication",
+				"totalPlural=*": "{place} sur {shown} plateformes de publication"
+			}
+		}
+	],
+	"ww_rating_rank_research": [
+		{
+			"declarations": [
+				"input place",
+				"input total",
+				"input shown",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{place} sur {shown} partenaire de recherche",
+				"totalPlural=*": "{place} sur {shown} partenaires de recherche"
+			}
+		}
+	],
+	"ww_rating_rank_none": [
+		{
+			"declarations": [
+				"input place",
+				"input total",
+				"input shown",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{place} sur {shown} organisation sans rôle principal",
+				"totalPlural=*": "{place} sur {shown} organisations sans rôle principal"
+			}
+		}
+	],
+	"ww_rating_rank_other": [
+		{
+			"declarations": [
+				"input place",
+				"input total",
+				"input shown",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{place} sur {shown} organisation de son type",
+				"totalPlural=*": "{place} sur {shown} organisations de son type"
+			}
+		}
+	],
 	"ww_rating_state_opaque": "Données opaques…",
 	"ww_rating_state_partial": "Données partielles…",
 	"ww_rating_state_open": "Données ouvertes…",

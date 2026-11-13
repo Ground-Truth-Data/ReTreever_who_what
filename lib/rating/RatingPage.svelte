@@ -28,7 +28,7 @@ import SearchDropdown from "../search/SearchDropdown.svelte";
 import WeedsSection from "../weeds/WeedsSection.svelte";
 import WeedsTally from "../weeds/WeedsTally.svelte";
 import RatingFeedback from "./RatingFeedback.svelte";
-import type { SearchResult } from "./resultLoad";
+import { rankPhrases, type SearchResult } from "./resultLoad";
 import type { SearchListItem } from "../search/searchTypes";
 import { ratingState, type RatingState } from "./ratingState";
 import { WEEDS_TABLES, type ScoreTally, type WeedsTable, type WhoWhatRoutes } from "../whoWhatTypes";
@@ -442,6 +442,11 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 						<span class="state-line">{stateLine}</span>
 					</h1>
 					{#if record.rating !== null}
+						{#if tab === "orgs" && record.rank}
+							<p class="rank" class:revealed>
+								{#each rankPhrases(record.rank) as phrase, i (i)}{#if i}<span class="dot">{" · "}</span>{/if}<span class="phrase">{phrase}</span>{/each}
+							</p>
+						{/if}
 						<div class="number" class:revealed class:wide={record.rating.toFixed(1).length > 4} bind:this={numberEl}>
 							<RatingNumber rating={record.rating} settled={periodIn} outOf={100} label={outOfLabel(record.rating)} />
 						</div>
@@ -724,6 +729,33 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 
 	.number {
 		margin: clamp(4px, 1vh, 12px) 0;
+	}
+
+	/* The org's place among its own kind, where the eye goes from the name to the number. */
+	.rank {
+		margin: clamp(4px, 1vh, 10px) 0 0;
+		font-family: var(--rt-font-web);
+		font-size: clamp(14px, 1.3vw, 19px);
+		font-weight: 700;
+		line-height: 1.2;
+		letter-spacing: 0.02em;
+		color: var(--rtvr-ink);
+		opacity: 0;
+		transition: opacity 260ms ease-out;
+	}
+
+	.rank.revealed {
+		opacity: 1;
+	}
+
+	.rank .phrase {
+		white-space: nowrap;
+	}
+
+	@media (scripting: none) {
+		.rank {
+			opacity: 1;
+		}
 	}
 
 	/* "100.0/100" is 3.8 glyph-heights wide, the widest four-character score 3.3:

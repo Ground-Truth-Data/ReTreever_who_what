@@ -1,6 +1,146 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
 	"ww_rating_out_of": "{rating} out of 100",
+	"ww_rating_ordinal_one": "{rank}st",
+	"ww_rating_ordinal_two": "{rank}nd",
+	"ww_rating_ordinal_few": "{rank}rd",
+	"ww_rating_ordinal_other": "{rank}th",
+	"ww_rating_rank_developer": [
+		{
+			"declarations": [
+				"input place",
+				"input total",
+				"input shown",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{place} of {shown} developer",
+				"totalPlural=*": "{place} of {shown} developers"
+			}
+		}
+	],
+	"ww_rating_rank_producer": [
+		{
+			"declarations": [
+				"input place",
+				"input total",
+				"input shown",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{place} of {shown} nursery or grower",
+				"totalPlural=*": "{place} of {shown} nurseries and growers"
+			}
+		}
+	],
+	"ww_rating_rank_landowner": [
+		{
+			"declarations": [
+				"input place",
+				"input total",
+				"input shown",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{place} of {shown} landowner",
+				"totalPlural=*": "{place} of {shown} landowners"
+			}
+		}
+	],
+	"ww_rating_rank_sponsor": [
+		{
+			"declarations": [
+				"input place",
+				"input total",
+				"input shown",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{place} of {shown} funder",
+				"totalPlural=*": "{place} of {shown} funders"
+			}
+		}
+	],
+	"ww_rating_rank_marketplace": [
+		{
+			"declarations": [
+				"input place",
+				"input total",
+				"input shown",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{place} of {shown} listing platform",
+				"totalPlural=*": "{place} of {shown} listing platforms"
+			}
+		}
+	],
+	"ww_rating_rank_research": [
+		{
+			"declarations": [
+				"input place",
+				"input total",
+				"input shown",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{place} of {shown} research partner",
+				"totalPlural=*": "{place} of {shown} research partners"
+			}
+		}
+	],
+	"ww_rating_rank_none": [
+		{
+			"declarations": [
+				"input place",
+				"input total",
+				"input shown",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{place} of {shown} organization without a main role",
+				"totalPlural=*": "{place} of {shown} organizations without a main role"
+			}
+		}
+	],
+	"ww_rating_rank_other": [
+		{
+			"declarations": [
+				"input place",
+				"input total",
+				"input shown",
+				"local totalPlural = total: plural"
+			],
+			"selectors": [
+				"totalPlural"
+			],
+			"match": {
+				"totalPlural=one": "{place} of {shown} organization of its kind",
+				"totalPlural=*": "{place} of {shown} organizations of its kind"
+			}
+		}
+	],
 	"ww_rating_state_opaque": "Opaque data…",
 	"ww_rating_state_partial": "Partial data…",
 	"ww_rating_state_open": "Open data…",
