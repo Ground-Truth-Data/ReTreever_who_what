@@ -79,7 +79,7 @@ const status = $derived(
 <p class="sr" role="status">{status}</p>
 
 <aside class="tally corner" class:on={visible} class:waiting={!landed} aria-hidden="true">
-	<p class="caption">{m.ww_rating_tally_caption({ rating: scoreWords })}</p>
+	<p class="caption">{m.ww_rating_tally_caption({ score: scoreWords })}</p>
 	<div class="big"><RatingNumber text={bigText} /></div>
 	{#if brokenDown}
 		<p class="so-far" title={pair(shown.scored, shown.available)}>
