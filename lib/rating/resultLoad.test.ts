@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { loadOrganization, loadProject, rankWords } from "./resultLoad";
+import { loadOrganization, loadProject, rankUnits, rankWords } from "./resultLoad";
 import type { WhoWhatEndpoints, WhoWhatFail } from "../whoWhatTypes";
 
 const lang = vi.hoisted(() => ({ locale: "en" }));
@@ -63,6 +63,19 @@ describe("an org's rank in words", () => {
 			expect(rankWords(rank)).toBe("34e sur 86 organisations");
 			expect(rankWords({ place: 1, of: 86, category: "all", overall: null })).toBe("1er sur 86 organisations");
 		});
+	});
+
+	it("cuts each place into numerals, ordinal ending and caption, in every language", () => {
+		const rank = { place: 22, of: 46, category: "developer_ish", overall: { place: 52, of: 87 } };
+		const cut = () => rankUnits(rank).map(({ lead, digits, suffix, caption }) => [lead, digits, suffix, caption]);
+		expect(cut()).toEqual([
+			["", "22", "nd", "of 46 developers"],
+			["", "52", "nd", "of 87 overall"],
+		]);
+		inLocale("es", () => expect(cut()[0]).toEqual(["", "22.", "º", "de 46 desarrolladores"]));
+		inLocale("pt-BR", () => expect(cut()[1]).toEqual(["", "52", "º", "de 87 no geral"]));
+		inLocale("fr", () => expect(cut()[0]).toEqual(["", "22", "e", "sur 46 développeurs"]));
+		expect(rankUnits({ ...rank, category: "all", place: 70, of: 86 }).map((u) => u.sentence)).toEqual(["70th of 86 organizations"]);
 	});
 
 	it("speaks es, pt-BR and fr", () => {

@@ -182,19 +182,38 @@ const RANK_WORDS: Record<string, typeof m.ww_rating_rank_developer> = {
 	research_ish: m.ww_rating_rank_research,
 };
 
-/** "3rd of 46 developers · 41st of 87 overall"; es "3.º de 46 desarrolladores", fr "3e sur 46 développeurs". */
-export const rankWords = (rank: Rank): string => rankPhrases(rank).join(" · ");
+/**
+ * One place as the page draws it: `digits` in the hand-drawn numerals (es "22." keeps its stop), `suffix` the
+ * ordinal's raised ending ("rd", "º", "e"), `caption` the rest of the sentence ("of 46 developers"), `lead` any words
+ * a language puts before the place. `sentence` is the whole, for a screen reader.
+ */
+export type RankUnit = { sentence: string; lead: string; digits: string; suffix: string; caption: string };
 
-/** The category place, then the overall one when there is one: each a phrase a line may break between, never inside. */
-export function rankPhrases(rank: Rank): string[] {
+// Stands in for the place while the sentence is built, so the words around it can be cut off whole.
+const MARK = "\u0001";
+
+/** "3rd of 46 developers · 41st of 87 overall"; es "3.º de 46 desarrolladores", fr "3e sur 46 développeurs". */
+export const rankWords = (rank: Rank): string => rankUnits(rank).map((u) => u.sentence).join(" · ");
+
+/** The category place, then the overall one when there is one; ranked among all, only the one. */
+export function rankUnits(rank: Rank): RankUnit[] {
 	const locale = getLocale();
 	const ordinal = new Intl.PluralRules(locale, { type: "ordinal" });
 	const count = new Intl.NumberFormat(locale);
-	const placeWords = (n: number) => (ORDINALS[ordinal.select(n) as keyof typeof ORDINALS] ?? ORDINALS.other)({ rank: n });
+	const unit = (n: number, say: (place: string) => string): RankUnit => {
+		const place = (ORDINALS[ordinal.select(n) as keyof typeof ORDINALS] ?? ORDINALS.other)({ rank: n });
+		const [lead, caption = ""] = say(MARK).split(MARK);
+		const number = String(n);
+		const ending = place.startsWith(number) ? place.slice(number.length) : "";
+		// es "22.º": the full stop stays on the baseline as a numeral; only the "º" is raised.
+		const stop = ending.startsWith(".") ? "." : "";
+		return { sentence: say(place), lead: lead.trim(), digits: number + stop, suffix: ending.slice(stop.length), caption: caption.trim() };
+	};
 	const words =
 		rank.category === null ? m.ww_rating_rank_none : rank.category === ALL ? m.ww_rating_rank_all : (RANK_WORDS[rank.category] ?? m.ww_rating_rank_other);
-	const inCategory = words({ place: placeWords(rank.place), total: rank.of, shown: count.format(rank.of) });
+	const inCategory = unit(rank.place, (place) => words({ place, total: rank.of, shown: count.format(rank.of) }));
 	// Ranked among all, its overall place is this one again.
 	if (!rank.overall || rank.category === ALL) return [inCategory];
-	return [inCategory, m.ww_rating_rank_overall({ place: placeWords(rank.overall.place), shown: count.format(rank.overall.of) })];
+	const { place: overallPlace, of: overallOf } = rank.overall;
+	return [inCategory, unit(overallPlace, (place) => m.ww_rating_rank_overall({ place, shown: count.format(overallOf) }))];
 }
