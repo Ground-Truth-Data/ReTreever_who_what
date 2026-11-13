@@ -141,6 +141,7 @@
 			}
 		}
 	],
+	"ww_rating_rank_overall": "{place} sur {shown} au total",
 	"ww_rating_state_opaque": "Données opaques…",
 	"ww_rating_state_partial": "Données partielles…",
 	"ww_rating_state_open": "Données ouvertes…",
