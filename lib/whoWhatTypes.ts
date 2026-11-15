@@ -142,4 +142,6 @@ export type WhoWhatRoutes = {
 	/** How one record's published score was built. Absent → no link to it. */
 	whoOrgScore?: (key: string) => string;
 	whatProjectScore?: (key: string) => string;
+	/** An org's "show your rating" page. Absent → no link to it. */
+	whoOrgBadge?: (key: string) => string;
 };

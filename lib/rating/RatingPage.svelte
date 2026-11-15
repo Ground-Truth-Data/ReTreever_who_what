@@ -517,6 +517,9 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 	{#if feedbackHref && record}
 		<RatingFeedback href={feedbackHref} address={feedbackAddress} about={feedbackAbout} />
 	{/if}
+	{#if tab === "orgs" && record && routes.whoOrgBadge}
+		<p class="show-rating"><a href={localized(routes.whoOrgBadge(record.key))}>{m.ww_rating_badge_link()}</a></p>
+	{/if}
 	<LessonHand bind:this={lessonHand} name="rating" facts={lessonFacts} rating={lessonDoors} />
 	{/snippet}
 </RatingGround>
@@ -710,6 +713,24 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		position: relative;
 		z-index: 1;
 		margin: clamp(4px, 1vh, 12px) 0;
+	}
+
+	/* The feedback block's quiet link, centred under it. */
+	.show-rating {
+		box-sizing: border-box;
+		width: min(100%, 720px);
+		margin: 0 auto;
+		padding: 0 var(--pad, 16px) clamp(32px, 6vh, 72px);
+		font-family: var(--rt-font-web);
+		font-size: 15px;
+		text-align: center;
+	}
+
+	.show-rating a {
+		color: var(--rtvr-on-dark);
+		text-decoration: underline;
+		text-decoration-color: var(--color-gold-bar);
+		text-underline-offset: 4px;
 	}
 
 	/* Under the number, over the sky: a line of its own whose height is held
