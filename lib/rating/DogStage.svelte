@@ -117,6 +117,9 @@ const WARM_DECODED = 8;
 const ENTRANCE_CAP_MS = 3000;
 // The rest of the dog's clips wait for the run's frames, so nothing shares their bandwidth.
 let entranceIn = $state(false);
+// The turn waits for every frame of the reaction, the breath and the blink: short of
+// them, the player held the watching frame through the turn and jumped to the breath.
+let reactionIn = $state(false);
 
 const ENTRANCE = "dog-entrance";
 // The run ends on the frame the skid stops; the sapling is clear of the dog's nose from PLANT_FRAME on.
@@ -270,16 +273,18 @@ $effect(() => {
 			const sapling = m.clips[ENTRANCE];
 			warm(frameUrl(from, ENTRANCE, sapling, sapling.frameCount), true);
 			const walkRoot = reach?.root ?? from;
-			void quietStart(walkRoot, m.clips, entrance[0]).then((ok) => {
+			const walkFacts = reach?.facts ?? sapling;
+			// The watching frame before the rest of the walk: one of 49 equal shares, it landed
+			// so late on a slow link that the dog popped in already turning.
+			const watching = warm(frameUrl(walkRoot, ENTRANCE, walkFacts, walkFacts.frameCount), true, true);
+			void watching.then(() => quietStart(walkRoot, m.clips, entrance[0])).then((ok) => {
 				if (!live) return;
 				entranceIn = true;
 				if (ok) {
 					steps = entrance;
 					return;
 				}
-				// The watching hold is the walk's last frame: decoded first, or the stage paints nothing.
-				const walk = reach?.facts ?? sapling;
-				void warm(frameUrl(walkRoot, ENTRANCE, walk, walk.frameCount), true).then(() => {
+				void watching.then(() => {
 					if (!live) return;
 					plant();
 					stand(watchingFor(m.clips));
@@ -290,6 +295,30 @@ $effect(() => {
 			if (live) stand([]);
 		},
 	);
+	return () => {
+		live = false;
+	};
+});
+
+$effect(() => {
+	if (!manifest || !root || !entranceIn) return;
+	const clips = manifest.clips;
+	const from = root;
+	const state = dogState;
+	let live = true;
+	untrack(() => {
+		const reaction = reactionFor(state, clips);
+		const idle = idleFor(reaction, clips, 1);
+		const blinkClip = idleBlinkFor(state, clips);
+		const all: DogStep[] = [
+			...reaction,
+			...(idle ? [idle, { clip: BREATH_BLINK, loop: false, frames: BREATH_BLINK_SHEET }] : []),
+			...(blinkClip ? [{ clip: blinkClip, loop: false }] : []),
+		];
+		void Promise.allSettled(all.flatMap((s) => warmStep(from, clips, s, WARM_DECODED, true))).then(() => {
+			if (live) reactionIn = true;
+		});
+	});
 	return () => {
 		live = false;
 	};
@@ -324,7 +353,7 @@ $effect(() => {
 });
 
 $effect(() => {
-	if (!armed || !standing || reacted || !manifest) return;
+	if (!armed || !standing || !reactionIn || reacted || !manifest) return;
 	const reaction = reactionFor(dogState, manifest.clips);
 	// With no turn to make, an unscored dog stops watching and faces the reader.
 	const next = reaction.length ? reaction : steps[at]?.hold ? standingFor(manifest.clips) : null;
