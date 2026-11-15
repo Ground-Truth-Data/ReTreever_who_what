@@ -440,8 +440,14 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 						{/if}
 					</h1>
 					{#if record.rating !== null}
-						<div class="number" class:revealed class:wide={record.rating.toFixed(1).length > 4} bind:this={numberEl}>
-							<RatingNumber rating={record.rating} settled={periodIn} outOf={100} label={numberLabel(record.rating)} />
+						<div class="number-slot" class:wide={record.rating.toFixed(1).length > 4}>
+							<!-- Holds the place while the dog brings the number: zeros, so the score is not told early ("000.0" would be). -->
+							<div class="number-ghost" class:gone={revealed} aria-hidden="true">
+								<RatingNumber text={record.rating.toFixed(1).length > 3 ? "00.0" : "0.0"} outOf={100} />
+							</div>
+							<div class="number" class:revealed bind:this={numberEl}>
+								<RatingNumber rating={record.rating} settled={periodIn} outOf={100} label={numberLabel(record.rating)} />
+							</div>
 						</div>
 						<!-- Held from first paint: the measure is a second request, and its arrival must move nothing. -->
 						<div class="measure-slot">
@@ -742,13 +748,77 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 	}
 
 	.number {
+		position: relative;
+		z-index: 1;
 		margin: clamp(4px, 1vh, 12px) 0;
 	}
 
 	/* "100.0/100" is 3.8 glyph-heights wide, the widest four-character score 3.3:
 	   scaled to that footprint it clears the dog, and a phone's 16px gutters. */
-	.number.wide {
+	.number-slot.wide {
 		--glyph-h: min(calc(clamp(96px, 14vw, 210px) * 0.86), calc((100vw - 32px) / 3.85));
+	}
+
+	/* The slot's box is the hidden number's; the ghost lies over it and adds no
+	   size of its own, so the number replaces it without a shift. */
+	.number-slot {
+		--ghost-out: 600ms;
+		position: relative;
+	}
+
+	.number-ghost {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: flex-start;
+		pointer-events: none;
+		opacity: 1;
+		transition: opacity var(--ghost-out) ease-in;
+	}
+
+	.number-ghost.gone {
+		opacity: 0;
+		visibility: hidden;
+		transition:
+			opacity var(--ghost-out) ease-in,
+			visibility 0s linear var(--ghost-out);
+	}
+
+	/* Faint enough to read as a shape: a legible "00.0/100" reads as a score of zero. */
+	.number-ghost :global(.rating-number) {
+		opacity: 0.11;
+		filter: none;
+	}
+
+	.number-ghost :global(.out-of) {
+		transition: opacity 120ms ease-in;
+	}
+
+	/* Its "/100" goes first, so the landing number's "/100" never shows beside it. */
+	.number-ghost.gone :global(.out-of) {
+		opacity: 0;
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		.number-ghost :global(.rating-number) {
+			animation: ghost-pulse 2.4s ease-in-out infinite alternate;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.number-slot {
+			--ghost-out: 260ms;
+		}
+	}
+
+	@keyframes ghost-pulse {
+		from {
+			opacity: 0.07;
+		}
+		to {
+			opacity: 0.15;
+		}
 	}
 
 	/* In the DOM from the moment the record lands, shown once the dog stands:
@@ -821,6 +891,10 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 			opacity: 1;
 			visibility: visible;
 			transform: none;
+		}
+
+		.number-ghost {
+			display: none;
 		}
 	}
 
@@ -996,6 +1070,10 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 			align-items: center;
 			padding-left: 0;
 			text-align: center;
+		}
+
+		.number-ghost {
+			justify-content: center;
 		}
 	}
 

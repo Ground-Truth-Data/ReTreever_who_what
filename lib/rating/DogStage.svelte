@@ -103,9 +103,9 @@ const reduceMotion = typeof window !== "undefined" && matchMedia("(prefers-reduc
 
 // The number waits for the dog at most this long after the record lands, so a
 // slow phone sees the score while the dog is still on its way. Unthrottled
-// desktop stands ~2.9 s after landing; the plant and the shoots put that
-// 0.6 s past where the number used to leave, and the budget moved with it.
-const NUMBER_BUDGET_MS = 4600;
+// desktop stands 2.7–2.9 s after landing (walk, plant, shoots); the slot
+// holds a ghost of the number meanwhile, so this stays just past that.
+const NUMBER_BUDGET_MS = 3200;
 const firstPage = typeof window !== "undefined" && !pageSeen;
 if (typeof window !== "undefined") pageSeen = true;
 let landedAt: number | null = null;
