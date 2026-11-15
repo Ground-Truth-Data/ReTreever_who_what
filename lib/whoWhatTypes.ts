@@ -123,6 +123,8 @@ export type WhoWhatEndpoints = {
 	windowClipRoot?: string;
 	/** The dog's walk on cut on past its stage window's right edge, native size, with its own clips.json. Absent → it walks in at the stage's edge. */
 	reachClipRoot?: string;
+	/** The same walk on at the phone stage's size. Absent → phones play reachClipRoot's. */
+	reachPhoneClipRoot?: string;
 };
 
 // The host's `error`: a standalone child has no @sveltejs/kit to import it from.

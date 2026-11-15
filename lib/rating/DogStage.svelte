@@ -4,9 +4,10 @@ import { createContext } from "svelte";
 /**
  * The dog's frames cut to its stage window, each with its own clips.json: sized
  * for a phone, and at the window's own 940px. `reach`: the walk on alone, cut
- * on past the window's right edge so it can start off the screen.
+ * on past the window's right edge so it can start off the screen; `reachPhone`
+ * the same at the phone's size.
  */
-export type StageClipRoots = { phone?: string; desktop?: string; reach?: string };
+export type StageClipRoots = { phone?: string; desktop?: string; reach?: string; reachPhone?: string };
 
 // The rating route lends the cut frames to the dog without the page between them carrying them.
 export const [getStageClipRoots, setStageClipRoots, hasStageClipRoots] = createContext<StageClipRoots>();
@@ -250,8 +251,9 @@ $effect(() => {
 		stand([]);
 		return;
 	}
-	const from = (matchMedia(PHONE).matches && cut?.phone) || cut?.desktop || clipRoot;
-	const wide = cut?.reach;
+	const phone = matchMedia(PHONE).matches;
+	const from = (phone && cut?.phone) || cut?.desktop || clipRoot;
+	const wide = (phone && cut?.reachPhone) || cut?.reach;
 	root = from;
 	let live = true;
 	Promise.all([loadClips(from), wide ? loadClips(wide).catch(() => null) : null]).then(
@@ -442,7 +444,12 @@ onDestroy(() => {
 		{:else}
 			<link rel="preload" href="{cut?.desktop ?? clipRoot}/clips.json" as="fetch" crossorigin="anonymous" />
 		{/if}
-		{#if cut?.reach}
+		{#if cut?.reachPhone}
+			<link rel="preload" href="{cut.reachPhone}/clips.json" as="fetch" crossorigin="anonymous" media={PHONE} />
+			{#if cut.reach}
+				<link rel="preload" href="{cut.reach}/clips.json" as="fetch" crossorigin="anonymous" media="(min-width: 768px)" />
+			{/if}
+		{:else if cut?.reach}
 			<link rel="preload" href="{cut.reach}/clips.json" as="fetch" crossorigin="anonymous" />
 		{/if}
 	{/if}

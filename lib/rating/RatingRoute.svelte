@@ -43,7 +43,12 @@ $effect(() => {
 
 // The host's endpoints are fixed for the page's life; the dog reads its root once.
 // svelte-ignore state_referenced_locally
-setStageClipRoots({ phone: endpoints.stageClipRoot, desktop: endpoints.windowClipRoot, reach: endpoints.reachClipRoot });
+setStageClipRoots({
+	phone: endpoints.stageClipRoot,
+	desktop: endpoints.windowClipRoot,
+	reach: endpoints.reachClipRoot,
+	reachPhone: endpoints.reachPhoneClipRoot,
+});
 
 // The top bar searches again from the rating page; the list warms up in idle time.
 const list = new LiveList((q, signal) =>
