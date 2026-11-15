@@ -110,6 +110,12 @@ if (typeof window !== "undefined") pageSeen = true;
 let landedAt: number | null = null;
 // Frames decoded ahead of each step; the rest are only fetched, so a step's first ticks never wait on a decode.
 const WARM_DECODED = 8;
+// The player holds a frame that hasn't arrived, then skips on, so a run short of
+// its frames froze mid-stride. It runs only with every frame in; past this, the
+// dog is already standing by the planted tree.
+const ENTRANCE_CAP_MS = 3000;
+// The rest of the dog's clips wait for the run's frames, so nothing shares their bandwidth.
+let entranceIn = $state(false);
 
 const ENTRANCE = "dog-entrance";
 // The run ends on the frame the skid stops; the sapling is clear of the dog's nose from PLANT_FRAME on.
@@ -158,48 +164,56 @@ const saplingSrc = $derived.by(() => {
 });
 
 // Kept for the page's life: an Image dropped mid-fetch can be cancelled.
-const warmed = new Map<string, { img: HTMLImageElement; decoded?: Promise<void> }>();
-function warm(url: string, decode: boolean): Promise<void> {
+const warmed = new Map<string, { img: HTMLImageElement; loaded: Promise<void>; decoded?: Promise<void> }>();
+function warm(url: string, decode: boolean, urgent = decode): Promise<void> {
 	let w = warmed.get(url);
 	if (!w) {
 		const img = new Image();
-		if (!decode) img.fetchPriority = "low";
+		if (!urgent) img.fetchPriority = "low";
+		const loaded = new Promise<void>((r) => {
+			img.onload = img.onerror = () => r();
+		});
 		img.src = url;
-		w = { img };
+		w = { img, loaded };
 		warmed.set(url, w);
 	}
 	if (decode) w.decoded ??= w.img.decode().catch(() => {});
-	return w.decoded ?? Promise.resolve();
+	return w.decoded ?? w.loaded;
 }
 
-function warmStep(from: string, clips: Record<string, ClipFacts>, step: DogStep | null | undefined, limit = Infinity): Promise<void>[] {
+function warmStep(from: string, clips: Record<string, ClipFacts>, step: DogStep | null | undefined, decoded = WARM_DECODED, urgent = false): Promise<void>[] {
 	const facts = step && clips[step.clip];
 	if (!step || !facts) return [];
-	const order = [...new Set(step.frames ?? Array.from({ length: facts.frameCount }, (_, k) => k + 1))].slice(0, limit);
-	return order.map((f, n) => warm(frameUrl(from, step.clip, facts, f), n < WARM_DECODED || limit !== Infinity));
+	const order = [...new Set(step.frames ?? Array.from({ length: facts.frameCount }, (_, k) => k + 1))];
+	return order.map((f, n) => warm(frameUrl(from, step.clip, facts, f), n < decoded, urgent));
 }
 
-// The walk starts on a quiet page: its first frames decoded, two frames
-// painted and the main thread idle, so start-up work never stutters its first steps.
-function quietStart(from: string, clips: Record<string, ClipFacts>, entrance: DogStep): Promise<void> {
-	const firsts = warmStep(from, clips, entrance, 10);
-	const quiet = Promise.allSettled(firsts).then(
-		() =>
-			new Promise<void>((r) =>
-				requestAnimationFrame(() =>
+// True once every frame of the walk is in, its first ten decoded, two frames
+// painted and the main thread idle; false if the frames miss the cap.
+function quietStart(from: string, clips: Record<string, ClipFacts>, entrance: DogStep): Promise<boolean> {
+	const all = warmStep(from, clips, entrance, 10, true);
+	const allIn = Promise.race([
+		Promise.allSettled(all).then(() => true),
+		new Promise<boolean>((r) => setTimeout(() => r(false), ENTRANCE_CAP_MS)),
+	]);
+	return allIn.then((ok) =>
+		!ok
+			? false
+			: new Promise<boolean>((r) =>
 					requestAnimationFrame(() =>
-						typeof requestIdleCallback === "function" ? requestIdleCallback(() => r(), { timeout: 300 }) : r(),
+						requestAnimationFrame(() =>
+							typeof requestIdleCallback === "function" ? requestIdleCallback(() => r(true), { timeout: 300 }) : r(true),
+						),
 					),
 				),
-			),
 	);
-	return Promise.race([quiet, new Promise<void>((r) => setTimeout(r, 800))]);
 }
 
 function stand(next: DogStep[]) {
 	steps = next;
 	at = 0;
 	standing = true;
+	entranceIn = true;
 	tellStanding();
 }
 
@@ -253,8 +267,21 @@ $effect(() => {
 			}
 			const sapling = m.clips[ENTRANCE];
 			warm(frameUrl(from, ENTRANCE, sapling, sapling.frameCount), true);
-			void quietStart(reach?.root ?? from, m.clips, entrance[0]).then(() => {
-				if (live) steps = entrance;
+			const walkRoot = reach?.root ?? from;
+			void quietStart(walkRoot, m.clips, entrance[0]).then((ok) => {
+				if (!live) return;
+				entranceIn = true;
+				if (ok) {
+					steps = entrance;
+					return;
+				}
+				// The watching hold is the walk's last frame: decoded first, or the stage paints nothing.
+				const walk = reach?.facts ?? sapling;
+				void warm(frameUrl(walkRoot, ENTRANCE, walk, walk.frameCount), true).then(() => {
+					if (!live) return;
+					plant();
+					stand(watchingFor(m.clips));
+				});
 			});
 		},
 		() => {
@@ -269,7 +296,7 @@ $effect(() => {
 // The next step's first frames are decoded while this one plays; the reaction's
 // during the walk on, and the settled dog's clips once it is turning.
 $effect(() => {
-	if (!manifest || !root) return;
+	if (!manifest || !root || !entranceIn) return;
 	const clips = manifest.clips;
 	const state = dogState;
 	const from = root;
