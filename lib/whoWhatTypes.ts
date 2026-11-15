@@ -139,4 +139,7 @@ export type WhoWhatRoutes = {
 	whoMap?: string;
 	whoOrg?: (key: string) => string;
 	whatProject?: (key: string) => string;
+	/** How one record's published score was built. Absent → no link to it. */
+	whoOrgScore?: (key: string) => string;
+	whatProjectScore?: (key: string) => string;
 };

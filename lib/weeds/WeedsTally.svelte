@@ -14,12 +14,15 @@ let {
 	litIndex,
 	visible,
 	landed = true,
+	traceHref = undefined,
 }: {
 	tally: ScoreTally;
 	litIndex: number;
 	visible: boolean;
 	/** False while the hero's number is still travelling into the panel: its slot holds the hero's figure, unseen. */
 	landed?: boolean;
+	/** The page that walks this score down to its parts; absent, no link. */
+	traceHref?: string;
 } = $props();
 
 const LAST = WEEDS_TABLES.length - 1;
@@ -78,7 +81,8 @@ const status = $derived(
 
 <p class="sr" role="status">{status}</p>
 
-<aside class="tally corner" class:on={visible} class:waiting={!landed} aria-hidden="true">
+<aside class="tally corner" class:on={visible} class:waiting={!landed}>
+	<div class="face" aria-hidden="true">
 	<p class="caption">{m.ww_rating_tally_caption({ score: scoreWords })}</p>
 	<div class="big"><RatingNumber text={bigText} /></div>
 	{#if brokenDown}
@@ -122,9 +126,12 @@ const status = $derived(
 	{:else}
 		<p class="scores">{m.ww_rating_tally_not_broken_down_long()}</p>
 	{/if}
+	</div>
+	{#if traceHref}<a class="trace-link" href={traceHref}>{m.ww_rating_trace_link()}</a>{/if}
 </aside>
 
-<div class="tally strip" class:on={visible} aria-hidden="true">
+<div class="tally strip" class:on={visible}>
+	<div class="face" aria-hidden="true">
 	<ol class="steps">
 		{#each tally.tables as line, i (line.table)}
 			<li class:done={i < litIndex} class:lit={i === litIndex}></li>
@@ -137,6 +144,8 @@ const status = $derived(
 	{:else}
 		<span class="row-pts">{m.ww_rating_tally_not_broken_down()}</span>
 	{/if}
+	</div>
+	{#if traceHref}<a class="trace-link" href={traceHref}>{m.ww_rating_trace_link_short()}</a>{/if}
 </div>
 
 <style>
@@ -194,6 +203,30 @@ const status = $derived(
 
 	.corner p {
 		margin: 0;
+	}
+
+	/* The figures are drawn for the eye (the status line speaks them) and lay out as the panel's own children. */
+	.face {
+		display: contents;
+	}
+
+	/* The one thing in the tally that takes a click; the rest lets clicks through to the table. */
+	.trace-link {
+		pointer-events: auto;
+		color: var(--color-gold-bar);
+		font-weight: 700;
+		text-decoration: underline;
+		text-decoration-color: color-mix(in srgb, var(--color-gold-bar) 55%, transparent);
+		text-underline-offset: 3px;
+	}
+
+	.corner .trace-link {
+		font-size: 13px;
+	}
+
+	.strip .trace-link {
+		flex: 0 0 auto;
+		font-size: 13px;
 	}
 
 	.caption {

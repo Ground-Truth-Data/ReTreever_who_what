@@ -11,16 +11,11 @@ import InRaw from "../assets/svg/rating/Rating_page_in.svg?raw";
 import DeeperRaw from "../assets/svg/rating/Rating_page_deeper_period.svg?raw";
 import shovelUrl from "../assets/pub-Rtvr/rating/shovel-highballer.webp";
 import YellowLineRaw from "../assets/svg/rating/Rating_page_bottom_yellow_line.svg?raw";
-import groundUrl from "../assets/pub-Rtvr/rating/ground.webp";
-import skyUrl from "../assets/golden_sky_background.webp";
-import pineUrl from "../assets/pub-Rtvr/rating/poly/rp-pine.webp";
-import pinePhoneUrl from "../assets/pub-Rtvr/rating/poly/rp-pine-1366.webp";
 import DogStage from "./DogStage.svelte";
 import LessonHand from "../stage/LessonHand.svelte";
 import HelpSticker from "../stage/HelpSticker.svelte";
 import NumberFollower from "./NumberFollower.svelte";
 import GlobeSpinIcon from "../stage/GlobeSpinIcon.svelte";
-import Greenery from "../stage/Greenery.svelte";
 import RatingNumber from "./RatingNumber.svelte";
 import MeasureSticker from "./MeasureSticker.svelte";
 import SearchBar from "../search/SearchBar.svelte";
@@ -28,6 +23,7 @@ import SearchDropdown from "../search/SearchDropdown.svelte";
 import WeedsSection from "../weeds/WeedsSection.svelte";
 import WeedsTally from "../weeds/WeedsTally.svelte";
 import RatingFeedback from "./RatingFeedback.svelte";
+import RatingGround from "./RatingGround.svelte";
 import type { SearchResult } from "./resultLoad";
 import type { SearchListItem } from "../search/searchTypes";
 import { ratingState, type RatingState } from "./ratingState";
@@ -213,6 +209,9 @@ let barEl = $state<HTMLElement | null>(null);
 
 const localized = (href: string | undefined) => (href ? localizeHref(href) : undefined);
 
+// Beside the measure: the page that walks this score down to its parts.
+const scoreHref = $derived(record ? localized(tab === "orgs" ? routes.whoOrgScore?.(record.key) : routes.whatProjectScore?.(record.key)) : undefined);
+
 const hrefOf = (item: SearchListItem) =>
 	localized(tab === "orgs" ? routes.whoOrg?.(item.key) : routes.whatProject?.(item.key));
 
@@ -364,18 +363,20 @@ const inArt = svgFit(InRaw, [["in", m.ww_rating_art_in()]]);
 const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 </script>
 
-<div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl}); --art-pine-phone: url({pinePhoneUrl}); --art-ground: url({groundUrl});" bind:this={pageEl}>
+<RatingGround bind:pageEl bind:heroEl bind:undergroundEl hasTally={tally !== null}>
+	{#snippet before()}
 	{#if record && record.rating !== null}
 		<div class="dig-head">
 			<NumberFollower rating={record.rating} name={record.name} on={following} {overSoil} {numberEl} {land} landOn={ledgerNumber} />
 		</div>
 	{/if}
-	<section class="rating-hero" bind:this={heroEl}>
-		<Greenery>
+	{/snippet}
+	{#snippet grass()}
 			<div class="dog-column">
 				<DogStage bind:this={dog} rating={record?.rating ?? null} {armed} {clipRoot} onstanding={() => (dogStanding = true)} />
 			</div>
-		</Greenery>
+	{/snippet}
+	{#snippet hero()}
 		<div class="hero-top">
 			<div class="header-sticker" aria-hidden="true">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -449,6 +450,12 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 								<RatingNumber rating={record.rating} settled={periodIn} outOf={100} label={numberLabel(record.rating)} />
 							</div>
 						</div>
+						<!-- Its own line, held from first paint like the measure's slot, so neither a long figure nor the sticker's arrival moves it. -->
+						<div class="score-link-row">
+							{#if scoreHref}
+								<a class="score-link" class:revealed={periodIn} href={scoreHref}>{m.ww_rating_trace_link()}</a>
+							{/if}
+						</div>
 						<!-- Held from first paint: the measure is a second request, and its arrival must move nothing. -->
 						<div class="measure-slot">
 							{#if tally?.measure}
@@ -461,14 +468,15 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 					<div class="ghost" aria-hidden="true">
 						<div class="name"><span class="name-text">&nbsp;</span></div>
 						<div class="number"><RatingNumber rating={0} outOf={100} /></div>
+						<div class="score-link-row"></div>
 						<div class="measure-slot"></div>
 					</div>
 				{/if}
 			</div>
 		</div>
-	</section>
+	{/snippet}
 
-	<div class="underground" class:has-tally={tally !== null} bind:this={undergroundEl}>
+	{#snippet underground()}
 	{#snippet lockup()}
 	<section class="soil-band">
 		<div class="lockup" aria-hidden="true">
@@ -497,34 +505,23 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 	{#if weedsHref}
 		<WeedsSection bind:this={weeds} {tab} href={weedsHref} head={lockup} {clipRoot} {onopenproject} onactive={(i) => (litIndex = i)} />
 		{#if tally}
-			<WeedsTally {tally} {litIndex} visible={tallyVisible || (land > 0 && land < 1)} landed={!travels || land >= 1} />
+			<WeedsTally {tally} {litIndex} visible={tallyVisible || (land > 0 && land < 1)} landed={!travels || land >= 1} traceHref={scoreHref} />
 		{/if}
 	{:else}
 		{@render lockup()}
 	{/if}
-	</div>
+	{/snippet}
+
+	{#snippet after()}
 	<!-- Outside the underground: the tally shows while the underground fills the screen, and this foot is past the weeds. -->
 	{#if feedbackHref && record}
 		<RatingFeedback href={feedbackHref} address={feedbackAddress} about={feedbackAbout} />
 	{/if}
 	<LessonHand bind:this={lessonHand} name="rating" facts={lessonFacts} rating={lessonDoors} />
-</div>
+	{/snippet}
+</RatingGround>
 
 <style>
-	.rating-page {
-		--pad: clamp(16px, 3vw, 40px);
-		--art: min(100vw, 1200px);
-		--greenery-h: clamp(170px, calc(var(--art) * 0.3), 36vh);
-		--upper-band: calc(var(--greenery-h) * 0.87);
-		/* The soil runs this far up under the grass, and the grass bases fade into it. */
-		--soil-overlap: calc(var(--upper-band) * 0.22);
-		position: relative;
-		min-height: calc(100vh - 5rem);
-		width: 100%;
-		background: #0b1109;
-		overflow-x: clip;
-	}
-
 	/* The follower's track: from the page's top to the lockup's foot, measured
 	   on every scroll read. No box of its own. */
 	.dig-head {
@@ -534,44 +531,6 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		width: 100%;
 		height: var(--dig-head-h, 0px);
 		pointer-events: none;
-	}
-
-	/* The foot is the search hero's crest and grass, lower here so the dog and
-	   the number stand on the crest; the bottom padding is what keeps them off
-	   the grass. Capped at 900px or a tall monitor opens sky between them. */
-	.rating-hero {
-		--stage-w: clamp(200px, 34vw, 480px);
-		--stage-h: calc(var(--stage-w) * 900 / 940);
-		--dog-lift: calc(var(--soil-overlap) - var(--stage-h) * 20 / 900);
-		position: relative;
-		width: 100%;
-		box-sizing: border-box;
-		min-height: min(100vh - 5rem, 900px);
-		padding: clamp(20px, 4vh, 48px) var(--pad) calc(var(--greenery-h) * 0.55);
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: clamp(20px, 4vh, 48px);
-		background-color: #cc9f47;
-		background-image: var(--art-sky, var(--rtvr-missing-art));
-		background-size: cover;
-		background-position: center top;
-		isolation: isolate;
-		z-index: 1;
-		-webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - var(--soil-overlap)), transparent);
-		mask-image: linear-gradient(to bottom, #000 calc(100% - var(--soil-overlap)), transparent);
-	}
-
-	/* The comp's sky carries the pine pattern faintly behind everything. */
-	.rating-hero::before {
-		content: "";
-		position: absolute;
-		inset: 0;
-		background-image: var(--art-pine);
-		background-size: 1366px 1024px;
-		opacity: 0.05;
-		pointer-events: none;
-		z-index: 0;
 	}
 
 	/* The comp's top row: the header left, the bar block right, on one line so
@@ -753,6 +712,46 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		margin: clamp(4px, 1vh, 12px) 0;
 	}
 
+	/* Under the number, over the sky: a line of its own whose height is held
+	   whether or not the link has arrived, so nothing under it moves. */
+	.score-link-row {
+		height: 1.3em;
+		font-size: clamp(14px, 1.2vw, 17px);
+		line-height: 1.3;
+		max-width: 100%;
+	}
+
+	.score-link {
+		display: block;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		font-family: var(--rt-font-web);
+		font-weight: 700;
+		color: var(--rt-gold-ink);
+		text-decoration: underline;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 3px;
+		opacity: 0;
+		visibility: hidden;
+		transition:
+			opacity 260ms ease-out,
+			visibility 0s linear 260ms;
+	}
+
+	.score-link.revealed {
+		opacity: 1;
+		visibility: visible;
+		transition-delay: 0s;
+	}
+
+	@media (scripting: none) {
+		.score-link {
+			opacity: 1;
+			visibility: visible;
+		}
+	}
+
 	/* "100.0/100" is 3.8 glyph-heights wide, the widest four-character score 3.3:
 	   scaled to that footprint it clears the dog, and a phone's 16px gutters. */
 	.number-slot.wide {
@@ -910,54 +909,6 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		width: var(--stage-w);
 	}
 
-	/* The band's own z-index (3) would cap the running dog under the hero's
-	   words. Unset, its washes (0, 1) and tufts (3) still stack under them,
-	   and the dog can rise over them while it runs. */
-	.rating-hero :global(.wildflower-band) {
-		z-index: auto;
-	}
-
-	/* Below the grass the page is underground: one ground picture, drawn once
-	   and never mirrored or repeated, under the lockup and the weeds; a wash
-	   of the page's dark keeps the stickers and the tabs legible on it. It is
-	   as wide as the page and at least as tall as the pinned scene (a screen,
-	   or the pin's 520px floor under the head), so a narrow screen crops its
-	   sides. */
-	.underground {
-		--ground-w: max(100%, calc(max(100dvh, 860px) * 986 / 712));
-		position: relative;
-		margin-top: calc(var(--soil-overlap) * -1);
-		padding-top: var(--soil-overlap);
-	}
-
-	/* The weeds pin paints the same ground, shifted by where it starts, so
-	   it is seamless until it pins and then holds still while the tabs walk. */
-	.underground,
-	.underground :global(.weeds-pin) {
-		background:
-			linear-gradient(rgb(11 17 9 / 0.3), rgb(11 17 9 / 0.3)),
-			var(--art-ground) center var(--soil-y, 0px) / var(--ground-w) auto no-repeat,
-			#0b1109;
-	}
-
-	.underground :global(.weeds-pin) {
-		--soil-y: calc(var(--soil-overlap) * -1);
-	}
-
-	/* The tally stands in the left margin from 1100px up (WeedsTally's own
-	   breakpoint); the stage gives it that column and leans half as far the
-	   other way, so it still reads as centred under the head. */
-	@media (min-width: 1100px) {
-		.underground.has-tally {
-			--stage-room: 300px;
-		}
-
-		.underground.has-tally :global(.weeds-lean) {
-			padding-left: var(--stage-room);
-			padding-right: calc(var(--stage-room) / 2);
-		}
-	}
-
 	.soil-band {
 		position: relative;
 		display: flex;
@@ -1077,33 +1028,9 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		}
 	}
 
-	/* At 5% opacity the faint pine needs no more than a 1x tile on a phone. */
-	@media (max-width: 767px) {
-		.rating-hero::before {
-			background-image: var(--art-pine-phone, var(--art-pine));
-		}
-	}
-
-	/* One column: the hero hugs its content, since a phone's 100vh is taller
-	   than what a reader sees. The padding is the stage's top plus a quarter
-	   stage; the -64px raises the dog's head behind the crest to just under
-	   the number's foot (the grid stacks over the dog); any more and it
-	   reaches the number. That puts the whole dog on the first screen. */
-	@media (max-width: 720px) {
-		.rating-hero {
-			min-height: 0;
-			padding-bottom: calc(var(--dog-lift) + var(--stage-h) * 1.265 - 64px);
-		}
-	}
-
 	/* A phone: the header shares its row with the globe and the help sticker,
 	   so the bar spans the screen at the search page's size. */
 	@media (max-width: 720px) {
-		.rating-hero {
-			padding-top: 16px;
-			gap: 10px;
-		}
-
 		.hero-top {
 			display: grid;
 			grid-template-columns: minmax(0, 1fr) auto auto;
@@ -1158,7 +1085,8 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		}
 
 		.name,
-		.measure-slot {
+		.measure-slot,
+		.score-link-row {
 			flex-basis: 100%;
 		}
 
