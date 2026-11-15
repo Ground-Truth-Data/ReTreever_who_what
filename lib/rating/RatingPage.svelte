@@ -28,8 +28,7 @@ import SearchDropdown from "../search/SearchDropdown.svelte";
 import WeedsSection from "../weeds/WeedsSection.svelte";
 import WeedsTally from "../weeds/WeedsTally.svelte";
 import RatingFeedback from "./RatingFeedback.svelte";
-import { rankUnits, type SearchResult } from "./resultLoad";
-import RankBadges from "./RankBadges.svelte";
+import type { SearchResult } from "./resultLoad";
 import type { SearchListItem } from "../search/searchTypes";
 import { ratingState, type RatingState } from "./ratingState";
 import { WEEDS_TABLES, formatRatingOutOf, type ScoreTally, type WeedsTable, type WhoWhatRoutes } from "../whoWhatTypes";
@@ -334,16 +333,17 @@ const lessonFacts = () => ({
 	pageReady: record !== null && dogStanding && (record.rating === null || revealed),
 });
 
-const STATE_LINES: Record<RatingState, () => string> = {
+// The hero shows no state line; a screen reader hears it with the number.
+const STATE_WORDS: Record<RatingState, () => string> = {
 	opaque: m.ww_rating_state_opaque,
 	partial: m.ww_rating_state_partial,
 	open: m.ww_rating_state_open,
 	transparent: m.ww_rating_state_transparent,
 };
-const stateLine = $derived.by(() => {
-	const state = record ? ratingState(record.rating) : null;
-	return state ? STATE_LINES[state]() : m.ww_rating_state_unscored();
-});
+const numberLabel = (rating: number) => {
+	const state = ratingState(rating);
+	return state ? m.ww_rating_number_label({ score: formatRatingOutOf(rating), state: STATE_WORDS[state]() }) : formatRatingOutOf(rating);
+};
 
 const headerArt = svgFit(HeaderRaw, [
 	["RATING:", m.ww_rating_art_rating()],
@@ -367,7 +367,7 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 <div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl}); --art-pine-phone: url({pinePhoneUrl}); --art-ground: url({groundUrl});" bind:this={pageEl}>
 	{#if record && record.rating !== null}
 		<div class="dig-head">
-			<NumberFollower rating={record.rating} name={record.name} {stateLine} on={following} {overSoil} {numberEl} {land} landOn={ledgerNumber} />
+			<NumberFollower rating={record.rating} name={record.name} on={following} {overSoil} {numberEl} {land} landOn={ledgerNumber} />
 		</div>
 	{/if}
 	<section class="rating-hero" bind:this={heroEl}>
@@ -431,23 +431,32 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		</div>
 
 		<div class="hero-grid">
-			<div class="score-column" class:pending={!record}>
+			<div class="score-column">
 				{#if record}
 					<h1 class="name">
-						<span class="name-text">{m.ww_rating_name_line({ name: record.name })}</span>
-						<span class="state-line">{stateLine}</span>
+						<span class="name-text">{record.name}</span>
+						{#if record.rating === null}
+							<span class="unscored">{m.ww_rating_state_unscored()}</span>
+						{/if}
 					</h1>
 					{#if record.rating !== null}
-						{#if tab === "orgs" && record.rank}
-							<RankBadges units={rankUnits(record.rank)} {revealed} />
-						{/if}
 						<div class="number" class:revealed class:wide={record.rating.toFixed(1).length > 4} bind:this={numberEl}>
-							<RatingNumber rating={record.rating} settled={periodIn} outOf={100} label={formatRatingOutOf(record.rating)} />
+							<RatingNumber rating={record.rating} settled={periodIn} outOf={100} label={numberLabel(record.rating)} />
+						</div>
+						<!-- Held from first paint: the measure is a second request, and its arrival must move nothing. -->
+						<div class="measure-slot">
+							{#if tally?.measure}
+								<MeasureSticker measure={tally.measure} {revealed} />
+							{/if}
 						</div>
 					{/if}
-					{#if tally?.measure}
-						<MeasureSticker measure={tally.measure} {revealed} />
-					{/if}
+				{:else}
+					<!-- Holds a typical record's height while it streams, so the hills and the dog stand where they will. -->
+					<div class="ghost" aria-hidden="true">
+						<div class="name"><span class="name-text">&nbsp;</span></div>
+						<div class="number"><RatingNumber rating={0} outOf={100} /></div>
+						<div class="measure-slot"></div>
+					</div>
 				{/if}
 			</div>
 		</div>
@@ -715,10 +724,21 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		word-break: break-word;
 	}
 
-	.state-line {
+	.unscored {
 		font-size: clamp(16px, 1.8vw, 26px);
 		font-weight: 700;
-		align-self: flex-end;
+	}
+
+	.ghost {
+		display: contents;
+		visibility: hidden;
+	}
+
+	.measure-slot {
+		--measure-h: clamp(56px, 6.5vw, 92px);
+		height: var(--measure-h);
+		display: flex;
+		max-width: 100%;
 	}
 
 	.number {
@@ -970,18 +990,12 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 			justify-items: center;
 		}
 
+		/* Full width, so a wider number never moves the column's own box. */
 		.score-column {
+			justify-self: stretch;
 			align-items: center;
 			padding-left: 0;
 			text-align: center;
-		}
-
-		.state-line {
-			align-self: center;
-		}
-
-		.score-column :global(.ranks) {
-			justify-content: center;
 		}
 	}
 
@@ -1002,17 +1016,10 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 			min-height: 0;
 			padding-bottom: calc(var(--dog-lift) + var(--stage-h) * 1.265 - 64px);
 		}
-
-		/* Held while the record streams: a one-line name (49px), the row gap and
-		   the number (102px) with its margins, so the dog stands where it will. */
-		.score-column.pending {
-			min-height: calc(155px + 2 * clamp(4px, 1vh, 12px));
-		}
 	}
 
 	/* A phone: the header shares its row with the globe and the help sticker,
-	   so the bar spans the screen at the search page's size; the number stands
-	   beside its measure sticker, which brings the dog onto the first screen. */
+	   so the bar spans the screen at the search page's size. */
 	@media (max-width: 720px) {
 		.rating-hero {
 			padding-top: 16px;
@@ -1073,8 +1080,12 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		}
 
 		.name,
-		.score-column :global(.ranks) {
+		.measure-slot {
 			flex-basis: 100%;
+		}
+
+		.measure-slot {
+			justify-content: center;
 		}
 	}
 

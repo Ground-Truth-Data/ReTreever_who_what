@@ -1,17 +1,15 @@
 <script lang="ts">
-// The hero's number with the name and state line, riding under the nav once
+// The hero's number with the name, riding under the nav once
 // the real number has gone under it: born where that number stood and handed
 // back there, sticky in the page's dig-head track so the lockup's end lets it
 // go, unless the ledger waits for it: then it comes down into the ledger's
 // number as the page scrolls. Never a control.
 import { untrack } from "svelte";
 import RatingNumber from "./RatingNumber.svelte";
-import { m } from "$parent/src/lib/paraglide/messages";
 
 let {
 	rating,
 	name,
-	stateLine,
 	on,
 	overSoil,
 	numberEl,
@@ -20,7 +18,6 @@ let {
 }: {
 	rating: number;
 	name: string;
-	stateLine: string;
 	/** True while the real number is under the nav; the flip each way plays the FLIP. */
 	on: boolean;
 	/** The follower's own top is past the hero's foot: light text on the soil. */
@@ -112,8 +109,7 @@ $effect(() => {
 	<div class="body" class:shown class:soil={overSoil} class:landed={land >= 1} bind:this={body}>
 		<span class="glyphs" bind:this={glyphs}><RatingNumber text={rating.toFixed(1)} /></span>
 		<span class="words" style:opacity={land > 0 ? Math.max(0, 1 - land * 3) : null}>
-			<span class="name">{m.ww_rating_name_line({ name })}</span>
-			<span class="state">{stateLine}</span>
+			<span class="name">{name}</span>
 		</span>
 	</div>
 </div>
@@ -205,11 +201,6 @@ $effect(() => {
 		line-clamp: 2;
 		overflow: hidden;
 		word-break: break-word;
-	}
-
-	.state {
-		font-size: clamp(14px, 1.2vw, 18px);
-		font-weight: 700;
 	}
 
 	@media (max-width: 860px) {

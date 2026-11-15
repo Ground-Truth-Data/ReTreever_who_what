@@ -1,170 +1,12 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
 	"ww_rating_out_of": "{rating} de 100",
-	"ww_rating_ordinal_one": "{rank}.º",
-	"ww_rating_ordinal_two": "{rank}.º",
-	"ww_rating_ordinal_few": "{rank}.º",
-	"ww_rating_ordinal_other": "{rank}.º",
-	"ww_rating_rank_developer": [
-		{
-			"declarations": [
-				"input place",
-				"input total",
-				"input shown",
-				"local totalPlural = total: plural"
-			],
-			"selectors": [
-				"totalPlural"
-			],
-			"match": {
-				"totalPlural=one": "{place} de {shown} desarrollador",
-				"totalPlural=*": "{place} de {shown} desarrolladores"
-			}
-		}
-	],
-	"ww_rating_rank_producer": [
-		{
-			"declarations": [
-				"input place",
-				"input total",
-				"input shown",
-				"local totalPlural = total: plural"
-			],
-			"selectors": [
-				"totalPlural"
-			],
-			"match": {
-				"totalPlural=one": "{place} de {shown} vivero o productor",
-				"totalPlural=*": "{place} de {shown} viveros y productores"
-			}
-		}
-	],
-	"ww_rating_rank_landowner": [
-		{
-			"declarations": [
-				"input place",
-				"input total",
-				"input shown",
-				"local totalPlural = total: plural"
-			],
-			"selectors": [
-				"totalPlural"
-			],
-			"match": {
-				"totalPlural=one": "{place} de {shown} propietario de la tierra",
-				"totalPlural=*": "{place} de {shown} propietarios de la tierra"
-			}
-		}
-	],
-	"ww_rating_rank_sponsor": [
-		{
-			"declarations": [
-				"input place",
-				"input total",
-				"input shown",
-				"local totalPlural = total: plural"
-			],
-			"selectors": [
-				"totalPlural"
-			],
-			"match": {
-				"totalPlural=one": "{place} de {shown} financiador",
-				"totalPlural=*": "{place} de {shown} financiadores"
-			}
-		}
-	],
-	"ww_rating_rank_marketplace": [
-		{
-			"declarations": [
-				"input place",
-				"input total",
-				"input shown",
-				"local totalPlural = total: plural"
-			],
-			"selectors": [
-				"totalPlural"
-			],
-			"match": {
-				"totalPlural=one": "{place} de {shown} plataforma de publicación",
-				"totalPlural=*": "{place} de {shown} plataformas de publicación"
-			}
-		}
-	],
-	"ww_rating_rank_research": [
-		{
-			"declarations": [
-				"input place",
-				"input total",
-				"input shown",
-				"local totalPlural = total: plural"
-			],
-			"selectors": [
-				"totalPlural"
-			],
-			"match": {
-				"totalPlural=one": "{place} de {shown} socio de investigación",
-				"totalPlural=*": "{place} de {shown} socios de investigación"
-			}
-		}
-	],
-	"ww_rating_rank_none": [
-		{
-			"declarations": [
-				"input place",
-				"input total",
-				"input shown",
-				"local totalPlural = total: plural"
-			],
-			"selectors": [
-				"totalPlural"
-			],
-			"match": {
-				"totalPlural=one": "{place} de {shown} organización sin un rol principal",
-				"totalPlural=*": "{place} de {shown} organizaciones sin un rol principal"
-			}
-		}
-	],
-	"ww_rating_rank_other": [
-		{
-			"declarations": [
-				"input place",
-				"input total",
-				"input shown",
-				"local totalPlural = total: plural"
-			],
-			"selectors": [
-				"totalPlural"
-			],
-			"match": {
-				"totalPlural=one": "{place} de {shown} organización de su tipo",
-				"totalPlural=*": "{place} de {shown} organizaciones de su tipo"
-			}
-		}
-	],
-	"ww_rating_rank_all": [
-		{
-			"declarations": [
-				"input place",
-				"input total",
-				"input shown",
-				"local totalPlural = total: plural"
-			],
-			"selectors": [
-				"totalPlural"
-			],
-			"match": {
-				"totalPlural=one": "{place} de {shown} organización",
-				"totalPlural=*": "{place} de {shown} organizaciones"
-			}
-		}
-	],
-	"ww_rating_rank_overall": "{place} de {shown} en total",
-	"ww_rating_state_opaque": "Datos opacos…",
-	"ww_rating_state_partial": "Datos parciales…",
-	"ww_rating_state_open": "Datos abiertos…",
-	"ww_rating_state_transparent": "Datos transparentes…",
+	"ww_rating_state_opaque": "Datos opacos",
+	"ww_rating_state_partial": "Datos parciales",
+	"ww_rating_state_open": "Datos abiertos",
+	"ww_rating_state_transparent": "Datos transparentes",
 	"ww_rating_state_unscored": "Sin calificar",
-	"ww_rating_name_line": "{name};",
+	"ww_rating_number_label": "{score}: {state}",
 	"ww_rating_notice_empty": "Escriba un nombre para buscar de nuevo.",
 	"ww_rating_notice_loading": "Aún está cargando — vuelva a intentarlo en un momento.",
 	"ww_rating_notice_no_match": "Sin coincidencias — pruebe con el nombre completo.",
@@ -178,14 +20,30 @@
 	"ww_rating_art_dig": "Cave",
 	"ww_rating_art_in": "más",
 	"ww_rating_art_deeper": "hondo",
-	"ww_rating_art_trees_planted": "Árboles plantados",
 	"ww_rating_trees_planted_label": "Árboles plantados: {count}",
-	"ww_rating_art_hectares": "Hectáreas",
-	"ww_rating_art_hectares_mapped": "Hectáreas mapeadas",
-	"ww_rating_art_planting_sites": "Sitios de plantación",
 	"ww_rating_hectares_label": "Hectáreas: {count}",
 	"ww_rating_hectares_mapped_label": "Hectáreas mapeadas: {count}",
 	"ww_rating_planting_sites_label": "Sitios de plantación: {count}",
+	"ww_rating_measure_ha": "ha",
+	"ww_rating_measure_trees_verb": "plantados",
+	"ww_rating_measure_hectares_verb": "restauradas",
+	"ww_rating_measure_hectares_mapped_verb": "mapeadas",
+	"ww_rating_measure_sites_unit": [
+		{
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
+			"match": {
+				"countPlural=one": "sitio",
+				"countPlural=*": "sitios"
+			}
+		}
+	],
+	"ww_rating_measure_sites_verb": "de plantación",
 	"ww_rating_help": "Muéstreme cómo funciona esta página",
 	"ww_rating_explore_map": "Explore el mapa",
 	"ww_rating_weeds": "La maleza",

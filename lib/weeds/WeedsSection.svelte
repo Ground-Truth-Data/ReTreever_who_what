@@ -534,7 +534,7 @@ function barKeydown(e: KeyboardEvent) {
 		margin: 0;
 	}
 
-	/* A tab with no table to show: one card in the rank badges' dress, so the
+	/* A tab with no table to show: one card in the measure sticker's dress, so the
 	   state reads as an answer, not a leftover line. */
 	.state {
 		align-self: flex-start;
