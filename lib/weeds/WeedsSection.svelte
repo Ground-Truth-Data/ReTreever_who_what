@@ -56,6 +56,8 @@ let runEl = $state<HTMLElement | null>(null);
 let progress = $state(0);
 // Until the reader first scrolls into the run, the dig line tugs; never again in this page view.
 let fresh = $state(true);
+// At or past the pin: the host may compact its head to give the table room.
+let pinned = $state(false);
 
 async function load(table: WeedsTableName) {
 	if (answers[table] || inFlight.has(table)) return;
@@ -153,7 +155,9 @@ $effect(() => {
 		raf = 0;
 		const y = window.scrollY;
 		// The dig line follows every frame, a smooth landing's included.
-		progress = progressFor(y - pinTop(track), stepOf(run), WEEDS_TABLES.length);
+		const offset = y - pinTop(track);
+		pinned = offset >= -1;
+		progress = progressFor(offset, stepOf(run), WEEDS_TABLES.length);
 		if (progress > 0.15) fresh = false;
 		if (landing) {
 			if (Math.abs(y - landing.top) > 2 && performance.now() < landing.until) return;
@@ -262,7 +266,7 @@ function barKeydown(e: KeyboardEvent) {
 </script>
 
 <div class="weeds-track" style:--weeds-n={WEEDS_TABLES.length} bind:this={trackEl}>
-<div class="weeds-pin" style:--head-h="{headH}px" bind:this={pinEl}>
+<div class="weeds-pin" class:pinned style:--head-h="{headH}px" bind:this={pinEl}>
 {#if head}
 	<div class="weeds-head" bind:clientHeight={headH}>{@render head()}</div>
 {/if}
@@ -536,17 +540,34 @@ function barKeydown(e: KeyboardEvent) {
 		outline-offset: 1px;
 	}
 
+	/* A phone keeps the count and the pill on one row; the pill's words wrap inside it. */
 	.cue {
 		flex: none;
 		display: flex;
-		flex-wrap: wrap;
 		align-items: center;
-		gap: 6px 14px;
+		gap: 10px;
 		min-height: 28px;
 		margin-top: -4px;
 	}
 
+	/* Beside a phone, the cue costs no row: it rides in the band above the
+	   strip, which the lit tab (1.5 x --tab-h, grown upward) never reaches. */
+	@media (min-width: 768px) {
+		.weeds-stage {
+			position: relative;
+			padding-top: max(calc(var(--tab-h) * 1.2), calc(var(--tab-h) * 0.5 + 36px));
+		}
+
+		.cue {
+			position: absolute;
+			top: 2px;
+			right: clamp(16px, 3vw, 40px);
+			margin: 0;
+		}
+	}
+
 	.cue-count {
+		flex: none;
 		font-size: 12px;
 		font-weight: 700;
 		letter-spacing: 0.1em;
@@ -609,7 +630,13 @@ function barKeydown(e: KeyboardEvent) {
 	/* A phone's pill takes the full 44px. */
 	@media (max-width: 767px) {
 		.cue-next {
+			flex: 0 1 auto;
+			min-width: 0;
 			min-height: 44px;
+			border-radius: 22px;
+			font-size: 13px;
+			line-height: 1.2;
+			text-align: left;
 		}
 	}
 

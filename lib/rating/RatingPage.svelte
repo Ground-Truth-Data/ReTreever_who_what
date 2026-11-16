@@ -936,6 +936,18 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		flex-direction: column;
 		align-items: center;
 		padding: clamp(28px, 5vh, 56px) var(--pad) clamp(18px, 3vh, 36px);
+		transition: padding 220ms ease-out;
+	}
+
+	/* Pinned over the weeds, the lockup compacts so the table gets the room;
+	   above the pin it reads at full size. */
+	:global(.weeds-pin.pinned) .soil-band {
+		padding-top: 10px;
+		padding-bottom: 6px;
+	}
+
+	:global(.weeds-pin.pinned) .lockup {
+		--lockup-h: calc(clamp(30px, 5.5vw, 78px) * 0.57);
 	}
 
 	/* Three columns, the shovel alone in the middle one: the words on each
@@ -979,6 +991,7 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		width: auto;
 		display: block;
 		filter: drop-shadow(1px 2px 4px rgb(12 8 1 / 0.45));
+		transition: height 220ms ease-out;
 	}
 
 	/* A real planting shovel, its blade sunk through the line. The yellow
@@ -993,6 +1006,9 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		height: calc(var(--lockup-h) * 1.9);
 		width: auto;
 		margin-bottom: calc(var(--lockup-h) * -0.55);
+		transition:
+			height 220ms ease-out,
+			margin 220ms ease-out;
 		pointer-events: none;
 		filter:
 			drop-shadow(var(--rim) 0 0 var(--rt-yellow-bright))
@@ -1000,6 +1016,14 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 			drop-shadow(0 var(--rim) 0 var(--rt-yellow-bright))
 			drop-shadow(0 calc(-1 * var(--rim)) 0 var(--rt-yellow-bright))
 			drop-shadow(1px 2px 4px rgb(12 8 1 / 0.45));
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.soil-band,
+		.sticker :global(svg),
+		.shovel {
+			transition: none;
+		}
 	}
 
 	/* Full-bleed between the two rows, as the reference draws it. The item
