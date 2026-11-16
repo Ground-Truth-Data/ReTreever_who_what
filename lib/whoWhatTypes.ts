@@ -72,8 +72,8 @@ export type ScoreAnswer = {
 	measure: { kind: "trees" | "hectares" | "hectaresMapped" | "sites"; value: number } | null;
 	/** Null when this row's breakdown did not reconcile with its stored points when the run froze: it is not drawn. */
 	tables: TallyLine[] | null;
-	/** An org's step from the tables to its number; `projects` is the N of "mean of N", 0 when nothing was broken down. */
 	/**
+	 * An org's step from the tables to its number; `projects` is the N of "mean of N", 0 when nothing was broken down.
 	 * `reviewed`: a reviewed claim is in the org's score; `ratio` is that claim step's multiplier, null without one.
 	 */
 	org?: {
