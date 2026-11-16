@@ -73,7 +73,24 @@ export type ScoreAnswer = {
 	/** Null when this row's breakdown did not reconcile with its stored points when the run froze: it is not drawn. */
 	tables: TallyLine[] | null;
 	/** An org's step from the tables to its number; `projects` is the N of "mean of N", 0 when nothing was broken down. */
-	org?: { projects: number; mean: number | null; claimed: number | null; planted: number | null; undisclosed: number | null };
+	/**
+	 * `reviewed`: a reviewed claim is in the org's score; `ratio` is that claim step's multiplier, null without one.
+	 */
+	org?: {
+		projects: number;
+		mean: number | null;
+		claimed: number | null;
+		planted: number | null;
+		undisclosed: number | null;
+		reviewed: boolean;
+		ratio: number | null;
+	};
+	/**
+	 * Where the score ranks in the published run; null when unranked. `group` is the role id the org was ranked in,
+	 * "all" for a role too small to rank alone, null for a project (ranked among all projects). `peers` is the
+	 * group's scores ascending, this record's included, no names; over 120 it is 120 evenly spaced quantiles.
+	 */
+	place: { rank: number; of: number; group: string | null; peers: number[] } | null;
 	/** The published run the answer was read from; null before a first publish. */
 	scoreRunId: string | null;
 	/** Whether this row's breakdown reached its stored points when the run froze; null before a first publish. */
