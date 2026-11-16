@@ -1,5 +1,6 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { scrollTopFor, tabIndexFor } from "./weedsScroll";
+import { cueFor, headX, progressFor, scrollTopFor, tabIndexFor } from "./weedsScroll";
 
 const STEP = 500;
 const N = 7;
@@ -47,5 +48,73 @@ describe("scrollTopFor", () => {
 		for (let i = 0; i < N; i++) {
 			expect(tabIndexFor(scrollTopFor(i, trackTop, STEP) - trackTop, STEP, N)).toBe(i);
 		}
+	});
+});
+
+describe("progressFor", () => {
+	it("is continuous between tabs and agrees with tabIndexFor", () => {
+		expect(progressFor(0, STEP, N)).toBe(0);
+		expect(progressFor(2.5 * STEP, STEP, N)).toBe(2.5);
+		expect(progressFor(6 * STEP, STEP, N)).toBe(6);
+		for (const o of [0.2, 1.49, 1.5, 3.7, 5.99]) {
+			expect(Math.round(progressFor(o * STEP, STEP, N))).toBe(tabIndexFor(o * STEP, STEP, N));
+		}
+	});
+
+	it("clamps above and past the run, and is 0 with no step", () => {
+		expect(progressFor(-300, STEP, N)).toBe(0);
+		expect(Object.is(progressFor(-300, STEP, N), -0)).toBe(false);
+		expect(progressFor(60 * STEP, STEP, N)).toBe(6);
+		expect(progressFor(3 * STEP, 0, N)).toBe(0);
+		expect(progressFor(3 * STEP, Number.NaN, N)).toBe(0);
+	});
+});
+
+describe("headX", () => {
+	// Lit tabs are wider, so the centres are uneven on purpose.
+	const centres = [30, 90, 170, 240, 300, 380, 450];
+
+	it("sits on a tab's centre at each whole step", () => {
+		centres.forEach((c, i) => expect(headX(i, centres)).toBe(c));
+	});
+
+	it("moves between two centres by the fraction", () => {
+		expect(headX(2.5, centres)).toBe(205);
+		expect(headX(0.25, centres)).toBe(45);
+		expect(headX(5.9, centres)).toBeCloseTo(443);
+	});
+
+	it("holds the ends", () => {
+		expect(headX(-1, centres)).toBe(30);
+		expect(headX(9, centres)).toBe(450);
+		expect(headX(3, [])).toBe(0);
+		expect(headX(3, [12])).toBe(12);
+	});
+});
+
+describe("cueFor", () => {
+	it("says first, next, then last", () => {
+		expect(cueFor(0, N)).toBe("first");
+		expect(cueFor(1, N)).toBe("next");
+		expect(cueFor(5, N)).toBe("next");
+		expect(cueFor(6, N)).toBe("last");
+	});
+});
+
+describe("the rating messages", () => {
+	const read = (l: string) => JSON.parse(readFileSync(new URL(`../../messages/rating/${l}.json`, import.meta.url), "utf8"));
+	const en = read("en");
+	const holes = (v: unknown) => [...JSON.stringify(v).matchAll(/\{(\w+)\}/g)].map((x) => x[1]).sort();
+
+	it("every language has every key, with the same placeholders", () => {
+		for (const l of ["es", "pt-BR", "fr"]) {
+			const other = read(l);
+			expect(Object.keys(other).sort(), l).toEqual(Object.keys(en).sort());
+			for (const k of Object.keys(en)) expect(holes(other[k]), `${l} ${k}`).toEqual(holes(en[k]));
+		}
+	});
+
+	it("the cue has its three wordings and its count", () => {
+		for (const k of ["count", "first", "next", "last"]) expect(en[`ww_rating_weeds_cue_${k}`]).toBeTruthy();
 	});
 });
