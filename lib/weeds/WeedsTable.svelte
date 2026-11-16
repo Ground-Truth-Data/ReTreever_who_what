@@ -18,7 +18,7 @@ let {
 	rows: WeedsRow[];
 	/** Every row the table has, filtered or not: what says a column is published. */
 	all?: WeedsRow[];
-	/** Each new value runs the highlight down the rows once, when the table is on screen. */
+	/** Each new value digs the table from the top once, when it is on screen; till then its rows are hidden. */
 	sweep?: unknown;
 	/** The column whose cell opens the row, and what opening does. */
 	open?: { column: string; on: (row: WeedsRow) => void };
@@ -140,32 +140,48 @@ $effect(() => {
 	activeCol = -1;
 });
 
-// The sweep ends inside the tally's 750 ms count: each row lights at most 48 ms
-// after the one above, and the last by 330, so its 380 ms fade is over by 750
-// with the observer's callback and the first frame counted in.
-const LAST_ROW_MS = 330;
-const FADE_MS = 380;
-const STEP_MS = 48;
-let swept = $state(-1);
+// The dig ends inside the tally's 750 ms count: the edge reaches the visible
+// bottom by 340 and the last row's 260 ms drop and wash are over by 600, with
+// the observer's callback and the first frames counted in.
+const SWEEP_MS = 340;
+const LAND_MS = 260;
+// The sweep value whose dig is over: its rows simply show, so a filter keystroke redraws them at once.
+let dug = $state<unknown>(undefined);
+// Rows the edge has passed, keyed to their sweep: a new value hides every row in the very render it arrives.
+let reached = $state<{ key: unknown; n: number }>({ key: undefined, n: 0 });
+let edgeY = $state(-1);
 
 $effect(() => {
-	void sweep;
+	const key = sweep;
 	const el = wrap;
 	if (!el) return;
 	let raf = 0;
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	edgeY = -1;
 	const run = () => {
-		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-		const n = rows.length;
-		const step = n > 1 ? Math.min(STEP_MS, LAST_ROW_MS / (n - 1)) : 0;
+		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+			dug = key;
+			return;
+		}
+		measure();
+		const tops = rowBoxes.map((b) => b.top);
+		const top = headH;
+		const bottom = Math.max(top, Math.min(el.scrollHeight, el.clientHeight));
 		const t0 = performance.now();
 		const tick = (now: number) => {
-			const t = now - t0;
-			if (t >= (n - 1) * step + FADE_MS) {
-				swept = -1;
+			const k = Math.min(1, (now - t0) / SWEEP_MS);
+			const y = top + (bottom - top) * (1 - (1 - k) ** 2);
+			edgeY = y;
+			let n = reached.key === key ? reached.n : 0;
+			while (n < tops.length && tops[n] <= y) n++;
+			reached = { key, n };
+			if (k < 1) {
+				raf = requestAnimationFrame(tick);
 				return;
 			}
-			swept = step ? Math.min(n - 1, Math.floor(t / step)) : n - 1;
-			raf = requestAnimationFrame(tick);
+			reached = { key, n: tops.length };
+			edgeY = -1;
+			timer = setTimeout(() => (dug = key), LAND_MS);
 		};
 		raf = requestAnimationFrame(tick);
 	};
@@ -181,7 +197,10 @@ $effect(() => {
 	return () => {
 		seen.disconnect();
 		cancelAnimationFrame(raf);
-		swept = -1;
+		clearTimeout(timer);
+		// A dig cut short leaves nothing behind, so coming back to that table digs it again.
+		dug = undefined;
+		reached = { key: undefined, n: 0 };
 	};
 });
 
@@ -213,7 +232,8 @@ $effect(() => {
 			class:on={activeCol > 0}
 			style="height: {tableH}px; width: {colBand.w}px; transform: translateX({colBand.left}px)"
 		></div>
-		<table class="weeds-table" bind:this={table}>
+		<span class="scan" class:on={edgeY >= 0} style="width: {tableW}px; transform: translateY({Math.max(edgeY, headH)}px)"></span>
+		<table class="weeds-table" class:digging={dug !== sweep} bind:this={table}>
 			<thead>
 				<tr>
 					{#each drawn as c, j (c.key)}
@@ -224,7 +244,7 @@ $effect(() => {
 			{#key columns}
 				<tbody>
 					{#each rows as row, i (i)}
-						<tr class:lit={i === activeRow} class:sweep={i <= swept} style="--i: {i}">
+						<tr class:lit={i === activeRow} class:in={dug === sweep || (reached.key === sweep && i < reached.n)}>
 							{#each drawn as c, j (c.key)}
 								{@const v = row[c.key]}
 								{@const shown = cellText(row, c)}
@@ -265,7 +285,6 @@ $effect(() => {
 	.weeds-frame {
 		--glide: 260ms cubic-bezier(0.2, 0.9, 0.25, 1.12);
 		--lit: color-mix(in srgb, var(--rt-yellow) 10%, #000);
-		--sweep: color-mix(in srgb, var(--rt-yellow) 10%, #000);
 		position: relative;
 		width: 100%;
 		max-width: 100%;
@@ -406,25 +425,59 @@ $effect(() => {
 
 	tbody tr {
 		scroll-snap-align: start none;
-		animation: weeds-row-in 340ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-		animation-delay: calc(min(var(--i), 16) * 22ms);
 	}
 
-	@keyframes weeds-row-in {
+	/* The dig through a table: a gold edge sweeps down from the header, and
+	   each row drops into place from above as it passes, with a brief wash.
+	   A row the edge has not reached is not seen. */
+	.digging tbody tr:not(.in) {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+
+	.digging tbody tr.in {
+		transition:
+			opacity 200ms ease-out,
+			transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+	}
+
+	.digging tbody tr.in td {
+		animation: wash 260ms ease-out;
+	}
+
+	@keyframes wash {
 		from {
-			opacity: 0;
-			transform: translateY(10px);
+			background-color: color-mix(in srgb, var(--color-gold-shard) 16%, #000);
 		}
 	}
 
-	tbody tr.sweep td {
-		animation: weeds-sweep 380ms ease-out;
+	/* Above the cells, under the pinned header; its trail glows up behind it. */
+	.scan {
+		position: absolute;
+		top: 0;
+		left: 0;
+		z-index: 2;
+		height: 2px;
+		pointer-events: none;
+		background: var(--color-gold-shard);
+		box-shadow: 0 0 10px 2px rgb(240 182 10 / 0.55);
+		opacity: 0;
+		transition: opacity 200ms ease;
 	}
 
-	@keyframes weeds-sweep {
-		from {
-			background-color: var(--sweep);
-		}
+	.scan.on {
+		opacity: 1;
+		transition: none;
+	}
+
+	.scan::before {
+		content: "";
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 2px;
+		height: 72px;
+		background: linear-gradient(transparent, rgb(240 182 10 / 0.16));
 	}
 
 	tbody tr.lit td:first-child {
@@ -555,9 +608,17 @@ $effect(() => {
 			transition: none;
 		}
 
-		tbody tr,
-		tbody tr.sweep td {
+		.digging tbody tr:not(.in) {
+			opacity: 1;
+			transform: none;
+		}
+
+		.digging tbody tr.in td {
 			animation: none;
+		}
+
+		.scan {
+			display: none;
 		}
 	}
 
