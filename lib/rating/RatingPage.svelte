@@ -184,9 +184,14 @@ $effect(() => {
 	onScroll();
 	window.addEventListener("scroll", onScroll, { passive: true });
 	window.addEventListener("resize", onScroll);
+	// The head compacts on a transition once pinned; a reader who stops scrolling mid-shrink still gets the ledger's final top.
+	const headSize = new ResizeObserver(onScroll);
+	const headEl = page.querySelector<HTMLElement>(".weeds-head");
+	if (headEl) headSize.observe(headEl);
 	return () => {
 		window.removeEventListener("scroll", onScroll);
 		window.removeEventListener("resize", onScroll);
+		headSize.disconnect();
 		if (raf) cancelAnimationFrame(raf);
 	};
 });
