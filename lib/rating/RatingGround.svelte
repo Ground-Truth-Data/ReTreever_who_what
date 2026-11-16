@@ -152,7 +152,7 @@ let {
 	   other way, so it still reads as centred under the head. */
 	@media (min-width: 1100px) {
 		.underground.has-tally {
-			--stage-room: 300px;
+			--stage-room: 340px;
 		}
 
 		.underground.has-tally :global(.weeds-lean) {

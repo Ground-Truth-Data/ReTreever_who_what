@@ -1,9 +1,24 @@
 <script lang="ts">
-// The rating adding up while the reader digs: a panel at the window's left
-// edge, or a thin strip on a phone. Never a control.
+// How the rating adds up, built while the reader digs: a card at the window's
+// left edge, or a strip along a phone's foot. On the last table it walks the
+// score through the claim and the place among its peers to the hero's number.
+// Never a control.
 import { untrack } from "svelte";
 import RatingNumber from "../rating/RatingNumber.svelte";
-import { TABLE_LABELS, TABLE_SCORES, barFill, ladderValue, tallyTargets, tween } from "./tallyMath";
+import {
+	TABLE_LABELS,
+	barFill,
+	claimLine,
+	ladderValue,
+	landingBeats,
+	ownBar,
+	peerBars,
+	peersLit,
+	placeLine,
+	tallySteps,
+	tallyTargets,
+	tween,
+} from "./tallyMath";
 import { fullCount, shortCount } from "./weedsFormat";
 import { WEEDS_TABLES, type ScoreTally } from "../whoWhatTypes";
 import { m } from "$parent/src/lib/paraglide/messages";
@@ -19,7 +34,7 @@ let {
 	tally: ScoreTally;
 	litIndex: number;
 	visible: boolean;
-	/** False while the hero's number is still travelling into the panel: its slot holds the hero's figure, unseen. */
+	/** False while the hero's number is still travelling into the card: its slot holds the hero's figure, unseen. */
 	landed?: boolean;
 	/** The page that walks this score down to its parts; absent, no link. */
 	traceHref?: string;
@@ -28,16 +43,27 @@ let {
 const LAST = WEEDS_TABLES.length - 1;
 const COUNT_MS = 750;
 
-const lit = $derived(tally.tables[litIndex] ?? tally.tables[0]);
-const goal = $derived(tallyTargets(tally, litIndex));
 // An org's score was not broken down when it averaged nothing.
 const brokenDown = $derived(tally.kind === "project" || (tally.org?.projects ?? 0) > 0);
+const steps = $derived(brokenDown ? tallySteps(tally) : []);
+const claim = $derived(claimLine(tally));
+const place = $derived(placeLine(tally));
+const bars = $derived(tally.place ? peerBars(tally.place.peers) : []);
+const own = $derived(tally.place ? ownBar(tally.place) : -1);
 
+// The step lit; steps.length once the walk has reached the rating.
+let stage = $state(0);
+let peerK = $state(0);
 let shown = $state({ scored: 0, available: 0, big: 0 });
 let wasLanded = false;
+
 $effect(() => {
-	const to = { ...goal };
+	const goal = tallyTargets(tally, litIndex);
+	const beats = landingBeats(tally);
+	const atEnd = litIndex >= LAST && brokenDown;
 	if (!landed) {
+		stage = 0;
+		peerK = 0;
 		shown = { scored: 0, available: 0, big: tally.rating ?? 0 };
 		wasLanded = false;
 		return;
@@ -46,104 +72,167 @@ $effect(() => {
 	const from = wasLanded ? untrack(() => ({ ...shown })) : { scored: 0, available: 0, big: 0 };
 	wasLanded = true;
 	if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-		shown = to;
+		stage = atEnd ? beats.length : 0;
+		peerK = atEnd ? 1 : 0;
+		shown = { ...goal, big: atEnd ? beats[beats.length - 1].to : goal.big };
 		return;
 	}
-	const t0 = performance.now();
+	let dead = false;
 	let raf = 0;
-	const tick = (now: number) => {
-		const t = Math.min(1, (now - t0) / COUNT_MS);
-		shown = { scored: tween(from.scored, to.scored, t), available: tween(from.available, to.available, t), big: tween(from.big, to.big, t) };
-		if (t < 1) raf = requestAnimationFrame(tick);
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	const run = (ms: number, step: (k: number) => void) =>
+		new Promise<void>((done) => {
+			const t0 = performance.now();
+			const tick = (now: number) => {
+				if (dead) return;
+				const t = Math.min(1, (now - t0) / ms);
+				step(t);
+				if (t < 1) raf = requestAnimationFrame(tick);
+				else done();
+			};
+			raf = requestAnimationFrame(tick);
+		});
+	const hold = (ms: number) => new Promise<void>((done) => (timer = setTimeout(done, ms)));
+	const count = (to: typeof goal) => run(COUNT_MS, (t) => (shown = { scored: tween(from.scored, to.scored, t), available: tween(from.available, to.available, t), big: tween(from.big, to.big, t) }));
+
+	stage = 0;
+	peerK = 0;
+	if (!atEnd) count(goal);
+	else
+		(async () => {
+			await count(goal);
+			for (let i = 1; i < beats.length; i++) {
+				await hold(beats[i - 1].hold);
+				if (dead) return;
+				stage = i;
+				const b0 = untrack(() => shown.big);
+				const beat = beats[i];
+				await run(beat.ms, (t) => {
+					shown = { ...goal, big: tween(b0, beat.to, t) };
+					if (beat.peers) peerK = tween(0, 1, t);
+				});
+			}
+			if (!dead) stage = beats.length;
+		})();
+	return () => {
+		dead = true;
+		cancelAnimationFrame(raf);
+		clearTimeout(timer);
 	};
-	raf = requestAnimationFrame(tick);
-	return () => cancelAnimationFrame(raf);
 });
 
-// Whole points: compact from five digits, the full figure in the title and the accessible name.
+const done = $derived(stage >= steps.length && steps.length > 0);
+const reachedRating = $derived(done && steps[steps.length - 1] === "place");
+const lit = $derived(tally.tables[litIndex] ?? tally.tables[0]);
 const pair = (a: number, b: number) => `${fullCount(a)} / ${fullCount(b)}`;
-const bigText = $derived(shown.big.toFixed(1));
-const scoreText = $derived((tally.score ?? 0).toFixed(1));
-const scoreWords = $derived(
-	new Intl.NumberFormat(getLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1, useGrouping: false }).format(Number(scoreText)),
+const one = (n: number) => n.toFixed(1);
+const bigText = $derived(one(shown.big));
+const pctText = $derived(shown.available > 0 ? one((shown.scored / shown.available) * 100) : "–");
+const lightUpTo = $derived(peersLit(own, peerK));
+const headline = $derived(
+	new Intl.NumberFormat(getLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1, useGrouping: false }).format(
+		Number(one(tally.rating ?? tally.score ?? 0)),
+	),
 );
-const label = $derived(TABLE_LABELS[lit.table]);
-const status = $derived(
-	m.ww_rating_tally_status({
-		table: label,
+const stepTitle = (step: string) =>
+	step === "points" ? m.ww_rating_tally_step_points() : step === "claims" ? m.ww_rating_tally_step_claims() : (place?.among ?? "");
+
+// The strip's one line: what the step in hand adds.
+const stripLine = $derived.by(() => {
+	if (!brokenDown) return m.ww_rating_tally_not_broken_down();
+	const step = steps[Math.min(stage, steps.length - 1)];
+	if (litIndex < LAST || (step === "points" && !done)) {
+		const sums = m.ww_rating_tally_so_far({ scored: shortCount(shown.scored), total: shortCount(shown.available) });
+		return litIndex < LAST ? `${TABLE_LABELS[lit.table]} ${shortCount(lit.awarded)}/${shortCount(lit.available)} · ${sums}` : sums;
+	}
+	if (step === "claims") return `${claim.words} ${claim.factor}`;
+	if (step === "place" && place) return place.short;
+	return m.ww_rating_tally_so_far({ scored: shortCount(shown.scored), total: shortCount(shown.available) });
+});
+
+const status = $derived.by(() => {
+	if (reachedRating && place) return m.ww_rating_tally_status_landed({ place: place.short, rating: one(tally.rating ?? 0) });
+	const goal = tallyTargets(tally, litIndex);
+	return m.ww_rating_tally_status({
+		table: TABLE_LABELS[lit.table],
 		awarded: fullCount(lit.awarded),
 		available: fullCount(lit.available),
 		scored: fullCount(goal.scored),
 		total: fullCount(goal.available),
-	}),
-);
+	});
+});
 </script>
 
 <p class="sr" role="status">{status}</p>
 
-<aside class="tally corner" class:on={visible} class:waiting={!landed}>
+<aside class="tally corner" class:on={visible} class:waiting={!landed} class:done={reachedRating}>
 	<div class="face" aria-hidden="true">
-	<p class="caption">{m.ww_rating_tally_caption({ score: scoreWords })}</p>
-	<div class="big"><RatingNumber text={bigText} /></div>
-	{#if brokenDown}
-		<p class="so-far" title={pair(shown.scored, shown.available)}>
-			<span class="pts"><RatingNumber text={shortCount(shown.scored)} label={fullCount(shown.scored)} /></span>
-			<span>{m.ww_rating_tally_points_so_far({ available: shortCount(shown.available) })}</span>
-		</p>
-		<ol class="ladder">
-			{#each tally.tables as line, i (line.table)}
-				{@const value = ladderValue(line, i, litIndex)}
-				{@const fill = barFill(line, i, landed ? litIndex : -1)}
-				<li class:dim={i > litIndex} class:lit={i === litIndex}>
-					<span class="name">{TABLE_LABELS[line.table]}</span>
-					{#if typeof value === "string"}
-						<span class="value"><span class="mark">{value}</span></span>
-					{:else}
-						<span class="value" title={pair(value.awarded, value.available)}>
-							<RatingNumber text={shortCount(value.awarded)} label={fullCount(value.awarded)} /><span class="slash">/</span><RatingNumber
-								text={shortCount(value.available)}
-								label={fullCount(value.available)}
-							/>
-						</span>
-					{/if}
-					{#if fill !== null}
-						<span class="bar"><span class="fill" style:transform="scaleX({fill})"></span></span>
-					{/if}
-				</li>
-			{/each}
-			{#if tally.kind === "org" && tally.org}
-				<li class="org" class:dim={litIndex < LAST} class:lit={litIndex === LAST}>
-					<span class="name">{m.ww_rating_tally_mean({ count: tally.org.projects, shown: fullCount(tally.org.projects) })}</span>
-					<span class="value"><RatingNumber text={(tally.org.mean ?? 0).toFixed(1)} /></span>
-				</li>
-				<li class:dim={litIndex < LAST} class:lit={litIndex === LAST}>
-					<span class="name">{m.ww_rating_tally_after_claims()}</span>
-					<span class="value"><RatingNumber text={scoreText} /></span>
-				</li>
-			{/if}
-		</ol>
-		<p class="scores">{m.ww_rating_tally_table_scores({ table: label, scores: TABLE_SCORES[lit.table] })}</p>
-	{:else}
-		<p class="scores">{m.ww_rating_tally_not_broken_down_long()}</p>
-	{/if}
+		<p class="caption">{m.ww_rating_tally_adds_up({ rating: headline })}</p>
+		<div class="big">
+			<RatingNumber text={bigText} outOf={100} />
+			<!-- Its row is held from the start so the card does not grow when it lands. -->
+			{#if steps[steps.length - 1] === "place"}<span class="match" class:shown={reachedRating}>{m.ww_rating_tally_match()}</span>{/if}
+		</div>
+		{#if brokenDown}
+			<ol class="steps">
+				{#each steps as step, i (step)}
+					<li class:done={i < stage} class:wait={i > stage}>
+						<span class="no">{i + 1}</span>
+						<div class="body">
+							<h3>{stepTitle(step)}</h3>
+							{#if step === "points"}
+								<ol class="ladder">
+									{#each tally.tables as line, t (line.table)}
+										{@const value = ladderValue(line, t, litIndex)}
+										{@const fill = barFill(line, t, landed ? litIndex : -1)}
+										<li class:dug={t <= litIndex} class:lit={t === litIndex}>
+											<span class="name">{TABLE_LABELS[line.table]}</span>
+											<span class="bar">{#if fill !== null}<span class="fill" style:transform="scaleX({fill})"></span>{/if}</span>
+											{#if typeof value === "string"}
+												<span class="pts">{value}</span>
+											{:else}
+												<span class="pts" title={pair(value.awarded, value.available)}>{shortCount(value.awarded)} / {shortCount(value.available)}</span>
+											{/if}
+										</li>
+									{/each}
+								</ol>
+								<p class="line" title={pair(shown.scored, shown.available)}>
+									<span>{m.ww_rating_tally_so_far({ scored: shortCount(shown.scored), total: shortCount(shown.available) })}</span>
+									<span class="to">{pctText}</span>
+								</p>
+							{:else if step === "claims"}
+								<p class="line"><span>{claim.words}</span><span class="to">{claim.factor}</span></p>
+								{#if claim.leaves}<p class="line"><span>{claim.leaves}</span></p>{/if}
+							{:else if place}
+								<svg class="mini" viewBox="0 0 240 34" preserveAspectRatio="none">
+									{#each bars as b, p (p)}
+										<rect class:me={p === own} class:lit={p < lightUpTo} x={b.x} y={b.y} width={b.w} height={b.h} rx="1" />
+									{/each}
+								</svg>
+								<p class="line"><span>{place.place}</span><span class="to">{one(tally.rating ?? 0)}</span></p>
+							{/if}
+						</div>
+					</li>
+				{/each}
+			</ol>
+		{:else}
+			<p class="note">{m.ww_rating_tally_not_broken_down_long()}</p>
+		{/if}
 	</div>
 	{#if traceHref}<a class="trace-link" href={traceHref}>{m.ww_rating_trace_link()}</a>{/if}
 </aside>
 
 <div class="tally strip" class:on={visible}>
 	<div class="face" aria-hidden="true">
-	<ol class="steps">
-		{#each tally.tables as line, i (line.table)}
-			<li class:done={i < litIndex} class:lit={i === litIndex}></li>
-		{/each}
-	</ol>
-	<span class="pct"><RatingNumber text={bigText} /></span>
-	{#if brokenDown}
-		<span class="row-pts" title={pair(shown.scored, shown.available)}>{m.ww_rating_tally_of({ scored: shortCount(shown.scored), total: shortCount(shown.available) })}</span>
-		<span class="row-lit" title={pair(lit.awarded, lit.available)}><span class="name">{label}</span> {shortCount(lit.awarded)}/{shortCount(lit.available)}</span>
-	{:else}
-		<span class="row-pts">{m.ww_rating_tally_not_broken_down()}</span>
-	{/if}
+		<span class="pct"><RatingNumber text={bigText} /></span>
+		<span class="what">{stripLine}</span>
+		{#if steps.length}
+			<span class="dots">
+				{#each steps as step, i (step)}
+					<i class:on={i <= stage} class:done={i < stage}>{i + 1}</i>
+				{/each}
+			</span>
+		{/if}
 	</div>
 	{#if traceHref}<a class="trace-link" href={traceHref}>{m.ww_rating_trace_link_short()}</a>{/if}
 </div>
@@ -166,7 +255,8 @@ const status = $derived(
 		z-index: 20;
 		pointer-events: none;
 		font-family: var(--rt-font-web);
-		color: var(--rtvr-on-dark, #fff);
+		color: var(--rt-cream-dim);
+		font-variant-numeric: tabular-nums;
 		opacity: 0;
 		visibility: hidden;
 		transition:
@@ -182,30 +272,31 @@ const status = $derived(
 			visibility 0s;
 	}
 
-	/* A panel, not bare soil: the roots behind it are too busy to read over.
-	   The page sets its top under the pinned head. */
+	/* The page's sticker dress: ink, a gold edge, a slight tilt. The page sets its top under the pinned head. */
 	.corner {
 		display: none;
-		left: clamp(24px, 3vw, 48px);
+		left: clamp(20px, 2.4vw, 40px);
 		top: var(--ledger-top, 25vh);
-		width: 232px;
+		width: 286px;
+		max-height: calc(100vh - var(--ledger-top, 25vh) - 16px);
 		box-sizing: border-box;
 		flex-direction: column;
-		align-items: stretch;
-		gap: 10px;
-		margin: 0;
-		padding: 18px 18px 16px;
-		text-align: left;
-		background: rgb(0 0 0 / 0.72);
-		border: 1px solid color-mix(in srgb, var(--color-gold-bar) 35%, transparent);
-		border-radius: 4px;
+		gap: 12px;
+		padding: 16px 18px 14px;
+		background: var(--rtvr-ink);
+		border: 2px solid var(--color-gold-shard);
+		border-radius: 3px;
+		box-shadow: 3px 5px 14px rgb(0 0 0 / 0.5);
+		transform: rotate(-0.8deg);
+		overflow: hidden;
 	}
 
-	.corner p {
+	.corner p,
+	.corner h3 {
 		margin: 0;
 	}
 
-	/* The figures are drawn for the eye (the status line speaks them) and lay out as the panel's own children. */
+	/* The figures are drawn for the eye (the status line speaks them) and lay out as the card's own children. */
 	.face {
 		display: contents;
 	}
@@ -214,32 +305,41 @@ const status = $derived(
 	.trace-link {
 		pointer-events: auto;
 		color: var(--color-gold-bar);
+		font-size: 13px;
 		font-weight: 700;
 		text-decoration: underline;
 		text-decoration-color: color-mix(in srgb, var(--color-gold-bar) 55%, transparent);
 		text-underline-offset: 3px;
 	}
 
-	.corner .trace-link {
-		font-size: 13px;
-	}
-
-	.strip .trace-link {
-		flex: 0 0 auto;
-		font-size: 13px;
-	}
-
 	.caption {
-		font-size: 13px;
-		font-weight: 500;
-		letter-spacing: 0.1em;
+		font-size: 12px;
+		font-weight: 700;
+		letter-spacing: 0.12em;
 		text-transform: uppercase;
 		color: var(--color-gold-bar);
 	}
 
 	.big {
-		--glyph-h: 64px;
-		line-height: 1;
+		--glyph-h: 58px;
+		min-height: 58px;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: 4px 8px;
+	}
+
+	.match {
+		flex-basis: 100%;
+		font-size: 12px;
+		font-weight: 700;
+		color: var(--color-gold-shard);
+		opacity: 0;
+		transition: opacity 300ms ease;
+	}
+
+	.match.shown {
+		opacity: 1;
 	}
 
 	/* Dim while the hero's number is on its way; its own slot stays empty till it lands. */
@@ -251,48 +351,116 @@ const status = $derived(
 		visibility: hidden;
 	}
 
-	.so-far {
-		font-size: 15px;
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: 2px 6px;
+	.steps {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 12px;
 	}
 
-	.pts {
-		--glyph-h: 24px;
+	.steps > li {
+		display: grid;
+		grid-template-columns: 22px minmax(0, 1fr);
+		gap: 0 10px;
+		transition: opacity 300ms ease;
+	}
+
+	.steps > li.wait {
+		opacity: 0.38;
+	}
+
+	.no {
+		display: grid;
+		place-items: center;
+		width: 22px;
+		height: 22px;
+		box-sizing: border-box;
+		border: 1.5px solid var(--color-gold-shard);
+		border-radius: 50%;
+		color: var(--color-gold-shard);
+		font-size: 12px;
+		font-weight: 700;
+		transition:
+			background-color 300ms ease,
+			color 300ms ease;
+	}
+
+	.steps > li.done .no {
+		background: var(--color-gold-shard);
+		color: var(--rtvr-ink);
+	}
+
+	.body {
+		min-width: 0;
+	}
+
+	h3 {
+		margin: 2px 0 6px;
+		font-size: 14px;
+		font-weight: 700;
+		line-height: 1.25;
+		color: var(--rtvr-on-dark);
+	}
+
+	.line {
+		display: flex;
+		justify-content: space-between;
+		gap: 8px;
+		font-size: 13px;
+	}
+
+	.line .to {
+		flex: 0 0 auto;
+		color: var(--color-gold-shard);
+		font-weight: 700;
 	}
 
 	.ladder {
 		list-style: none;
-		margin: 6px 0 0;
+		margin: 0 0 6px;
 		padding: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 6px;
-		--glyph-h: 18px;
+		display: grid;
+		gap: 3px;
+		font-size: 12.5px;
 	}
 
-	/* A line too long for one row puts its figure under its name, flush right; nothing runs past the panel. */
 	.ladder li {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		column-gap: 14px;
-		row-gap: 3px;
-		font-size: 14px;
-		transition: opacity 260ms ease;
+		display: grid;
+		grid-template-columns: 6.6em minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 6px;
+		color: rgb(255 255 255 / 0.4);
 	}
 
 	.ladder .name {
-		flex: 1 1 auto;
-		min-width: 0;
-		overflow-wrap: anywhere;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.ladder li.dug {
+		color: var(--rt-cream);
+	}
+
+	.ladder li.lit {
+		color: var(--rtvr-on-dark);
+		font-weight: 700;
+	}
+
+	.ladder li.lit .name::before {
+		content: "";
+		display: inline-block;
+		width: 6px;
+		height: 6px;
+		margin: 0 5px 1px 0;
+		border-radius: 50%;
+		background: var(--color-gold-shard);
 	}
 
 	.bar {
-		flex: 0 0 100%;
-		height: 3px;
+		height: 5px;
+		border-radius: 3px;
 		background: color-mix(in srgb, var(--color-gold-shard) 18%, transparent);
 		overflow: hidden;
 	}
@@ -306,105 +474,103 @@ const status = $derived(
 		transition: transform 750ms cubic-bezier(0.33, 1, 0.68, 1);
 	}
 
-	.ladder .org {
-		border-top: 1px solid color-mix(in srgb, var(--color-gold-bar) 20%, transparent);
-		padding-top: 6px;
+	.pts {
+		min-width: 4.6em;
+		text-align: right;
+		white-space: nowrap;
 	}
 
-	.ladder .dim {
-		opacity: 0.35;
+	.mini {
+		display: block;
+		width: 100%;
+		height: 34px;
+		margin: 2px 0 6px;
 	}
 
-	.ladder .lit .name {
-		color: var(--color-gold-bar);
+	.mini rect {
+		fill: rgb(255 255 255 / 0.2);
+		transition: fill 120ms ease;
 	}
 
-	.value {
-		display: inline-flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		justify-content: flex-end;
-		gap: 3px;
-		min-width: 64px;
-		max-width: 100%;
-		margin-left: auto;
+	.mini rect.lit {
+		fill: var(--color-gold-shard);
 	}
 
-	.slash,
-	.mark {
-		font-size: 14px;
-		line-height: 1;
+	.mini rect.me {
+		fill: var(--rtvr-on-dark);
 	}
 
-	.scores {
-		font-size: 12px;
-		opacity: 0.85;
+	.note {
+		font-size: 13px;
 	}
 
-	/* The phone strip: the one place a wash is allowed, for legibility over the table. */
+	/* The phone strip: the number, what the step in hand adds, the steps as dots, and the trace link under it. */
 	.strip {
 		left: 0;
 		right: 0;
 		bottom: 0;
-		height: calc(44px + env(safe-area-inset-bottom, 0px));
-		padding: 0 16px env(safe-area-inset-bottom, 0px);
-		box-sizing: border-box;
-		display: flex;
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		grid-template-rows: auto auto;
 		align-items: center;
-		gap: 12px;
-		background: rgb(11 17 9 / 0.85);
-		font-size: 13px;
-		white-space: nowrap;
-		overflow: hidden;
-	}
-
-	/* Seven segments along the strip's top: the tabs read, the lit one, the rest. */
-	.steps {
-		position: absolute;
-		top: 0;
-		left: 16px;
-		right: 16px;
-		display: flex;
-		gap: 3px;
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-
-	.steps li {
-		flex: 1 1 0;
-		height: 3px;
-		background: color-mix(in srgb, var(--rtvr-on-dark, #fff) 22%, transparent);
-	}
-
-	.steps .done {
-		background: color-mix(in srgb, var(--color-gold-shard) 60%, transparent);
-	}
-
-	.steps .lit {
-		background: var(--color-gold-bar);
+		gap: 2px 12px;
+		box-sizing: border-box;
+		padding: 7px max(16px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px))
+			max(16px, env(safe-area-inset-left, 0px));
+		background: var(--rtvr-ink);
+		border-top: 2px solid var(--color-gold-shard);
+		font-size: 12.5px;
 	}
 
 	.pct {
-		--glyph-h: 22px;
-		flex: 0 0 auto;
+		--glyph-h: 30px;
+		grid-row: 1 / 3;
+		filter: none;
 	}
 
-	.row-pts {
-		flex: 0 0 auto;
-		opacity: 0.9;
-	}
-
-	.row-lit {
-		flex: 1 1 auto;
+	.what {
 		min-width: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
-		text-align: right;
+		white-space: nowrap;
+		color: var(--rtvr-on-dark);
 	}
 
-	.row-lit .name {
-		color: var(--color-gold-bar);
+	.dots {
+		grid-row: 1 / 3;
+		grid-column: 3;
+		display: flex;
+		gap: 4px;
+	}
+
+	.dots i {
+		display: grid;
+		place-items: center;
+		width: 18px;
+		height: 18px;
+		box-sizing: border-box;
+		border: 1.5px solid var(--color-gold-shard);
+		border-radius: 50%;
+		font: 700 10px var(--rt-font-web);
+		font-style: normal;
+		color: var(--color-gold-shard);
+		opacity: 0.4;
+	}
+
+	.dots i.on {
+		opacity: 1;
+	}
+
+	.dots i.done {
+		background: var(--color-gold-shard);
+		color: var(--rtvr-ink);
+	}
+
+	.strip .trace-link {
+		grid-column: 2;
+		grid-row: 2;
+		justify-self: start;
+		font-size: 12px;
 	}
 
 	@media (min-width: 1100px) {
@@ -414,6 +580,16 @@ const status = $derived(
 
 		.strip {
 			display: none;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.fill,
+		.steps > li,
+		.no,
+		.mini rect,
+		.match {
+			transition: none;
 		}
 	}
 </style>

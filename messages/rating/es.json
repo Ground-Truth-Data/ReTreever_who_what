@@ -72,21 +72,22 @@
 	"ww_rating_table_polymorphic": "Polimórfico",
 	"ww_rating_table_stakeholders": "Actores",
 	"ww_rating_table_sources": "Fuentes",
-	"ww_rating_table_scores_projects": "los campos propios del registro",
-	"ww_rating_table_scores_crop": "especies y nombres de cultivos",
-	"ww_rating_table_scores_planting": "filas de plantación y sus cantidades",
-	"ww_rating_table_scores_land": "terrenos y sus polígonos",
-	"ww_rating_table_scores_polymorphic": "los campos varios",
-	"ww_rating_table_scores_stakeholders": "categorías de actores",
-	"ww_rating_table_scores_sources": "de dónde proviene el registro",
 	"ww_rating_tally_status": "{table}: {awarded} de {available}. {scored} de {total} hasta ahora.",
-	"ww_rating_tally_caption": "Puntuación {score}: la base de la clasificación",
-	"ww_rating_tally_points_so_far": "de {available} puntos hasta ahora",
-	"ww_rating_tally_after_claims": "puntuación tras las declaraciones",
-	"ww_rating_tally_table_scores": "{table}: {scores}",
 	"ww_rating_tally_not_broken_down_long": "N/D — sin desglose",
 	"ww_rating_tally_not_broken_down": "sin desglose",
-	"ww_rating_tally_of": "{scored} de {total}",
+	"ww_rating_tally_adds_up": "Cómo se llega a {rating}",
+	"ww_rating_tally_match": "= la calificación de arriba",
+	"ww_rating_tally_step_points": "Puntos que ganan sus registros",
+	"ww_rating_tally_step_claims": "Frente a lo que declara",
+	"ww_rating_tally_so_far": "{scored} de {total} hasta ahora",
+	"ww_rating_tally_claim_none": "Aún sin declaración revisada",
+	"ww_rating_tally_claim_ratio": "Plantado ÷ declarado",
+	"ww_rating_tally_claim_leaves": "Queda en {score}",
+	"ww_rating_tally_peers_projects": "proyectos",
+	"ww_rating_tally_among": "Entre {count} {peers}",
+	"ww_rating_tally_among_all": "Entre {count} {peers} en total",
+	"ww_rating_tally_place_among": "Puesto {rank} de {count} {peers}",
+	"ww_rating_tally_status_landed": "Todas las tablas excavadas. {place}: la calificación, {rating}.",
 	"ww_rating_column_project": "Proyecto",
 	"ww_rating_column_score": "Calificación",
 	"ww_rating_column_points": "Puntos",
@@ -150,22 +151,6 @@
 			"match": {
 				"totalPlural=one": "{shown} de {total} fila",
 				"totalPlural=*": "{shown} de {total} filas"
-			}
-		}
-	],
-	"ww_rating_tally_mean": [
-		{
-			"declarations": [
-				"input count",
-				"input shown",
-				"local countPlural = count: plural"
-			],
-			"selectors": [
-				"countPlural"
-			],
-			"match": {
-				"countPlural=one": "promedio de {shown} proyecto",
-				"countPlural=*": "promedio de {shown} proyectos"
 			}
 		}
 	],

@@ -72,21 +72,22 @@
 	"ww_rating_table_polymorphic": "Polymorphic",
 	"ww_rating_table_stakeholders": "Stakeholders",
 	"ww_rating_table_sources": "Sources",
-	"ww_rating_table_scores_projects": "the record's own fields",
-	"ww_rating_table_scores_crop": "species and crop names",
-	"ww_rating_table_scores_planting": "planting rows and their counts",
-	"ww_rating_table_scores_land": "plots and their polygons",
-	"ww_rating_table_scores_polymorphic": "the misc fields",
-	"ww_rating_table_scores_stakeholders": "stakeholder categories",
-	"ww_rating_table_scores_sources": "where the record came from",
 	"ww_rating_tally_status": "{table}: {awarded} of {available}. {scored} of {total} so far.",
-	"ww_rating_tally_caption": "Score {score}: what the rank is built on",
-	"ww_rating_tally_points_so_far": "of {available} points so far",
-	"ww_rating_tally_after_claims": "score after claims",
-	"ww_rating_tally_table_scores": "{table}: {scores}",
 	"ww_rating_tally_not_broken_down_long": "N/A — not broken down",
 	"ww_rating_tally_not_broken_down": "not broken down",
-	"ww_rating_tally_of": "{scored} of {total}",
+	"ww_rating_tally_adds_up": "How {rating} adds up",
+	"ww_rating_tally_match": "= the rating above",
+	"ww_rating_tally_step_points": "Points its records earn",
+	"ww_rating_tally_step_claims": "Against what it claims",
+	"ww_rating_tally_so_far": "{scored} of {total} so far",
+	"ww_rating_tally_claim_none": "No reviewed claim yet",
+	"ww_rating_tally_claim_ratio": "Planted ÷ claimed",
+	"ww_rating_tally_claim_leaves": "Leaves {score}",
+	"ww_rating_tally_peers_projects": "projects",
+	"ww_rating_tally_among": "Among the {count} {peers}",
+	"ww_rating_tally_among_all": "Among all {count} {peers}",
+	"ww_rating_tally_place_among": "Place {rank} of {count} {peers}",
+	"ww_rating_tally_status_landed": "Every table dug. {place}: the rating, {rating}.",
 	"ww_rating_column_project": "Project",
 	"ww_rating_column_score": "Score",
 	"ww_rating_column_points": "Points",
@@ -150,22 +151,6 @@
 			"match": {
 				"totalPlural=one": "{shown} of {total} rows",
 				"totalPlural=*": "{shown} of {total} rows"
-			}
-		}
-	],
-	"ww_rating_tally_mean": [
-		{
-			"declarations": [
-				"input count",
-				"input shown",
-				"local countPlural = count: plural"
-			],
-			"selectors": [
-				"countPlural"
-			],
-			"match": {
-				"countPlural=one": "mean of {shown} project",
-				"countPlural=*": "mean of {shown} projects"
 			}
 		}
 	],

@@ -1,6 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { WEEDS_TABLES, type ScoreTally, type TallyLine } from "../whoWhatTypes";
-import { TABLE_LABELS, TABLE_SCORES, barFill, ladderValue, sumsThrough, tallyTargets, tween } from "./tallyMath";
+import {
+	TABLE_LABELS,
+	barFill,
+	claimLine,
+	ladderValue,
+	landingBeats,
+	ownBar,
+	peerBars,
+	peersLit,
+	placeLine,
+	stepFigure,
+	sumsThrough,
+	tallySteps,
+	tallyTargets,
+	tween,
+} from "./tallyMath";
 
 // The demo project e-ln5pa3mmvn39ogex, 594 / 672, as the host answers it.
 const DEMO: TallyLine[] = [
@@ -39,8 +54,29 @@ const ACTIVE: TallyLine[] = [
 	{ table: "stakeholders", awarded: 6, available: 6 },
 	{ table: "sources", awarded: 9, available: 12 },
 ];
-const project: ScoreTally = { kind: "project", scored: true, rating: 91.8, score: 91.8, pointsScored: 514, pointsAvailable: 560, planted: 20, measure: { kind: "trees", value: 20 }, tables: ACTIVE, scoreRunId: "run-1", reconciled: true };
-const org: ScoreTally = { ...project, kind: "org", rating: 90.4, org: { projects: 3, mean: 91.8, claimed: 0, planted: 20, undisclosed: 0 } };
+const project: ScoreTally = {
+	kind: "project",
+	scored: true,
+	rating: 91.8,
+	score: 91.8,
+	pointsScored: 514,
+	pointsAvailable: 560,
+	planted: 20,
+	measure: { kind: "trees", value: 20 },
+	tables: ACTIVE,
+	place: { rank: 2, of: 5, group: null, peers: [10, 40, 60, 91.8, 95] },
+	scoreRunId: "run-1",
+	reconciled: true,
+};
+// P-TREE ADOPTION UGANDA's shape: 22 projects' mean 64.4, no reviewed claim, 13th of 46 developers at 73.9.
+const org: ScoreTally = {
+	...project,
+	kind: "org",
+	rating: 73.9,
+	score: 64.4,
+	org: { projects: 22, mean: 64.4, claimed: null, planted: 16630, undisclosed: null, reviewed: false, ratio: null },
+	place: { rank: 13, of: 46, group: "developer_ish", peers: Array.from({ length: 46 }, (_, i) => i * 2) },
+};
 
 describe("tallyTargets", () => {
 	it("counts the tables' running sums before the last tab", () => {
@@ -48,19 +84,81 @@ describe("tallyTargets", () => {
 		expect(tallyTargets(project, 5)).toEqual({ scored: 504, available: 548, big: 92 });
 	});
 
-	it("lands the last tab on the stored score despite drift", () => {
+	it("lands the last tab on the stored totals and the score despite drift", () => {
 		expect(sumsThrough(ACTIVE, 6)).toEqual({ scored: 513, available: 560, pct: 91.6 });
 		expect(tallyTargets(project, 6)).toEqual({ scored: 514, available: 560, big: 91.8 });
 	});
 
-	it("holds an org on its projects' mean until the last tab, then its number after claims", () => {
-		expect(tallyTargets(org, 0)).toEqual({ scored: 4, available: 5, big: 91.8 });
-		expect(tallyTargets(org, 6)).toEqual({ scored: 514, available: 560, big: 90.4 });
+	it("follows an org's running points too, and settles the last tab on its projects' mean", () => {
+		expect(tallyTargets(org, 0)).toEqual({ scored: 4, available: 5, big: 80 });
+		expect(tallyTargets(org, 6)).toEqual({ scored: 514, available: 560, big: 64.4 });
 	});
 
 	it("falls back to the sums where nothing is stored", () => {
-		const bare: ScoreTally = { ...project, rating: null, pointsScored: null, pointsAvailable: null };
+		const bare: ScoreTally = { ...project, score: null, rating: null, pointsScored: null, pointsAvailable: null };
 		expect(tallyTargets(bare, 6)).toEqual({ scored: 513, available: 560, big: 91.6 });
+	});
+});
+
+describe("the walk to the rating", () => {
+	it("takes an org through its claims and a project straight to its peers", () => {
+		expect(tallySteps(org)).toEqual(["points", "claims", "place"]);
+		expect(tallySteps(project)).toEqual(["points", "place"]);
+		expect(tallySteps({ ...org, place: null })).toEqual(["points", "claims"]);
+		expect(tallySteps({ ...project, rating: null })).toEqual(["points"]);
+	});
+
+	it("settles each step on its figure and ends on the hero's number", () => {
+		const claimed: ScoreTally = { ...org, score: 27, org: { ...org.org!, reviewed: true, ratio: 0.42 } };
+		expect(tallySteps(claimed).map((s) => stepFigure(claimed, s))).toEqual([64.4, 27, 73.9]);
+		expect(landingBeats(org).map((b) => b.to)).toEqual([64.4, 64.4, 73.9]);
+		expect(landingBeats(org).map((b) => b.peers)).toEqual([false, false, true]);
+		expect(landingBeats(project).map((b) => b.to)).toEqual([91.8, 91.8]);
+	});
+});
+
+describe("claimLine", () => {
+	it("takes nothing off without a reviewed claim", () => {
+		expect(claimLine(org)).toEqual({ words: "No reviewed claim yet", factor: "× 1", leaves: null });
+		expect(claimLine({ ...org, org: { ...org.org!, reviewed: false, ratio: 0.5 } }).factor).toBe("× 1");
+	});
+
+	it("divides planted by claimed and says the score it leaves", () => {
+		const claimed: ScoreTally = { ...org, score: 27, org: { ...org.org!, reviewed: true, ratio: 0.42 } };
+		expect(claimLine(claimed)).toEqual({ words: "Planted ÷ claimed", factor: "× 0.42", leaves: "Leaves 27.0" });
+		expect(claimLine({ ...claimed, org: { ...claimed.org!, ratio: 1 } }).factor).toBe("× 1");
+	});
+});
+
+describe("the peers", () => {
+	it("names the group as the trace page does", () => {
+		expect(placeLine(org)).toEqual({ among: "Among the 46 developers", place: "Place 13 of 46", short: "Place 13 of 46 developers" });
+		expect(placeLine({ ...org, place: { ...org.place!, group: "all" } })?.among).toBe("Among all 46 organizations");
+		expect(placeLine(project)?.among).toBe("Among all 5 projects");
+		expect(placeLine({ ...org, place: null })).toBeNull();
+	});
+
+	it("finds its own bar among ascending peers, scaled onto quantiles", () => {
+		expect(ownBar(project.place!)).toBe(3);
+		expect(ownBar(org.place!)).toBe(33);
+		expect(ownBar({ rank: 1, of: 1000, peers: Array(120).fill(0) })).toBe(119);
+		expect(ownBar({ rank: 1000, of: 1000, peers: Array(120).fill(0) })).toBe(0);
+		expect(ownBar({ rank: 1, of: 1, peers: [50] })).toBe(0);
+	});
+
+	it("lights the bars below its own from the lowest, never its own", () => {
+		expect(peersLit(33, 0)).toBe(0);
+		expect(peersLit(33, 0.5)).toBe(17);
+		expect(peersLit(33, 1)).toBe(33);
+		expect(peersLit(0, 1)).toBe(0);
+	});
+
+	it("draws every peer inside the strip, a zero as a sliver", () => {
+		const bars = peerBars([0, 50, 100]);
+		expect(bars.map((b) => b.h)).toEqual([1, 16, 32]);
+		const last = bars[bars.length - 1];
+		expect(last.x + last.w).toBeCloseTo(240);
+		expect(peerBars([])).toEqual([]);
 	});
 });
 
@@ -106,7 +204,6 @@ describe("the words", () => {
 	it("name every table once", () => {
 		for (const t of WEEDS_TABLES) {
 			expect(TABLE_LABELS[t]).toMatch(/^[A-Z]/);
-			expect(TABLE_SCORES[t].length).toBeGreaterThan(8);
 		}
 	});
 });

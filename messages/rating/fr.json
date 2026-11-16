@@ -72,21 +72,22 @@
 	"ww_rating_table_polymorphic": "Polymorphe",
 	"ww_rating_table_stakeholders": "Acteurs",
 	"ww_rating_table_sources": "Sources",
-	"ww_rating_table_scores_projects": "les champs propres à la fiche",
-	"ww_rating_table_scores_crop": "espèces et noms de cultures",
-	"ww_rating_table_scores_planting": "lignes de plantation et leurs quantités",
-	"ww_rating_table_scores_land": "terrains et leurs polygones",
-	"ww_rating_table_scores_polymorphic": "les champs divers",
-	"ww_rating_table_scores_stakeholders": "catégories d’acteurs",
-	"ww_rating_table_scores_sources": "la provenance de la fiche",
 	"ww_rating_tally_status": "{table} : {awarded} sur {available}. {scored} sur {total} jusqu’ici.",
-	"ww_rating_tally_caption": "Score {score} : la base du classement",
-	"ww_rating_tally_points_so_far": "sur {available} points jusqu’ici",
-	"ww_rating_tally_after_claims": "score après les déclarations",
-	"ww_rating_tally_table_scores": "{table} : {scores}",
 	"ww_rating_tally_not_broken_down_long": "N/D — non détaillé",
 	"ww_rating_tally_not_broken_down": "non détaillé",
-	"ww_rating_tally_of": "{scored} sur {total}",
+	"ww_rating_tally_adds_up": "Comment on arrive à {rating}",
+	"ww_rating_tally_match": "= la note ci-dessus",
+	"ww_rating_tally_step_points": "Les points de ses données",
+	"ww_rating_tally_step_claims": "Face à ce qu’il déclare",
+	"ww_rating_tally_so_far": "{scored} sur {total} jusqu’ici",
+	"ww_rating_tally_claim_none": "Pas encore de déclaration vérifiée",
+	"ww_rating_tally_claim_ratio": "Planté ÷ déclaré",
+	"ww_rating_tally_claim_leaves": "Reste {score}",
+	"ww_rating_tally_peers_projects": "projets",
+	"ww_rating_tally_among": "Parmi les {count} {peers}",
+	"ww_rating_tally_among_all": "Parmi l’ensemble des {count} {peers}",
+	"ww_rating_tally_place_among": "Place {rank} sur {count} {peers}",
+	"ww_rating_tally_status_landed": "Toutes les tables fouillées. {place} : la note, {rating}.",
 	"ww_rating_column_project": "Projet",
 	"ww_rating_column_score": "Note",
 	"ww_rating_column_points": "Points",
@@ -150,22 +151,6 @@
 			"match": {
 				"totalPlural=one": "{shown} sur {total} ligne",
 				"totalPlural=*": "{shown} sur {total} lignes"
-			}
-		}
-	],
-	"ww_rating_tally_mean": [
-		{
-			"declarations": [
-				"input count",
-				"input shown",
-				"local countPlural = count: plural"
-			],
-			"selectors": [
-				"countPlural"
-			],
-			"match": {
-				"countPlural=one": "moyenne de {shown} projet",
-				"countPlural=*": "moyenne de {shown} projets"
 			}
 		}
 	],
