@@ -1,6 +1,6 @@
 <script lang="ts">
 import { cn } from "../cn";
-import globeSprite from "../assets/pub-Rtvr/animations/globe-satellite-sprite.webp";
+import globeSprite from "../assets/pub-Rtvr/animations/globe-spin-sprite.webp";
 import { m } from "$parent/src/lib/paraglide/messages";
 
 let { class: className = "", href }: { class?: string; href?: string } = $props();
@@ -27,13 +27,9 @@ let { class: className = "", href }: { class?: string; href?: string } = $props(
 		transform: scale(1.14) rotate(-5deg);
 	}
 
-	/* The sheet's cell is 300x236 with the Earth centred on top. The negative margins keep the icon's
-	   box at the Earth's old 213:160 frame, so the satellite hangs outside it and moves no neighbour. */
 	.globe-spin {
-		flex: none;
-		width: calc(100% * 300 / 213);
-		aspect-ratio: 300 / 236;
-		margin: calc(-100% * 2 / 213) calc(-100% * 15.5 / 213) calc(-100% * 74 / 213) calc(-100% * 71.5 / 213);
+		width: 100%;
+		aspect-ratio: 213 / 160;
 		background-image: var(--globe-sprite, var(--rtvr-missing-art));
 		background-repeat: no-repeat;
 		background-size: 300% 200%;
