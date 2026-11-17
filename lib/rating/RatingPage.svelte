@@ -1,3 +1,9 @@
+<script lang="ts" module>
+// The host remounts this page on every navigation, so the bar's text does not
+// reach the page a pick opens: the pick leaves its name here for that page.
+let picked: { href: string; name: string } | null = null;
+</script>
+
 <script lang="ts">
 import HeaderRaw from "../assets/svg/rating/Rating_page_Data_transparency_rating_header.svg?raw";
 import OrgsSelectedRaw from "../assets/svg/rating/Rating_page_orgs_selected.svg?raw";
@@ -228,6 +234,7 @@ function submit(q: string) {
 	if (item) {
 		query = item.name;
 		dropdownOpen = false;
+		holdName(item);
 		onpick?.(item, true);
 		return;
 	}
@@ -238,9 +245,22 @@ function pick(item: SearchListItem, go: boolean) {
 	if (go) {
 		query = item.name;
 		dropdownOpen = false;
+		holdName(item);
 	}
 	onpick?.(item, go);
 }
+
+function holdName(item: SearchListItem) {
+	const href = hrefOf(item);
+	picked = href ? { href, name: item.name } : null;
+}
+
+// The picked name, while its record streams: the hero holds that name's height.
+// svelte-ignore state_referenced_locally
+const heldName =
+	record === null && picked && typeof location !== "undefined" && new URL(picked.href, location.href).pathname === location.pathname
+		? picked.name
+		: "";
 
 let query = $state(record?.name ?? "");
 $effect(() => {
@@ -469,9 +489,9 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 						</div>
 					{/if}
 				{:else}
-					<!-- Holds a typical record's height while it streams, so the hills and the dog stand where they will. -->
+					<!-- Holds the record's height while it streams, so the hills and the dog stand where they will: the picked name's lines, or one line when nothing was picked. -->
 					<div class="ghost" aria-hidden="true">
-						<div class="name"><span class="name-text">&nbsp;</span></div>
+						<div class="name"><span class="name-text">{heldName || "\u00a0"}</span></div>
 						<div class="number"><RatingNumber rating={0} outOf={100} /></div>
 						<div class="score-link-row"></div>
 						<div class="measure-slot"></div>
