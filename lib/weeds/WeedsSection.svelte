@@ -33,7 +33,7 @@ let {
 	head?: Snippet;
 	clipRoot?: string;
 	/** An org's Projects row picked; absent, the names are plain text. */
-	onopenproject?: (projectKey: string) => void;
+	onopenproject?: (projectKey: string, name?: string) => void;
 	/** The lit tab's index, whenever it changes — by scroll, click or key. */
 	onactive?: (index: number) => void;
 } = $props();
@@ -250,7 +250,7 @@ const open = $derived(
 				column: "projectName",
 				on: (row: WeedsRow) => {
 					const key = row.projectKey;
-					if (typeof key === "string") onopenproject(key);
+					if (typeof key === "string") onopenproject(key, typeof row.projectName === "string" ? row.projectName : undefined);
 				},
 			}
 		: undefined,
