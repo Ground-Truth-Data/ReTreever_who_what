@@ -6,6 +6,9 @@
 // them as a band with no layer of their own, so they are the crest's own
 // silhouette, masked and filled with the ink, shifted and stretched into a
 // second range.
+// `flat` gives the band no stacking context of its own (no z-index, transform,
+// filter or opacity on it), so its layers stack in the section's and a child
+// can rise over the section's other content.
 import type { Snippet } from "svelte";
 import GrassTufts from "./GrassTufts.svelte";
 import hillPatternWebp from "../assets/hill_pattern.webp";
@@ -18,7 +21,7 @@ import hillPatternPhone from "../assets/hill_pattern-1290.avif";
 import upperGrassFrontPhone from "../assets/pub-Rtvr/home/uppergrass_front-1290.avif";
 import upperGrassBackPhone from "../assets/pub-Rtvr/home/uppergrass_back-1290.avif";
 
-let { children, ridge = false }: { children?: Snippet; ridge?: boolean } = $props();
+let { children, ridge = false, flat = false }: { children?: Snippet; ridge?: boolean; flat?: boolean } = $props();
 </script>
 
 <!-- Missing asset falls through to --rtvr-missing-art. -->
@@ -37,15 +40,21 @@ let { children, ridge = false }: { children?: Snippet; ridge?: boolean } = $prop
 	{/if}
 	<div class="crest"></div>
 	<!-- Back to front: black wash, green wash, children, then tufts (a runner passes BEHIND some). -->
-	<div class="wildflower-band">
+	<div class="wildflower-band" class:flat>
 		{@render children?.()}
 		<GrassTufts />
 	</div>
 </div>
 
 <style>
-	/* No z-index: the crest and the band stack in the section's own context. */
+	/* No z-index: the crest and the band stack in the section's own context.
+	   The band's layers, back to front, are named here for the children that
+	   stack between them (DogStage). */
 	.greenery {
+		--band-ground: 0;
+		--band-grass: 1;
+		--band-runner: 2;
+		--band-tufts: 3;
 		position: absolute;
 		inset: 0;
 		pointer-events: none;
@@ -130,6 +139,10 @@ let { children, ridge = false }: { children?: Snippet; ridge?: boolean } = $prop
 		z-index: 3;
 	}
 
+	.wildflower-band.flat {
+		z-index: auto;
+	}
+
 	/* Numbered: ::after paints above ordinary children by default and would
 	   otherwise cover the children and tufts. */
 	.wildflower-band::before,
@@ -143,16 +156,16 @@ let { children, ridge = false }: { children?: Snippet; ridge?: boolean } = $prop
 	}
 
 	.wildflower-band :global(.mascot-track) {
-		z-index: 2;
+		z-index: var(--band-runner);
 	}
 
 	.wildflower-band :global(.tuft-layer) {
-		z-index: 3;
+		z-index: var(--band-tufts);
 	}
 
 	/* Black silhouette BEHIND green: the children stack between the two pseudos. */
 	.wildflower-band::before {
-		z-index: 0;
+		z-index: var(--band-ground);
 		background-image: var(--art-uppergrass-front-webp, var(--rtvr-missing-art));
 		background-image: image-set(
 			var(--art-uppergrass-front-avif, var(--rtvr-missing-art)) type("image/avif"),
@@ -161,7 +174,7 @@ let { children, ridge = false }: { children?: Snippet; ridge?: boolean } = $prop
 	}
 
 	.wildflower-band::after {
-		z-index: 1;
+		z-index: var(--band-grass);
 		background-image: var(--art-uppergrass-back-webp, var(--rtvr-missing-art));
 		background-image: image-set(
 			var(--art-uppergrass-back-avif, var(--rtvr-missing-art)) type("image/avif"),

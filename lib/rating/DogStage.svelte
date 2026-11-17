@@ -596,16 +596,16 @@ onDestroy(() => {
 		inset: 0;
 		clip-path: inset(-50% -50% 0);
 		pointer-events: none;
-		z-index: 4;
+		z-index: calc(var(--band-tufts) + 1);
 	}
 
-	/* These stack with Greenery's grass tufts (z-index 3) and, since the
-	   rating page flattens the grass band, with the hero's words (5, 7). */
+	/* Under Greenery's tufts; and since the rating ground passes `flat`,
+	   these stack with the hero's words (5, 7) too. */
 	.earth,
 	.dog-stage,
 	.soil,
 	.sprouts {
-		z-index: 2;
+		z-index: calc(var(--band-tufts) - 1);
 	}
 
 	/* Running, the dog and its dust pass over everything in the hero. */
