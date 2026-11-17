@@ -42,7 +42,7 @@ let {
 <div class="rating-page" style="--art-sky: url({skyUrl}); --art-pine: url({pineUrl}); --art-pine-phone: url({pinePhoneUrl}); --art-ground: url({groundUrl});" bind:this={pageEl}>
 	{@render before?.()}
 	<section class="rating-hero" class:short bind:this={heroEl}>
-		<Greenery>{@render grass?.()}</Greenery>
+		<Greenery flat>{@render grass?.()}</Greenery>
 		{@render hero()}
 	</section>
 
@@ -111,13 +111,6 @@ let {
 		opacity: 0.05;
 		pointer-events: none;
 		z-index: 0;
-	}
-
-	/* The band's own z-index (3) would cap the running dog under the hero's
-	   words. Unset, its washes (0, 1) and tufts (3) still stack under them,
-	   and the dog can rise over them while it runs. */
-	.rating-hero :global(.wildflower-band) {
-		z-index: auto;
 	}
 
 	/* Below the grass the page is underground: one ground picture, drawn once
