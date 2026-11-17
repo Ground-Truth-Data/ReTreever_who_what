@@ -2,6 +2,7 @@
 import { untrack } from "svelte";
 import { m } from "$parent/src/lib/paraglide/messages";
 import { localizeHref } from "$parent/src/lib/paraglide/runtime";
+import { holdPickedName } from "../rating/pickedName";
 import { curtain } from "../stage/curtain.svelte";
 import type { WhoWhatEndpoints, WhoWhatRoutes } from "../whoWhatTypes";
 import SearchPage from "./SearchPage.svelte";
@@ -90,8 +91,14 @@ $effect(() => {
 function pickItem(item: SearchListItem, t: "orgs" | "projects", go: boolean) {
 	recordSearchHit(fetch, endpoints, t, item.key);
 	if (!go) return;
-	const href = t === "orgs" ? routes.whoOrg?.(item.key) : routes.whatProject?.(item.key);
-	if (href) curtain.wipe(localizeHref(href));
+	open(t, item.key, item.name);
+}
+
+function open(t: "orgs" | "projects", key: string, name: string | undefined) {
+	const href = t === "orgs" ? routes.whoOrg?.(key) : routes.whatProject?.(key);
+	if (!href) return;
+	holdPickedName(localizeHref(href), name);
+	curtain.wipe(localizeHref(href));
 }
 
 async function submitSearch(q: string, t: "orgs" | "projects") {
@@ -112,9 +119,7 @@ async function submitSearch(q: string, t: "orgs" | "projects") {
 
 	notice = null;
 	recordSearchHit(fetch, endpoints, t, key);
-	const href =
-		t === "orgs" ? routes.whoOrg?.(key) : routes.whatProject?.(key);
-	if (href) curtain.wipe(localizeHref(href));
+	open(t, key, (selected?.key === key ? selected : items.find((item) => item.key === key))?.name);
 }
 </script>
 

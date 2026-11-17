@@ -1,9 +1,3 @@
-<script lang="ts" module>
-// The host remounts this page on every navigation, so the bar's text does not
-// reach the page a pick opens: the pick leaves its name here for that page.
-let picked: { href: string; name: string } | null = null;
-</script>
-
 <script lang="ts">
 import HeaderRaw from "../assets/svg/rating/Rating_page_Data_transparency_rating_header.svg?raw";
 import OrgsSelectedRaw from "../assets/svg/rating/Rating_page_orgs_selected.svg?raw";
@@ -32,6 +26,7 @@ import RatingFeedback from "./RatingFeedback.svelte";
 import RatingGround from "./RatingGround.svelte";
 import type { SearchResult } from "./resultLoad";
 import type { SearchListItem } from "../search/searchTypes";
+import { holdPickedName, pickedNameFor } from "./pickedName";
 import { ratingState, type RatingState } from "./ratingState";
 import { WEEDS_TABLES, formatRatingOutOf, type ScoreTally, type WeedsTable, type WhoWhatRoutes } from "../whoWhatTypes";
 import { svgWords } from "../search/svgWords";
@@ -74,7 +69,7 @@ let {
 	weedsHref?: (table: WeedsTable) => string;
 	/** How the score adds up; null until the host answers, or when it cannot. */
 	tally?: ScoreTally | null;
-	onopenproject?: (projectKey: string) => void;
+	onopenproject?: (projectKey: string, name?: string) => void;
 	/** The host's feedback endpoint; absent, no feedback line. */
 	feedbackHref?: string;
 	feedbackAddress?: string;
@@ -251,16 +246,12 @@ function pick(item: SearchListItem, go: boolean) {
 }
 
 function holdName(item: SearchListItem) {
-	const href = hrefOf(item);
-	picked = href ? { href, name: item.name } : null;
+	holdPickedName(hrefOf(item), item.name);
 }
 
 // The picked name, while its record streams: the hero holds that name's height.
 // svelte-ignore state_referenced_locally
-const heldName =
-	record === null && picked && typeof location !== "undefined" && new URL(picked.href, location.href).pathname === location.pathname
-		? picked.name
-		: "";
+const heldName = record === null && typeof location !== "undefined" ? pickedNameFor(location) : "";
 
 let query = $state(record?.name ?? "");
 $effect(() => {

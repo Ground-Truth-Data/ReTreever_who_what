@@ -2,6 +2,7 @@
 import type { ScoreAnswer, ScoreTally, WeedsTable, WhoWhatEndpoints, WhoWhatRoutes } from "../whoWhatTypes";
 import type { SearchResult } from "./resultLoad";
 import RatingPage from "./RatingPage.svelte";
+import { holdPickedName } from "./pickedName";
 import { setStageClipRoots } from "./DogStage.svelte";
 import { LiveList } from "../search/liveList.svelte";
 import { loadOrgList, loadProjectList, recordSearchHit } from "../search/searchLists";
@@ -107,9 +108,11 @@ $effect(() => {
 	};
 });
 
-function openProject(projectKey: string) {
+function openProject(projectKey: string, name?: string) {
 	const href = routes.whatProject?.(projectKey);
-	if (href) curtain.wipe(localizeHref(href));
+	if (!href) return;
+	holdPickedName(localizeHref(href), name);
+	curtain.wipe(localizeHref(href));
 }
 
 $effect(() => {
