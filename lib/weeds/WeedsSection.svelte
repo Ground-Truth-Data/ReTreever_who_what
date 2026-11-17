@@ -5,6 +5,7 @@ import type { Snippet } from "svelte";
 import FrameClipPlayer from "$gc/FrameClipPlayer.svelte";
 import { loadClips, type ClipManifest } from "$gc/frameClips";
 import WeedsBarArt from "../assets/svg/rating/Rating_page_weeds_search_bar.svg?raw";
+import WeedsBarPhoneArt from "../assets/svg/rating/Rating_page_weeds_search_bar_phone.svg?raw";
 import WeedsTable from "./WeedsTable.svelte";
 import WeedsCount from "./WeedsCount.svelte";
 import NeverPublished from "./NeverPublished.svelte";
@@ -38,8 +39,6 @@ let {
 } = $props();
 
 const PANEL_ID = "weeds-panel";
-// The art keeps its aspect until the bar's floor wins, then stretches to stay tappable at 390.
-const WeedsBarRaw = WeedsBarArt.replace("<svg", '<svg preserveAspectRatio="none"');
 const FETCH_CLIP = "fetch-seedling";
 
 let active = $state<WeedsTableName>("projects");
@@ -284,9 +283,13 @@ function barKeydown(e: KeyboardEvent) {
 	</div>
 
 	<form class="weeds-bar" role="search" onsubmit={(e) => e.preventDefault()}>
-		<div class="bar-art" aria-hidden="true">
+		<div class="bar-art wide" aria-hidden="true">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-			{@html WeedsBarRaw}
+			{@html WeedsBarArt}
+		</div>
+		<div class="bar-art phone" aria-hidden="true">
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+			{@html WeedsBarPhoneArt}
 		</div>
 		<input
 			type="search"
@@ -430,6 +433,7 @@ function barKeydown(e: KeyboardEvent) {
 	/* The bar's art is 685.4 × 49.1; the input and the button sit on its two panels. */
 	/* Never shrinks for a long table; the table scrolls instead. */
 	.weeds-bar {
+		container-type: inline-size;
 		position: relative;
 		flex: none;
 		width: 100%;
@@ -443,7 +447,11 @@ function barKeydown(e: KeyboardEvent) {
 		inset: 0;
 	}
 
-	.bar-art :global(svg) {
+	.bar-art.phone {
+		display: none;
+	}
+
+	.bar-art > :global(svg) {
 		display: block;
 		width: 100%;
 		height: 100%;
@@ -761,6 +769,35 @@ function barKeydown(e: KeyboardEvent) {
 			top: 0;
 			width: 44px;
 			height: 100%;
+		}
+	}
+
+	/* Below 614px the wide art's own aspect would fall under the bar's 44px
+	   floor. The phone art is drawn in px for exactly that height: its slanted
+	   end is 44px of the left, its button the last 80px. */
+	@container (max-width: 614px) {
+		.bar-art.wide {
+			display: none;
+		}
+
+		.bar-art.phone {
+			display: block;
+		}
+
+		.bar-input {
+			left: 44px;
+			width: calc(100% - 124px);
+		}
+
+		.bar-clear {
+			left: auto;
+			right: 80px;
+		}
+
+		.bar-submit {
+			left: auto;
+			right: 0;
+			width: 80px;
 		}
 	}
 </style>
