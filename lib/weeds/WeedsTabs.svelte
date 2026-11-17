@@ -35,27 +35,31 @@ let {
 	fresh?: boolean;
 } = $props();
 
-// Each sticker's viewBox width and the height of what it actually draws: the
-// six new pairs carry a stray point below the box that pads the viewBox, so
-// the strip sizes by width and clips at the drawn edge. `drawn` is the word the art carries.
-type Sticker = { lit: string; dim: string; vw: [number, number]; vh: [number, number] };
-const STICKERS: Record<WeedsTable, { drawn: string } & Sticker> = {
-	projects: { drawn: "Projects", lit: ProjectsSelectedRaw, dim: ProjectsUnselectedRaw, vw: [85.25, 71.9], vh: [49.7, 26.8] },
-	crop: { drawn: "Crop", lit: CropSelectedRaw, dim: CropUnselectedRaw, vw: [102.3, 90.3], vh: [76, 52] },
-	planting: { drawn: "Planting", lit: PlantingSelectedRaw, dim: PlantingUnselectedRaw, vw: [102.3, 90.3], vh: [78, 52] },
-	land: { drawn: "Land", lit: LandSelectedRaw, dim: LandUnselectedRaw, vw: [102.3, 90.3], vh: [77, 52] },
-	polymorphic: { drawn: "Polymorphic", lit: PolymorphicSelectedRaw, dim: PolymorphicUnselectedRaw, vw: [102.3, 90.3], vh: [78, 52] },
-	stakeholders: { drawn: "Stakeholders", lit: StakeholdersSelectedRaw, dim: StakeholdersUnselectedRaw, vw: [102.3, 90.3], vh: [78, 52] },
-	sources: { drawn: "Sources", lit: SourcesSelectedRaw, dim: SourcesUnselectedRaw, vw: [102.3, 90.3], vh: [79, 52] },
+// `drawn` is the word the art carries.
+const STICKERS: Record<WeedsTable, { drawn: string; lit: string; dim: string }> = {
+	projects: { drawn: "Projects", lit: ProjectsSelectedRaw, dim: ProjectsUnselectedRaw },
+	crop: { drawn: "Crop", lit: CropSelectedRaw, dim: CropUnselectedRaw },
+	planting: { drawn: "Planting", lit: PlantingSelectedRaw, dim: PlantingUnselectedRaw },
+	land: { drawn: "Land", lit: LandSelectedRaw, dim: LandUnselectedRaw },
+	polymorphic: { drawn: "Polymorphic", lit: PolymorphicSelectedRaw, dim: PolymorphicUnselectedRaw },
+	stakeholders: { drawn: "Stakeholders", lit: StakeholdersSelectedRaw, dim: StakeholdersUnselectedRaw },
+	sources: { drawn: "Sources", lit: SourcesSelectedRaw, dim: SourcesUnselectedRaw },
 };
+
+// Each sticker's viewBox is its drawn box (the import script trims it), so its width over its height sizes the tab.
+function aspect(raw: string): number {
+	const box = /viewBox="([^"]+)"/.exec(raw)?.[1].trim().split(/[\s,]+/).map(Number);
+	if (!box || !(box[2] > 0) || !(box[3] > 0)) throw new Error("weeds tab sticker without a viewBox");
+	return box[2] / box[3];
+}
 
 const ART = Object.fromEntries(
 	WEEDS_TABLES.map((t) => {
 		const { drawn, lit, dim } = STICKERS[t];
 		const swap = [[drawn, TABLE_LABELS[t]]] as const;
-		return [t, { lit: svgFit(lit, swap), dim: svgFit(dim, swap) }];
+		return [t, { lit: svgFit(lit, swap), dim: svgFit(dim, swap), litAspect: aspect(lit), dimAspect: aspect(dim) }];
 	}),
-) as Record<WeedsTable, { lit: string; dim: string }>;
+) as Record<WeedsTable, { lit: string; dim: string; litAspect: number; dimAspect: number }>;
 
 const tabId = (t: WeedsTable) => `weeds-tab-${t}`;
 
@@ -135,7 +139,6 @@ $effect(() => {
 <div class="strip-frame" style:--fade-l="{scrollX > 1 ? FADE_L : 0}px" style:--fade-r="{scrollX < room - 1 ? FADE_R : 0}px">
 	<div class="strip" role="tablist" aria-label={m.ww_rating_weeds()} bind:this={stripEl} onscroll={() => (scrollX = stripEl?.scrollLeft ?? 0)}>
 		{#each WEEDS_TABLES as t (t)}
-			{@const s = STICKERS[t]}
 			{@const lit = t === active}
 			<button
 				type="button"
@@ -146,8 +149,7 @@ $effect(() => {
 				aria-selected={lit}
 				aria-controls={panelId}
 				tabindex={lit ? 0 : -1}
-				style:--vw={lit ? s.vw[0] : s.vw[1]}
-				style:--vh={lit ? s.vh[0] : s.vh[1]}
+				style:--aspect={lit ? ART[t].litAspect : ART[t].dimAspect}
 				onclick={() => onselect(t)}
 				onkeydown={(e) => keydown(e, t)}
 			>
@@ -291,19 +293,21 @@ $effect(() => {
 		cursor: pointer;
 		/* The drawn box's height is the strip's unit; the width follows each sticker's own aspect. */
 		height: var(--tab-h);
-		width: calc(var(--tab-h) * var(--vw) / var(--vh));
+		width: calc(var(--tab-h) * var(--aspect));
 		overflow: hidden;
 		border-radius: 2px;
 	}
 
+	/* One lit height for every tab: the art's own lit boxes are 1.5x their dim
+	   ones in six pairs, but 1.86x in the Projects pair. */
 	.tab.lit {
 		height: calc(var(--tab-h) * 1.5);
-		width: calc(var(--tab-h) * 1.5 * var(--vw) / var(--vh));
+		width: calc(var(--tab-h) * 1.5 * var(--aspect));
 	}
 
-	/* The sticker's svg is taller than the tab. Clipped here, not only at the
-	   button, or Chromium counts it as scroll room and a wheel over the strip
-	   scrolls the tabs' tops away. */
+	/* A sticker's svg can round a fraction taller than the tab. Clipped here,
+	   not only at the button, or Chromium counts it as scroll room and a wheel
+	   over the strip scrolls the tabs' tops away. */
 	.art {
 		display: block;
 		width: 100%;
