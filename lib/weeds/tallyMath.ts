@@ -83,7 +83,6 @@ export function claimLine(tally: ScoreTally): { words: string; factor: string; l
 	};
 }
 
-// The trace page's names for an org's peer group.
 const PEERS: Record<string, () => string> = {
 	developer_ish: m.ww_rating_trace_peers_developer_ish,
 	landowner_ish: m.ww_rating_trace_peers_landowner_ish,
@@ -97,13 +96,16 @@ const PEERS: Record<string, () => string> = {
 	all: m.ww_rating_trace_peers_all,
 };
 
+/** An org's peer group as the trace page and the tally both name it. */
+export const peersOf = (group: string | null) => (group && PEERS[group] ? PEERS[group]() : m.ww_rating_trace_peers_none());
+
 /** Step 3's heading and its place line, or null when the record is not ranked. */
 export function placeLine(tally: ScoreTally): { among: string; ranked: string; place: string; short: string } | null {
 	const place = tally.place;
 	if (!place) return null;
 	const group = place.group;
 	const peers =
-		tally.kind === "project" ? m.ww_rating_tally_peers_projects() : group && PEERS[group] ? PEERS[group]() : m.ww_rating_trace_peers_none();
+		tally.kind === "project" ? m.ww_rating_tally_peers_projects() : peersOf(group);
 	const count = fullCount(place.of);
 	const rank = fullCount(place.rank);
 	const all = tally.kind === "project" || group === "all";
