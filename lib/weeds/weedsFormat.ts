@@ -130,11 +130,14 @@ export function splitPublished(columns: WeedsColumn[], rows: WeedsRow[]): { show
 	return { shown, missing: drawn.filter((c) => !c.optional && !shown.includes(c)) };
 }
 
-/** When the row's link answered 404/410, the day it was checked; else null and the link is live. */
-export function deadOn(row: WeedsRow, columns: WeedsColumn[]): string | null {
+/** When the row's link answered 404/410, the day it was checked and, if the check ever saw it alive, the last day it did; else null and the link is live. */
+export function deadOn(row: WeedsRow, columns: WeedsColumn[]): { checked: string; alive: string | null } | null {
 	const at = columns.find((c) => c.kind === "dead");
 	const v = at && row[at.key];
-	return v ? formatWeedsDate(String(v)) : null;
+	if (!v) return null;
+	// null means not seen alive since the column landed (18 Nov 2026), not never alive: the line then names no date.
+	const alive = at.aside ? row[at.aside] : null;
+	return { checked: formatWeedsDate(String(v)), alive: alive ? formatWeedsDate(String(alive)) : null };
 }
 
 /** The weeds bar: keeps rows where any drawn cell, as shown, as a link's full URL or as a site's id, contains the text. */

@@ -58,6 +58,7 @@
 	"ww_rating_weeds_digging": "On creuse…",
 	"ww_rating_weeds_rows_capped": "{count} lignes affichées · il y en a d’autres",
 	"ww_rating_weeds_link_dead": "lien mort · vérifié le {date}",
+	"ww_rating_weeds_link_dead_alive": "lien mort · vérifié le {date} · actif pour la dernière fois le {alive}",
 	"ww_rating_weeds_from": "Données de {platforms}",
 	"ww_rating_weeds_points_of": "{scored} sur {available}",
 	"ww_rating_weeds_unnamed_site": "Site sans nom",

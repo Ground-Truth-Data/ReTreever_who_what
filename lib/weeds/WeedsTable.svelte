@@ -253,7 +253,7 @@ $effect(() => {
 								<td class={c.kind} class:cross={i === activeRow && j === activeCol && j > 0}>
 									{#if dead}
 										<span class="dead">{shown}</span>
-										<small class="dead-note">{m.ww_rating_weeds_link_dead({ date: dead })}</small>
+										<small class="dead-note">{dead.alive ? m.ww_rating_weeds_link_dead_alive({ date: dead.checked, alive: dead.alive }) : m.ww_rating_weeds_link_dead({ date: dead.checked })}</small>
 									{:else if href}
 										<a {href} rel="noopener" target="_blank">{shown}</a>
 									{:else if c.kind === "link" && v}

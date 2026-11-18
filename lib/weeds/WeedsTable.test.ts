@@ -6,7 +6,8 @@ import type { WeedsColumn, WeedsRow } from "../whoWhatTypes";
 const columns: WeedsColumn[] = [
 	{ key: "url", label: "URL", kind: "link" },
 	{ key: "sourceDesc", label: "Description", kind: "text" },
-	{ key: "linkDeadAt", label: "Link dead", kind: "dead" },
+	{ key: "linkDeadAt", label: "Link dead", kind: "dead", aside: "linkAliveAt" },
+	{ key: "linkAliveAt", label: "Last alive", kind: "aside" },
 ];
 const draw = (row: WeedsRow) => render(WeedsTable, { props: { columns, rows: [row] } }).body.replace(/<!--[\s\S]*?-->/g, "");
 
@@ -16,6 +17,13 @@ describe("the weeds sources table", () => {
 		expect(html).not.toContain("<a");
 		expect(html).toContain("gone.example");
 		expect(html).toContain("link dead · checked 2026/11/10");
+		expect(html).not.toContain("last alive");
+	});
+
+	it("a dead link the check once saw alive names that day too", () => {
+		const html = draw({ url: "https://www.gone.example/a", sourceDesc: null, linkDeadAt: "2026-11-10T17:10:44.938Z", linkAliveAt: "2026-10-28T09:00:00.000Z" });
+		expect(html).toContain("link dead · checked 2026/11/10 · last alive 2026/10/28");
+		expect(html).not.toMatch(/<th[^>]*>[^<]*Last alive/);
 	});
 
 	it("a live or unchecked link is a link, and the dead column is never drawn", () => {

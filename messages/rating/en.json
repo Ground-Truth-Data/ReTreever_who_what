@@ -58,6 +58,7 @@
 	"ww_rating_weeds_digging": "Digging…",
 	"ww_rating_weeds_rows_capped": "{count} rows shown · there are more",
 	"ww_rating_weeds_link_dead": "link dead · checked {date}",
+	"ww_rating_weeds_link_dead_alive": "link dead · checked {date} · last alive {alive}",
 	"ww_rating_weeds_from": "From {platforms}",
 	"ww_rating_weeds_points_of": "{scored} of {available}",
 	"ww_rating_weeds_unnamed_site": "Unnamed site",

@@ -58,6 +58,7 @@
 	"ww_rating_weeds_digging": "Excavando…",
 	"ww_rating_weeds_rows_capped": "{count} filas mostradas · hay más",
 	"ww_rating_weeds_link_dead": "enlace caído · comprobado el {date}",
+	"ww_rating_weeds_link_dead_alive": "enlace caído · comprobado el {date} · activo por última vez el {alive}",
 	"ww_rating_weeds_from": "Datos de {platforms}",
 	"ww_rating_weeds_points_of": "{scored} de {available}",
 	"ww_rating_weeds_unnamed_site": "Sitio sin nombre",

@@ -58,6 +58,7 @@
 	"ww_rating_weeds_digging": "Cavando…",
 	"ww_rating_weeds_rows_capped": "{count} linhas exibidas · há mais",
 	"ww_rating_weeds_link_dead": "link quebrado · verificado em {date}",
+	"ww_rating_weeds_link_dead_alive": "link quebrado · verificado em {date} · ativo pela última vez em {alive}",
 	"ww_rating_weeds_from": "Dados de {platforms}",
 	"ww_rating_weeds_points_of": "{scored} de {available}",
 	"ww_rating_weeds_unnamed_site": "Local sem nome",
