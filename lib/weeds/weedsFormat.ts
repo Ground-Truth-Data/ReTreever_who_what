@@ -31,6 +31,24 @@ export function shortCount(n: number): string {
 	return Math.abs(whole) >= 10_000 ? compactFormat().format(whole) : fullCount(whole);
 }
 
+const SYMBOLS = ["", "K", "M", "B", "T"];
+const tenths = new Map<string, Intl.NumberFormat>();
+
+/** A figure rounded to its symbol, for a sticker: "3.8K", "1.2M", "4B", "2.5T". The symbols are the same in every language; the decimal mark is the reader's (fr "3,8K"). */
+export function symbolCount(n: number): string {
+	let step = 0;
+	let scaled = n;
+	// Rounded before each test, so 999,950 is "1M" and never "1000K".
+	while (step < SYMBOLS.length - 1 && Math.round(Math.abs(scaled) * 10) / 10 >= 1000) {
+		scaled /= 1000;
+		step++;
+	}
+	const locale = getLocale();
+	let format = tenths.get(locale);
+	if (!format) tenths.set(locale, (format = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 })));
+	return format.format(scaled) + SYMBOLS[step];
+}
+
 const cents = new Map<string, Intl.NumberFormat>();
 function twoPlaces(): Intl.NumberFormat {
 	const locale = getLocale();

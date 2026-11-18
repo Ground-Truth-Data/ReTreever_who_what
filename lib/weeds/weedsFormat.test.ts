@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { EMPTY, cellText, filterRows, formatCell, formatMoney, formatWeedsDate, fullCount, linkLabel, shortCount, splitPublished } from "./weedsFormat";
+import { EMPTY, cellText, filterRows, formatCell, formatMoney, formatWeedsDate, fullCount, linkLabel, shortCount, splitPublished, symbolCount } from "./weedsFormat";
 import type { WeedsColumn } from "../whoWhatTypes";
 
 const lang = vi.hoisted(() => ({ locale: "en" }));
@@ -131,6 +131,17 @@ describe("the tally's counts", () => {
 		expect(shortCount(15454)).toBe("15.5K");
 		expect(shortCount(1_234_567)).toBe("1.2M");
 		expect(fullCount(226619)).toBe("226,619");
+	});
+
+	it("rounds a sticker's figure to K, M, B and T", () => {
+		expect(symbolCount(3800)).toBe("3.8K");
+		expect(symbolCount(16630)).toBe("16.6K");
+		expect(symbolCount(999_950)).toBe("1M");
+		expect(symbolCount(1_234_567)).toBe("1.2M");
+		expect(symbolCount(4_000_000_000)).toBe("4B");
+		expect(symbolCount(2_500_000_000_000)).toBe("2.5T");
+		for (const l of ["fr", "es", "pt-BR"]) inLocale(l, () => expect(symbolCount(3800)).toBe("3,8K"));
+		inLocale("es", () => expect(symbolCount(1_234_567)).toBe("1,2M"));
 	});
 
 	it("speaks the reader's language", () => {
