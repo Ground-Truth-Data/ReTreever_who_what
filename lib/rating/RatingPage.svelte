@@ -125,15 +125,16 @@ $effect(() => {
 // over. The track's height is the one measured thing; the follower shows
 // once the real number has gone under the nav, and turns light once its own
 // top is past the crest of the hills, which is where the dark begins.
-// Beside the ledger (1100px up, motion allowed) the number never rides:
-// from the page's top until the stage pins it leaves the hero for the
-// ledger's number, `land` says how far, and the ledger rises with the stage.
+// With motion allowed the number never rides: from the page's top until the
+// stage pins it leaves the hero for the ledger's number (the phone strip's
+// under 1100px), `land` says how far, and the ledger rises with the stage.
 let pageEl = $state<HTMLElement | null>(null);
 let following = $state(false);
 let overSoil = $state(false);
 let land = $state(0);
 let travels = $state(false);
-const ledgerNumber = () => pageEl?.querySelector<HTMLElement>(".tally.corner .big .rating-number") ?? null;
+const ledgerNumber = () =>
+	pageEl?.querySelector<HTMLElement>(innerWidth >= 1100 ? ".tally.corner .big .rating-number" : ".tally.strip .pct .rating-number") ?? null;
 $effect(() => {
 	const page = pageEl;
 	const soil = undergroundEl;
@@ -160,7 +161,6 @@ $effect(() => {
 			record?.rating != null &&
 			pin !== null &&
 			pin > 0 &&
-			matchMedia("(min-width: 1100px)").matches &&
 			!matchMedia("(prefers-reduced-motion: reduce)").matches;
 		const letGo = bandTop() + window.scrollY - (nav + 12 + body);
 		const run = travels && pin !== null ? Math.max(1, pin - letGo) : 0;
