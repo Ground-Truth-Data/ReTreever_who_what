@@ -87,6 +87,8 @@
 	"ww_rating_tally_peers_projects": "proyectos",
 	"ww_rating_tally_among": "Entre {count} {peers}",
 	"ww_rating_tally_among_all": "Entre {count} {peers} en total",
+	"ww_rating_hero_ranked": "Clasificación entre {count} {peers}",
+	"ww_rating_hero_ranked_all": "Clasificación entre {count} {peers} en total",
 	"ww_rating_tally_place_among": "Puesto {rank} de {count} {peers}",
 	"ww_rating_tally_status_landed": "Todas las tablas excavadas. {place}: la calificación, {rating}.",
 	"ww_rating_column_project": "Proyecto",

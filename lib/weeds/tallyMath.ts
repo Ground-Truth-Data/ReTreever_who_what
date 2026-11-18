@@ -98,7 +98,7 @@ const PEERS: Record<string, () => string> = {
 };
 
 /** Step 3's heading and its place line, or null when the record is not ranked. */
-export function placeLine(tally: ScoreTally): { among: string; place: string; short: string } | null {
+export function placeLine(tally: ScoreTally): { among: string; ranked: string; place: string; short: string } | null {
 	const place = tally.place;
 	if (!place) return null;
 	const group = place.group;
@@ -109,6 +109,7 @@ export function placeLine(tally: ScoreTally): { among: string; place: string; sh
 	const all = tally.kind === "project" || group === "all";
 	return {
 		among: all ? m.ww_rating_tally_among_all({ count, peers }) : m.ww_rating_tally_among({ count, peers }),
+		ranked: all ? m.ww_rating_hero_ranked_all({ count, peers }) : m.ww_rating_hero_ranked({ count, peers }),
 		place: m.ww_rating_trace_place({ rank, count }),
 		short: m.ww_rating_tally_place_among({ rank, count, peers }),
 	};

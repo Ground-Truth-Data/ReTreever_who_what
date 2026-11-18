@@ -22,6 +22,7 @@ import SearchBar from "../search/SearchBar.svelte";
 import SearchDropdown from "../search/SearchDropdown.svelte";
 import WeedsSection from "../weeds/WeedsSection.svelte";
 import WeedsTally from "../weeds/WeedsTally.svelte";
+import { placeLine } from "../weeds/tallyMath";
 import RatingFeedback from "./RatingFeedback.svelte";
 import RatingGround from "./RatingGround.svelte";
 import type { SearchResult } from "./resultLoad";
@@ -215,8 +216,11 @@ let barEl = $state<HTMLElement | null>(null);
 
 const localized = (href: string | undefined) => (href ? localizeHref(href) : undefined);
 
-// Beside the measure: the page that walks this score down to its parts.
+// The tally's link: the page that walks this score down to its parts.
 const scoreHref = $derived(record ? localized(tab === "orgs" ? routes.whoOrgScore?.(record.key) : routes.whatProjectScore?.(record.key)) : undefined);
+
+// Under the number: the group the rating places it in, so the number is read as a place and not a mark.
+const ranked = $derived(tally ? (placeLine(tally)?.ranked ?? null) : null);
 
 const hrefOf = (item: SearchListItem) =>
 	localized(tab === "orgs" ? routes.whoOrg?.(item.key) : routes.whatProject?.(item.key));
@@ -468,8 +472,8 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 						</div>
 						<!-- Its own line, held from first paint like the measure's slot, so neither a long figure nor the sticker's arrival moves it. -->
 						<div class="score-link-row">
-							{#if scoreHref}
-								<a class="score-link" class:revealed={periodIn} href={scoreHref}>{m.ww_rating_trace_link()}</a>
+							{#if ranked}
+								<p class="score-among" class:revealed={periodIn}>{ranked}</p>
 							{/if}
 						</div>
 						<!-- Held from first paint: the measure is a second request, and its arrival must move nothing. -->
@@ -750,7 +754,7 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 	}
 
 	/* Under the number, over the sky: a line of its own whose height is held
-	   whether or not the link has arrived, so nothing under it moves. */
+	   whether or not the line has arrived, so nothing under it moves. */
 	.score-link-row {
 		height: 1.3em;
 		font-size: clamp(14px, 1.2vw, 17px);
@@ -758,17 +762,15 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		max-width: 100%;
 	}
 
-	.score-link {
+	.score-among {
 		display: block;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		font-family: var(--rt-font-web);
 		font-weight: 700;
+		margin: 0;
 		color: var(--rt-gold-ink);
-		text-decoration: underline;
-		text-decoration-thickness: 2px;
-		text-underline-offset: 3px;
 		opacity: 0;
 		visibility: hidden;
 		transition:
@@ -776,14 +778,14 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 			visibility 0s linear 260ms;
 	}
 
-	.score-link.revealed {
+	.score-among.revealed {
 		opacity: 1;
 		visibility: visible;
 		transition-delay: 0s;
 	}
 
 	@media (scripting: none) {
-		.score-link {
+		.score-among {
 			opacity: 1;
 			visibility: visible;
 		}
