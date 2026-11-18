@@ -23,9 +23,3 @@ export function headX(progress: number, centres: readonly number[]): number {
 	const f = Math.min(1, Math.max(0, progress - i));
 	return centres[i] + (centres[i + 1] - centres[i]) * f;
 }
-
-/** Which of the cue's three wordings the lit tab takes. */
-export function cueFor(index: number, n: number): "first" | "next" | "last" {
-	if (index >= n - 1) return "last";
-	return index <= 0 ? "first" : "next";
-}

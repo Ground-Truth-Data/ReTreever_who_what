@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { cueFor, headX, progressFor, scrollTopFor, tabIndexFor } from "./weedsScroll";
+import { headX, progressFor, scrollTopFor, tabIndexFor } from "./weedsScroll";
 
 const STEP = 500;
 const N = 7;
@@ -92,15 +92,6 @@ describe("headX", () => {
 	});
 });
 
-describe("cueFor", () => {
-	it("says first, next, then last", () => {
-		expect(cueFor(0, N)).toBe("first");
-		expect(cueFor(1, N)).toBe("next");
-		expect(cueFor(5, N)).toBe("next");
-		expect(cueFor(6, N)).toBe("last");
-	});
-});
-
 describe("the rating messages", () => {
 	const read = (l: string) => JSON.parse(readFileSync(new URL(`../../messages/rating/${l}.json`, import.meta.url), "utf8"));
 	const en = read("en");
@@ -112,9 +103,5 @@ describe("the rating messages", () => {
 			expect(Object.keys(other).sort(), l).toEqual(Object.keys(en).sort());
 			for (const k of Object.keys(en)) expect(holes(other[k]), `${l} ${k}`).toEqual(holes(en[k]));
 		}
-	});
-
-	it("the cue has its three wordings and its count", () => {
-		for (const k of ["count", "first", "next", "last"]) expect(en[`ww_rating_weeds_cue_${k}`]).toBeTruthy();
 	});
 });

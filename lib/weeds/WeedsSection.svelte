@@ -15,7 +15,7 @@ import { columnLabel } from "./columnLabels";
 import { TABLE_LABELS } from "./tallyMath";
 import { m } from "$parent/src/lib/paraglide/messages";
 import { getLocale } from "$parent/src/lib/paraglide/runtime";
-import { cueFor, progressFor, scrollTopFor, tabIndexFor } from "./weedsScroll";
+import { progressFor, scrollTopFor, tabIndexFor } from "./weedsScroll";
 import { WEEDS_TABLES, type WeedsAnswer, type WeedsRow, type WeedsTable as WeedsTableName } from "../whoWhatTypes";
 
 let {
@@ -104,16 +104,6 @@ function pick(table: WeedsTableName) {
 	// it waits for the landing, or gives up when the scroll stops short.
 	landing = { top, until: performance.now() + 1500 };
 	window.scrollTo({ top, behavior: instant ? "instant" : "smooth" });
-}
-
-/** The cue's button: one table on, or past the run from the last. */
-function next() {
-	const i = WEEDS_TABLES.indexOf(active);
-	if (i < WEEDS_TABLES.length - 1) return pick(WEEDS_TABLES[i + 1]);
-	const track = trackEl;
-	if (!track) return;
-	const instant = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-	window.scrollTo({ top: pinTop(track) + track.getBoundingClientRect().height, behavior: instant ? "instant" : "smooth" });
 }
 
 /** The lesson's pick: resolves once the smooth scroll has landed, or given up. */
@@ -226,14 +216,6 @@ $effect(() => {
 });
 
 const answer = $derived(answers[active]);
-const at = $derived(WEEDS_TABLES.indexOf(active));
-const cue = $derived.by(() => {
-	const total = WEEDS_TABLES.length;
-	const kind = cueFor(at, total);
-	if (kind === "first") return m.ww_rating_weeds_cue_first({ total });
-	if (kind === "last") return m.ww_rating_weeds_cue_last();
-	return m.ww_rating_weeds_cue_next({ table: TABLE_LABELS[WEEDS_TABLES[at + 1]] });
-});
 const rows = $derived(answer ? filterRows(answer.rows, answer.columns, query) : []);
 // The project column is context, not a field: a table publishing nothing else says so instead of drawing it.
 const split = $derived(answer ? splitPublished(answer.columns, answer.rows) : null);
@@ -272,15 +254,6 @@ function barKeydown(e: KeyboardEvent) {
 <div class="weeds-lean">
 <section class="weeds-stage" aria-label={m.ww_rating_weeds()}>
 	<WeedsTabs {active} onselect={pick} panelId={PANEL_ID} {progress} {fresh} />
-
-	<!-- What the scroll does, said where the reader is already looking. Not a live region: the panel announces. -->
-	<div class="cue">
-		<span class="cue-count">{m.ww_rating_weeds_cue_count({ index: at + 1, total: WEEDS_TABLES.length })}</span>
-		<button type="button" class="cue-next" onclick={next}>
-			<svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6 8 10.5 12.5 6" /></svg>
-			<span>{cue}</span>
-		</button>
-	</div>
 
 	<form class="weeds-bar" role="search" onsubmit={(e) => e.preventDefault()}>
 		<div class="bar-art wide" aria-hidden="true">
@@ -546,106 +519,6 @@ function barKeydown(e: KeyboardEvent) {
 	.bar-submit:focus-visible {
 		outline: 2px solid var(--color-gold-bar);
 		outline-offset: 1px;
-	}
-
-	/* A phone keeps the count and the pill on one row; the pill's words wrap inside it. */
-	.cue {
-		flex: none;
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		min-height: 28px;
-		margin-top: -4px;
-	}
-
-	/* Beside a phone, the cue costs no row: it rides in the band above the
-	   strip, which the lit tab (1.5 x --tab-h, grown upward) never reaches. */
-	@media (min-width: 768px) {
-		.weeds-stage {
-			position: relative;
-			padding-top: max(calc(var(--tab-h) * 1.2), calc(var(--tab-h) * 0.5 + 36px));
-		}
-
-		.cue {
-			position: absolute;
-			top: 2px;
-			right: clamp(16px, 3vw, 40px);
-			margin: 0;
-		}
-	}
-
-	.cue-count {
-		flex: none;
-		font-size: 12px;
-		font-weight: 700;
-		letter-spacing: 0.1em;
-		text-transform: uppercase;
-		color: var(--color-gold-shard);
-		font-variant-numeric: tabular-nums;
-	}
-
-	.cue-next {
-		display: inline-flex;
-		align-items: center;
-		gap: 8px;
-		min-height: 28px;
-		padding: 4px 12px 4px 10px;
-		font: 700 14px var(--rt-font-web);
-		color: var(--rtvr-on-dark);
-		background: color-mix(in srgb, var(--rtvr-ink) 85%, transparent);
-		border: 1px solid color-mix(in srgb, var(--color-gold-shard) 55%, transparent);
-		border-radius: 999px;
-		cursor: pointer;
-	}
-
-	.cue-next:hover {
-		border-color: var(--color-gold-shard);
-	}
-
-	.cue-next:focus-visible {
-		outline: 2px solid var(--color-gold-bar);
-		outline-offset: 2px;
-	}
-
-	.chev {
-		width: 16px;
-		height: 16px;
-		flex: none;
-		stroke: var(--color-gold-shard);
-		fill: none;
-		stroke-width: 2.4;
-		stroke-linecap: round;
-		stroke-linejoin: round;
-		animation: bob 1.4s ease-in-out infinite;
-	}
-
-	@keyframes bob {
-		0%,
-		100% {
-			transform: translateY(-2px);
-		}
-		50% {
-			transform: translateY(3px);
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.chev {
-			animation: none;
-		}
-	}
-
-	/* A phone's pill takes the full 44px. */
-	@media (max-width: 767px) {
-		.cue-next {
-			flex: 0 1 auto;
-			min-width: 0;
-			min-height: 44px;
-			border-radius: 22px;
-			font-size: 13px;
-			line-height: 1.2;
-			text-align: left;
-		}
 	}
 
 	.panel {
