@@ -13,6 +13,7 @@ let {
 	all = undefined,
 	sweep = undefined,
 	open = undefined,
+	blanks = false,
 }: {
 	columns: WeedsColumn[];
 	rows: WeedsRow[];
@@ -22,10 +23,12 @@ let {
 	sweep?: unknown;
 	/** The column whose cell opens the row, and what opening does. */
 	open?: { column: string; on: (row: WeedsRow) => void };
+	/** Draw the columns no row publishes too, as empty cells: a table that publishes nothing still shows its rows. */
+	blanks?: boolean;
 } = $props();
 
 const split = $derived(splitPublished(columns, all ?? rows));
-const drawn = $derived(split.shown);
+const drawn = $derived(blanks ? columns.filter((c) => split.shown.includes(c) || split.missing.includes(c)) : split.shown);
 
 let wrap = $state<HTMLDivElement>();
 let table = $state<HTMLTableElement>();

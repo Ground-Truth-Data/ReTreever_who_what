@@ -80,3 +80,25 @@ describe("the weeds land table", () => {
 		expect(html).not.toMatch(/<th[^>]*>[^<]*Hectares/);
 	});
 });
+
+describe("a table that publishes nothing", () => {
+	const impact: WeedsColumn[] = [
+		{ key: "project", label: "Project", kind: "text" },
+		{ key: "survivalRate", label: "Surviving (%)", kind: "number" },
+		{ key: "reviews", label: "Reviews", kind: "text" },
+		{ key: "linkDeadAt", label: "Link dead", kind: "dead" },
+	];
+
+	it("still draws its row, every field an empty cell, when asked for blanks", () => {
+		const html = render(WeedsTable, { props: { columns: impact, rows: [{ project: "Elm", survivalRate: null, reviews: null }], blanks: true } }).body;
+		expect(html.match(/<th[ >]/g)).toHaveLength(3);
+		expect(html.match(/<tr[ >]/g)).toHaveLength(2);
+		expect(html).toContain("Elm");
+	});
+
+	it("draws its row with no project column to lead it", () => {
+		const html = render(WeedsTable, { props: { columns: impact.slice(1), rows: [{ survivalRate: null, reviews: null }], blanks: true } }).body;
+		expect(html.match(/<th[ >]/g)).toHaveLength(2);
+		expect(html.match(/<td[ >]/g)).toHaveLength(2);
+	});
+});

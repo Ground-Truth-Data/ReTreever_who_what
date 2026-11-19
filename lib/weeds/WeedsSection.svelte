@@ -217,7 +217,7 @@ $effect(() => {
 
 const answer = $derived(answers[active]);
 const rows = $derived(answer ? filterRows(answer.rows, answer.columns, query) : []);
-// The project column is context, not a field: a table publishing nothing else says so instead of drawing it.
+// The project column is context, not a field: a table publishing nothing else draws its rows with every field empty.
 const split = $derived(answer ? splitPublished(answer.columns, answer.rows) : null);
 const bare = $derived(!!split && split.shown.every((c) => c.key === "project"));
 const from = $derived(
@@ -290,16 +290,8 @@ function barKeydown(e: KeyboardEvent) {
 					<WeedsCount count={0} text={m.ww_rating_weeds_rows({ count: 0 })} />
 					<p class="state-line">{m.ww_rating_weeds_empty()}</p>
 				</div>
-			{:else if bare && split}
-				<div class="state">
-					<WeedsCount
-						count={answer.rows.length}
-						text={answer.more ? m.ww_rating_weeds_rows_capped({ count: answer.rows.length }) : m.ww_rating_weeds_rows({ count: answer.rows.length })}
-					/>
-					<NeverPublished fields={split.missing.map(columnLabel)} />
-				</div>
 			{:else}
-				<WeedsTable columns={answer.columns} {rows} all={answer.rows} sweep={active} {open} />
+				<WeedsTable columns={answer.columns} {rows} all={answer.rows} sweep={active} {open} blanks={bare} />
 				<div class="foot">
 					<p class="count" aria-live="polite">
 						{#if query}
