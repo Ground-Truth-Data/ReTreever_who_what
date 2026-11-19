@@ -1,20 +1,5 @@
 <script lang="ts">
-import ProjectsSelectedRaw from "../assets/svg/rating/Rating_page_projects_Selected.svg?raw";
-import ProjectsUnselectedRaw from "../assets/svg/rating/Rating_page_projects_unselected.svg?raw";
-import CropSelectedRaw from "../assets/svg/rating/Rating_page_crop_Selected.svg?raw";
-import CropUnselectedRaw from "../assets/svg/rating/Rating_page_crop_unselected.svg?raw";
-import PlantingSelectedRaw from "../assets/svg/rating/Rating_page_planting_Selected.svg?raw";
-import PlantingUnselectedRaw from "../assets/svg/rating/Rating_page_planting_unselected.svg?raw";
-import LandSelectedRaw from "../assets/svg/rating/Rating_page_land_Selected.svg?raw";
-import LandUnselectedRaw from "../assets/svg/rating/Rating_page_land_unselected.svg?raw";
-import PolymorphicSelectedRaw from "../assets/svg/rating/Rating_page_polymorphic_Selected.svg?raw";
-import PolymorphicUnselectedRaw from "../assets/svg/rating/Rating_page_polymorphic_unselected.svg?raw";
-import StakeholdersSelectedRaw from "../assets/svg/rating/Rating_page_stakeholders_Selected.svg?raw";
-import StakeholdersUnselectedRaw from "../assets/svg/rating/Rating_page_stakeholders_unselected.svg?raw";
-import SourcesSelectedRaw from "../assets/svg/rating/Rating_page_sources_Selected.svg?raw";
-import SourcesUnselectedRaw from "../assets/svg/rating/Rating_page_sources_unselected.svg?raw";
 import { WEEDS_TABLES, type WeedsTable } from "../whoWhatTypes";
-import { svgFit } from "../stage/svgFit";
 import { TABLE_LABELS } from "./tallyMath";
 import { headX } from "./weedsScroll";
 import { m } from "$parent/src/lib/paraglide/messages";
@@ -34,32 +19,6 @@ let {
 	/** No scroll into the run yet: the dig line's head tugs toward the next tab. */
 	fresh?: boolean;
 } = $props();
-
-// `drawn` is the word the art carries.
-const STICKERS: Record<WeedsTable, { drawn: string; lit: string; dim: string }> = {
-	projects: { drawn: "Projects", lit: ProjectsSelectedRaw, dim: ProjectsUnselectedRaw },
-	crop: { drawn: "Crop", lit: CropSelectedRaw, dim: CropUnselectedRaw },
-	planting: { drawn: "Planting", lit: PlantingSelectedRaw, dim: PlantingUnselectedRaw },
-	land: { drawn: "Land", lit: LandSelectedRaw, dim: LandUnselectedRaw },
-	polymorphic: { drawn: "Polymorphic", lit: PolymorphicSelectedRaw, dim: PolymorphicUnselectedRaw },
-	stakeholders: { drawn: "Stakeholders", lit: StakeholdersSelectedRaw, dim: StakeholdersUnselectedRaw },
-	sources: { drawn: "Sources", lit: SourcesSelectedRaw, dim: SourcesUnselectedRaw },
-};
-
-// Each sticker's viewBox is its drawn box (the import script trims it), so its width over its height sizes the tab.
-function aspect(raw: string): number {
-	const box = /viewBox="([^"]+)"/.exec(raw)?.[1].trim().split(/[\s,]+/).map(Number);
-	if (!box || !(box[2] > 0) || !(box[3] > 0)) throw new Error("weeds tab sticker without a viewBox");
-	return box[2] / box[3];
-}
-
-const ART = Object.fromEntries(
-	WEEDS_TABLES.map((t) => {
-		const { drawn, lit, dim } = STICKERS[t];
-		const swap = [[drawn, TABLE_LABELS[t]]] as const;
-		return [t, { lit: svgFit(lit, swap), dim: svgFit(dim, swap), litAspect: aspect(lit), dimAspect: aspect(dim) }];
-	}),
-) as Record<WeedsTable, { lit: string; dim: string; litAspect: number; dimAspect: number }>;
 
 const tabId = (t: WeedsTable) => `weeds-tab-${t}`;
 
@@ -149,15 +108,10 @@ $effect(() => {
 				aria-selected={lit}
 				aria-controls={panelId}
 				tabindex={lit ? 0 : -1}
-				style:--aspect={lit ? ART[t].litAspect : ART[t].dimAspect}
 				onclick={() => onselect(t)}
 				onkeydown={(e) => keydown(e, t)}
 			>
-				<span class="art" aria-hidden="true">
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html lit ? ART[t].lit : ART[t].dim}
-				</span>
-				<span class="visually-hidden">{TABLE_LABELS[t]}</span>
+				<span>{TABLE_LABELS[t]}</span>
 			</button>
 		{/each}
 	</div>
@@ -270,8 +224,10 @@ $effect(() => {
 	.strip {
 		position: relative;
 		z-index: 1;
-		display: flex;
-		align-items: flex-end;
+		/* Equal columns that share the strip, never narrower than the longest label: past that it scrolls. */
+		display: grid;
+		grid-auto-flow: column;
+		grid-auto-columns: minmax(calc(var(--tab-h) * 2.1), 1fr);
 		gap: 2px;
 		padding: 0 4px;
 		overflow-x: auto;
@@ -284,63 +240,31 @@ $effect(() => {
 	}
 
 	.tab {
-		flex: none;
-		display: block;
-		padding: 0;
-		margin: 0;
-		border: none;
-		background: none;
-		cursor: pointer;
-		/* The drawn box's height is the strip's unit; the width follows each sticker's own aspect. */
 		height: var(--tab-h);
-		width: calc(var(--tab-h) * var(--aspect));
-		overflow: hidden;
+		margin: 0;
+		padding: 0 2px;
+		border: none;
 		border-radius: 2px;
+		background: #444;
+		color: #fdfdfd;
+		font: italic 500 calc(var(--tab-h) * 0.3) var(--rt-font-web);
+		white-space: nowrap;
+		cursor: pointer;
 	}
 
-	/* One lit height for every tab: the art's own lit boxes are 1.5x their dim
-	   ones in six pairs, but 1.86x in the Projects pair. */
 	.tab.lit {
-		height: calc(var(--tab-h) * 1.5);
-		width: calc(var(--tab-h) * 1.5 * var(--aspect));
+		background: #000;
+		font: 400 calc(var(--tab-h) * 0.36) var(--rt-font-display);
 	}
 
-	/* A sticker's svg can round a fraction taller than the tab. Clipped here,
-	   not only at the button, or Chromium counts it as scroll room and a wheel
-	   over the strip scrolls the tabs' tops away. */
-	.art {
-		display: block;
-		width: 100%;
-		height: 100%;
-		overflow: clip;
-	}
-
-	.art :global(svg) {
-		display: block;
-		width: 100%;
-		height: auto;
-		filter: drop-shadow(1px 2px 4px rgb(12 8 1 / 0.45));
-	}
-
-	.tab.lit .art :global(svg) {
-		filter:
-			drop-shadow(0 0 2px var(--color-gold-shard))
-			drop-shadow(0 0 10px rgb(240 182 10 / 0.55));
+	/* theme.css inks and embosses every aria-selected tab as if it sat on gold; this one sits on black. */
+	.tab.lit span {
+		color: var(--rt-yellow);
+		text-shadow: none;
 	}
 
 	.tab:focus-visible {
 		outline: 2px solid var(--color-gold-bar);
 		outline-offset: 2px;
-	}
-
-	.visually-hidden {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		margin: -1px;
-		overflow: hidden;
-		clip: rect(0, 0, 0, 0);
-		white-space: nowrap;
-		border: 0;
 	}
 </style>
