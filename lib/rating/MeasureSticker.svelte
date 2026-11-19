@@ -1,9 +1,10 @@
 <script lang="ts">
 // The measure the score answer picked, under the hero's number: the figure,
-// its unit and a verb ("16,630 ha / restored"), the white tree before a
+// its unit and a verb ("16.6K ha / restored"), the white tree before a
 // count of trees. Never a control.
 import treeUrl from "$gc/assets/tree_white.webp";
 import type { ScoreTally } from "../whoWhatTypes";
+import { symbolCount } from "../weeds/weedsFormat";
 import { m } from "$parent/src/lib/paraglide/messages";
 import { getLocale } from "$parent/src/lib/paraglide/runtime";
 
@@ -19,8 +20,9 @@ const WORDS: Record<Measure["kind"], { unit: (count: number) => string; verb: ()
 };
 
 const words = $derived(WORDS[measure.kind]);
-// Hectares keep their one decimal only below 10: "4.5", "1,240".
-const text = $derived(measure.value.toLocaleString(getLocale(), { maximumFractionDigits: measure.value < 10 ? 1 : 0 }));
+// Hectares keep their one decimal only below 10: "4.5", "124". From a thousand the figure is rounded to its symbol, "3.8K".
+const full = $derived(measure.value.toLocaleString(getLocale(), { maximumFractionDigits: measure.value < 10 ? 1 : 0 }));
+const text = $derived(measure.value >= 1000 ? symbolCount(measure.value) : full);
 const unit = $derived(words.unit(measure.value));
 
 // Shown once the numerals' face is in, or the swap would move the unit.
@@ -41,7 +43,7 @@ $effect(() => {
 });
 </script>
 
-<div class="box" class:revealed={revealed && faceIn} role="img" aria-label={words.label({ count: text })}>
+<div class="box" class:revealed={revealed && faceIn} role="img" aria-label={words.label({ count: full })}>
 	<span class="figure" aria-hidden="true">
 		{#if measure.kind === "trees"}<img class="tree" src={treeUrl} alt="" draggable="false" />{/if}
 		<span class="value" bind:this={valueEl}>{text}</span>

@@ -132,7 +132,7 @@ describe("claimLine", () => {
 
 describe("the peers", () => {
 	it("names the group as the trace page does", () => {
-		expect(placeLine(org)).toEqual({ among: "Among the 46 developers", place: "Place 13 of 46", short: "Place 13 of 46 developers" });
+		expect(placeLine(org)).toEqual({ among: "Among the 46 developers", ranked: "Ranked among the 46 developers", place: "Place 13 of 46", short: "Place 13 of 46 developers" });
 		expect(placeLine({ ...org, place: { ...org.place!, group: "all" } })?.among).toBe("Among all 46 organizations");
 		expect(placeLine(project)?.among).toBe("Among all 5 projects");
 		expect(placeLine({ ...org, place: null })).toBeNull();

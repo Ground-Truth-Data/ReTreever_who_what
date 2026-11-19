@@ -22,6 +22,7 @@ import SearchBar from "../search/SearchBar.svelte";
 import SearchDropdown from "../search/SearchDropdown.svelte";
 import WeedsSection from "../weeds/WeedsSection.svelte";
 import WeedsTally from "../weeds/WeedsTally.svelte";
+import { placeLine } from "../weeds/tallyMath";
 import RatingFeedback from "./RatingFeedback.svelte";
 import RatingGround from "./RatingGround.svelte";
 import type { SearchResult } from "./resultLoad";
@@ -124,15 +125,16 @@ $effect(() => {
 // over. The track's height is the one measured thing; the follower shows
 // once the real number has gone under the nav, and turns light once its own
 // top is past the crest of the hills, which is where the dark begins.
-// Beside the ledger (1100px up, motion allowed) the track runs on to the pin
-// instead: from where the lockup would have let it go until the stage pins,
-// the number comes down into the ledger's, and `land` says how far.
+// With motion allowed the number never rides: from the page's top until the
+// stage pins it leaves the hero for the ledger's number (the phone strip's
+// under 1100px), `land` says how far, and the ledger rises with the stage.
 let pageEl = $state<HTMLElement | null>(null);
 let following = $state(false);
 let overSoil = $state(false);
 let land = $state(0);
 let travels = $state(false);
-const ledgerNumber = () => pageEl?.querySelector<HTMLElement>(".tally.corner .big .rating-number") ?? null;
+const ledgerNumber = () =>
+	pageEl?.querySelector<HTMLElement>(innerWidth >= 1100 ? ".tally.corner .big .rating-number" : ".tally.strip .pct .rating-number") ?? null;
 $effect(() => {
 	const page = pageEl;
 	const soil = undergroundEl;
@@ -154,14 +156,15 @@ $effect(() => {
 		const nav = navBottom();
 		const pin = weeds?.stagePin() ?? null;
 		travels =
+			shown &&
 			tally !== null &&
 			record?.rating != null &&
 			pin !== null &&
-			matchMedia("(min-width: 1100px)").matches &&
+			pin > 0 &&
 			!matchMedia("(prefers-reduced-motion: reduce)").matches;
-		const from = bandTop() + window.scrollY - (nav + 12 + body);
-		const run = travels && pin !== null ? Math.max(1, pin - from) : 0;
-		land = run ? Math.min(1, Math.max(0, (window.scrollY - from) / run)) : 0;
+		const letGo = bandTop() + window.scrollY - (nav + 12 + body);
+		const run = travels && pin !== null ? Math.max(1, pin - letGo) : 0;
+		land = travels && pin !== null ? Math.min(1, Math.max(0, window.scrollY / pin)) : 0;
 		const head = bandTop() - page.getBoundingClientRect().top - body + run;
 		if (Math.abs(head - lastHead) >= 1) {
 			lastHead = head;
@@ -173,8 +176,10 @@ $effect(() => {
 			const head = page.querySelector<HTMLElement>(".weeds-head")?.offsetHeight ?? 0;
 			const top = Math.max(nav + 12, Math.min(nav + head + 24, window.innerHeight - 16 - ledger.offsetHeight));
 			page.style.setProperty("--ledger-top", `${Math.round(top)}px`);
+			// Until the stage pins, the ledger stands where it will pin, so it rises into view with the table.
+			ledger.style.translate = travels && pin !== null && window.scrollY < pin ? `0 ${Math.round(pin - window.scrollY)}px` : "";
 		}
-		following = shown && number !== null && number.getBoundingClientRect().bottom <= nav;
+		following = !travels && shown && number !== null && number.getBoundingClientRect().bottom <= nav;
 		const followerTop = Math.min(nav + 12, bandTop() - body + run);
 		const dark = page.querySelector(".crest") ?? soil;
 		overSoil = land > 0 || followerTop >= dark.getBoundingClientRect().top;
@@ -215,8 +220,11 @@ let barEl = $state<HTMLElement | null>(null);
 
 const localized = (href: string | undefined) => (href ? localizeHref(href) : undefined);
 
-// Beside the measure: the page that walks this score down to its parts.
+// The tally's link: the page that walks this score down to its parts.
 const scoreHref = $derived(record ? localized(tab === "orgs" ? routes.whoOrgScore?.(record.key) : routes.whatProjectScore?.(record.key)) : undefined);
+
+// Under the number: the group the rating places it in, so the number is read as a place and not a mark.
+const ranked = $derived(tally ? (placeLine(tally)?.ranked ?? null) : null);
 
 const hrefOf = (item: SearchListItem) =>
 	localized(tab === "orgs" ? routes.whoOrg?.(item.key) : routes.whatProject?.(item.key));
@@ -462,14 +470,14 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 							<div class="number-ghost" class:gone={revealed} aria-hidden="true">
 								<RatingNumber text={record.rating.toFixed(1).length > 3 ? "00.0" : "0.0"} outOf={100} />
 							</div>
-							<div class="number" class:revealed bind:this={numberEl}>
+							<div class="number" class:revealed class:away={land > 0} bind:this={numberEl}>
 								<RatingNumber rating={record.rating} settled={periodIn} outOf={100} label={numberLabel(record.rating)} />
 							</div>
 						</div>
 						<!-- Its own line, held from first paint like the measure's slot, so neither a long figure nor the sticker's arrival moves it. -->
 						<div class="score-link-row">
-							{#if scoreHref}
-								<a class="score-link" class:revealed={periodIn} href={scoreHref}>{m.ww_rating_trace_link()}</a>
+							{#if ranked}
+								<p class="score-among" class:revealed={periodIn}>{ranked}</p>
 							{/if}
 						</div>
 						<!-- Held from first paint: the measure is a second request, and its arrival must move nothing. -->
@@ -750,7 +758,7 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 	}
 
 	/* Under the number, over the sky: a line of its own whose height is held
-	   whether or not the link has arrived, so nothing under it moves. */
+	   whether or not the line has arrived, so nothing under it moves. */
 	.score-link-row {
 		height: 1.3em;
 		font-size: clamp(14px, 1.2vw, 17px);
@@ -758,17 +766,15 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		max-width: 100%;
 	}
 
-	.score-link {
+	.score-among {
 		display: block;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		font-family: var(--rt-font-web);
 		font-weight: 700;
+		margin: 0;
 		color: var(--rt-gold-ink);
-		text-decoration: underline;
-		text-decoration-thickness: 2px;
-		text-underline-offset: 3px;
 		opacity: 0;
 		visibility: hidden;
 		transition:
@@ -776,14 +782,14 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 			visibility 0s linear 260ms;
 	}
 
-	.score-link.revealed {
+	.score-among.revealed {
 		opacity: 1;
 		visibility: visible;
 		transition-delay: 0s;
 	}
 
 	@media (scripting: none) {
-		.score-link {
+		.score-among {
 			opacity: 1;
 			visibility: visible;
 		}
@@ -919,6 +925,20 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		to {
 			transform: translateY(0);
 		}
+	}
+
+	/* The follower carries the number down; its "/100" stays out of the travel. */
+	.number.away :global(.rating-number) {
+		visibility: hidden;
+	}
+
+	.number :global(.out-of) {
+		transition: opacity 120ms ease-in;
+	}
+
+	.number.away :global(.out-of) {
+		visibility: visible;
+		opacity: 0;
 	}
 
 	/* No script, no dog: a crawler or a reader without JS gets the number as the HTML carries it. */

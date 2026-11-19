@@ -2,8 +2,8 @@
 // The hero's number with the name, riding under the nav once
 // the real number has gone under it: born where that number stood and handed
 // back there, sticky in the page's dig-head track so the lockup's end lets it
-// go, unless the ledger waits for it: then it comes down into the ledger's
-// number as the page scrolls. Never a control.
+// go, unless the ledger waits for it: then the number alone leaves the hero
+// for the ledger's number as the page scrolls. Never a control.
 import { untrack } from "svelte";
 import RatingNumber from "./RatingNumber.svelte";
 
@@ -24,7 +24,7 @@ let {
 	overSoil: boolean;
 	/** The hero's real number, measured once at each flip. */
 	numberEl: HTMLElement | null;
-	/** How far down into the ledger, 0–1; at 1 the ledger's own number has it. */
+	/** How far from the hero's number into the ledger's, 0–1; at 1 the ledger's own number has it. */
 	land?: number;
 	/** The ledger's number, where the travel ends. */
 	landOn?: () => HTMLElement | null;
@@ -34,6 +34,7 @@ let wrap = $state<HTMLElement | null>(null);
 let body = $state<HTMLElement | null>(null);
 let glyphs = $state<HTMLElement | null>(null);
 let shown = $state(false);
+let travelled = false;
 
 const FLIP_MS = 260;
 const EASE = "cubic-bezier(0.2, 0.7, 0.2, 1)";
@@ -54,15 +55,19 @@ function atNumber(): string | null {
 }
 
 // Measured from the untransformed layout (the sticky wrapper and offsets), so
-// each scroll frame lerps from where the follower rides to where the ledger's
-// number stands, whatever this frame's transform is.
+// each scroll frame lerps from where the hero's number stands to where the
+// ledger's does, whatever this frame's transform is.
 $effect(() => {
 	const node = body;
 	const p = land;
 	if (!node || !wrap) return;
+	// Back at the top it fades out where the hero's number stands, not under the nav.
+	const home = p <= 0 && travelled;
+	travelled = p > 0;
 	const src = glyphs?.querySelector<HTMLElement>(".rating-number");
-	const dest = p > 0 ? landOn()?.getBoundingClientRect() : null;
-	if (!src || !dest?.height || !src.offsetHeight) {
+	const from = p > 0 || home ? numberEl?.querySelector(".rating-number")?.getBoundingClientRect() : null;
+	const dest = p > 0 || home ? landOn()?.getBoundingClientRect() : null;
+	if (!src || !from?.height || !dest?.height || !src.offsetHeight) {
 		node.style.transform = "";
 		return;
 	}
@@ -73,10 +78,10 @@ $effect(() => {
 	// before the lockup rises past it, and settles into the ledger.
 	const ex = 1 - (1 - p) ** 4;
 	const ey = p < 0.5 ? 4 * p ** 3 : 1 - (2 - 2 * p) ** 3 / 2;
-	const k = 1 + ex * (dest.height / src.offsetHeight - 1);
-	const x = src.offsetLeft + ex * (dest.left - ox - src.offsetLeft);
-	const y = src.offsetTop + ey * (dest.top - oy - src.offsetTop);
-	node.style.transform = `translate(${x - k * src.offsetLeft}px, ${y - k * src.offsetTop}px) scale(${k})`;
+	const k = (from.height + ex * (dest.height - from.height)) / src.offsetHeight;
+	const x = from.left + ex * (dest.left - from.left);
+	const y = from.top + ey * (dest.top - from.top);
+	node.style.transform = `translate(${x - ox - k * src.offsetLeft}px, ${y - oy - k * src.offsetTop}px) scale(${k})`;
 });
 
 $effect(() => {
@@ -86,6 +91,7 @@ $effect(() => {
 	const wasShown = untrack(() => shown);
 	for (const a of node.getAnimations()) a.cancel();
 	if (target) {
+		node.style.transform = "";
 		shown = true;
 		if (reduced()) return;
 		const from = atNumber();
@@ -106,9 +112,9 @@ $effect(() => {
 </script>
 
 <div class="follower" class:travelling={land > 0} aria-hidden="true" bind:this={wrap}>
-	<div class="body" class:shown class:soil={overSoil} class:landed={land >= 1} bind:this={body}>
+	<div class="body" class:shown class:travel={land > 0} class:soil={overSoil} class:landed={land >= 1} bind:this={body}>
 		<span class="glyphs" bind:this={glyphs}><RatingNumber text={rating.toFixed(1)} /></span>
-		<span class="words" style:opacity={land > 0 ? Math.max(0, 1 - land * 3) : null}>
+		<span class="words" class:gone={land > 0}>
 			<span class="name">{name}</span>
 		</span>
 	</div>
@@ -164,8 +170,20 @@ $effect(() => {
 			text-shadow 200ms ease;
 	}
 
+	/* Swapped for the hero's number in the same frame, so it never shows twice. */
+	.body.travel {
+		opacity: 1;
+		visibility: visible;
+		transition: none;
+	}
+
+	.words.gone {
+		visibility: hidden;
+	}
+
 	/* The ledger's number has it now: gone in the same frame, so it never shows twice. */
-	.body.shown.landed {
+	.body.shown.landed,
+	.body.travel.landed {
 		opacity: 0;
 		visibility: hidden;
 		transition: none;

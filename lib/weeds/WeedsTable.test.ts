@@ -6,7 +6,8 @@ import type { WeedsColumn, WeedsRow } from "../whoWhatTypes";
 const columns: WeedsColumn[] = [
 	{ key: "url", label: "URL", kind: "link" },
 	{ key: "sourceDesc", label: "Description", kind: "text" },
-	{ key: "linkDeadAt", label: "Link dead", kind: "dead" },
+	{ key: "linkDeadAt", label: "Link dead", kind: "dead", aside: "linkAliveAt" },
+	{ key: "linkAliveAt", label: "Last alive", kind: "aside" },
 ];
 const draw = (row: WeedsRow) => render(WeedsTable, { props: { columns, rows: [row] } }).body.replace(/<!--[\s\S]*?-->/g, "");
 
@@ -16,6 +17,13 @@ describe("the weeds sources table", () => {
 		expect(html).not.toContain("<a");
 		expect(html).toContain("gone.example");
 		expect(html).toContain("link dead · checked 2026/11/10");
+		expect(html).not.toContain("last alive");
+	});
+
+	it("a dead link the check once saw alive names that day too", () => {
+		const html = draw({ url: "https://www.gone.example/a", sourceDesc: null, linkDeadAt: "2026-11-10T17:10:44.938Z", linkAliveAt: "2026-10-28T09:00:00.000Z" });
+		expect(html).toContain("link dead · checked 2026/11/10 · last alive 2026/10/28");
+		expect(html).not.toMatch(/<th[^>]*>[^<]*Last alive/);
 	});
 
 	it("a live or unchecked link is a link, and the dead column is never drawn", () => {
@@ -70,5 +78,27 @@ describe("the weeds land table", () => {
 	it("draws no empty column", () => {
 		expect(html.match(/<th[ >]/g)).toHaveLength(2);
 		expect(html).not.toMatch(/<th[^>]*>[^<]*Hectares/);
+	});
+});
+
+describe("a table that publishes nothing", () => {
+	const impact: WeedsColumn[] = [
+		{ key: "project", label: "Project", kind: "text" },
+		{ key: "survivalRate", label: "Surviving (%)", kind: "number" },
+		{ key: "reviews", label: "Reviews", kind: "text" },
+		{ key: "linkDeadAt", label: "Link dead", kind: "dead" },
+	];
+
+	it("still draws its row, every field an empty cell, when asked for blanks", () => {
+		const html = render(WeedsTable, { props: { columns: impact, rows: [{ project: "Elm", survivalRate: null, reviews: null }], blanks: true } }).body;
+		expect(html.match(/<th[ >]/g)).toHaveLength(3);
+		expect(html.match(/<tr[ >]/g)).toHaveLength(2);
+		expect(html).toContain("Elm");
+	});
+
+	it("draws its row with no project column to lead it", () => {
+		const html = render(WeedsTable, { props: { columns: impact.slice(1), rows: [{ survivalRate: null, reviews: null }], blanks: true } }).body;
+		expect(html.match(/<th[ >]/g)).toHaveLength(2);
+		expect(html.match(/<td[ >]/g)).toHaveLength(2);
 	});
 });

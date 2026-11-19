@@ -222,7 +222,7 @@ const status = $derived.by(() => {
 	{#if traceHref}<a class="trace-link" href={traceHref}>{m.ww_rating_trace_link()}</a>{/if}
 </aside>
 
-<div class="tally strip" class:on={visible}>
+<div class="tally strip" class:on={visible} class:waiting={!landed}>
 	<div class="face" aria-hidden="true">
 		<span class="pct"><RatingNumber text={bigText} /></span>
 		<span class="what">{stripLine}</span>
@@ -526,6 +526,11 @@ const status = $derived.by(() => {
 		--glyph-h: 30px;
 		grid-row: 1 / 3;
 		filter: none;
+	}
+
+	/* Empty while the hero's number is on its way into it. */
+	.strip.waiting .pct {
+		visibility: hidden;
 	}
 
 	.what {

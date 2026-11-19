@@ -9,6 +9,7 @@ import CountUp from "./CountUp.svelte";
 import TraceStop from "./TraceStop.svelte";
 import { formatRatingOutOf } from "../whoWhatTypes";
 import type { ScoreTrace, TraceRoutes } from "./traceTypes";
+import { peersOf } from "../weeds/tallyMath";
 import { m } from "$parent/src/lib/paraglide/messages";
 import { getLocale, localizeHref } from "$parent/src/lib/paraglide/runtime";
 
@@ -20,20 +21,6 @@ const oneDecimal = (n: number) => n.toFixed(1);
 const ratioText = (n: number) => (n === 1 ? "1.0" : n.toFixed(2));
 const whole = (n: number) => Math.round(n).toLocaleString(getLocale());
 const method = (s: Parameters<NonNullable<TraceRoutes["method"]>>[0]) => routes.method?.(s);
-
-const PEERS: Record<string, () => string> = {
-	developer_ish: m.ww_rating_trace_peers_developer_ish,
-	landowner_ish: m.ww_rating_trace_peers_landowner_ish,
-	producer_ish: m.ww_rating_trace_peers_producer_ish,
-	research_ish: m.ww_rating_trace_peers_research_ish,
-	supplier_ish: m.ww_rating_trace_peers_supplier_ish,
-	ngo_ish: m.ww_rating_trace_peers_ngo_ish,
-	marketplace_ish: m.ww_rating_trace_peers_marketplace_ish,
-	nursery_ish: m.ww_rating_trace_peers_nursery_ish,
-	sponsor_ish: m.ww_rating_trace_peers_sponsor_ish,
-	all: m.ww_rating_trace_peers_all,
-};
-const peers = (group: string | null) => (group && PEERS[group] ? PEERS[group]() : m.ww_rating_trace_peers_none());
 
 const runDate = $derived(
 	trace.run ? new Date(trace.run.at).toLocaleDateString(getLocale(), { day: "numeric", month: "long", year: "numeric" }) : null,
@@ -125,9 +112,9 @@ const TILTS = [-1.1, 0.8, -0.6, 1];
 						{@const projectsAt = claims ? 3 : 1}
 						<TraceStop
 							icon="trophy"
-							label={trace.group === "all" ? m.ww_rating_trace_rank_label_all() : m.ww_rating_trace_rank_label({ peers: peers(trace.group) })}
+							label={trace.group === "all" ? m.ww_rating_trace_rank_label_all() : m.ww_rating_trace_rank_label({ peers: peersOf(trace.group) })}
 							sentence={trace.rankOf !== null
-								? m.ww_rating_trace_rank_org({ percent: whole(rating), count: count(trace.rankOf), peers: peers(trace.group) })
+								? m.ww_rating_trace_rank_org({ percent: whole(rating), count: count(trace.rankOf), peers: peersOf(trace.group) })
 								: null}
 							note={trace.group === "all" ? m.ww_rating_trace_rank_all_note() : null}
 							howHref={method("rating")}

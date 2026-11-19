@@ -10,7 +10,7 @@ export interface SearchResult {
 	name: string;
 	/** The published percentile, 0–100; null when unscored or before a first publish. */
 	rating: number | null;
-	/** "unreviewed": no reviewed claim, ranked among its own kind. Null for a project, or unscored. */
+	/** "unreviewed": no reviewed claim. A label only: reviewed and unreviewed orgs rank together. Null for a project, or unscored. */
 	cohort: Cohort | null;
 	/** The published score run the rating was read from. */
 	scoreRunId: string | null;
@@ -79,7 +79,7 @@ export type ProjectRow = {
 
 const cohortOf = (raw: unknown): Cohort | null => (raw === "reviewed" || raw === "unreviewed" ? raw : null);
 
-/** The org's rating is its published percentile within its cohort. */
+/** The org's rating is its published percentile within its stakeholder category, or among all ranked orgs when that group is small. */
 export async function loadOrganization(
 	fetch: typeof globalThis.fetch,
 	organizationKey: string,
