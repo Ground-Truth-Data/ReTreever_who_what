@@ -139,7 +139,8 @@ $effect(() => {
 	const page = pageEl;
 	const soil = undergroundEl;
 	const number = numberEl;
-	const shown = revealed;
+	// Landed, not just revealed: mid-lob the number's box is small at the dog's mouth, and a page loaded scrolled would start the travel from there.
+	const shown = periodIn;
 	if (!page || !soil) return;
 	let raf = 0;
 	let lastHead = -1;
