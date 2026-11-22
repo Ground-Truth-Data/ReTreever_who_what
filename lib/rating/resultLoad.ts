@@ -10,8 +10,6 @@ export interface SearchResult {
 	name: string;
 	/** The published percentile, 0–100; null when unscored or before a first publish. */
 	rating: number | null;
-	/** "unreviewed": no reviewed claim. A label only: reviewed and unreviewed orgs rank together. Null for a project, or unscored. */
-	cohort: Cohort | null;
 	/** The published score run the rating was read from. */
 	scoreRunId: string | null;
 	/** Secondary line — an org's stakeholder category. Projects have none. */
@@ -57,15 +55,12 @@ async function fetchItem<T>(
 	return { item, scoreRunId: typeof payload.scoreRunId === "string" ? payload.scoreRunId : null };
 }
 
-export type Cohort = "reviewed" | "unreviewed";
-
 /** One org as the record endpoint answers the fields this page asks for. */
 export type OrgRow = {
 	organizationKey: string;
 	organizationName: string;
 	/** The published percentile, 0–100. */
 	rating: number | null;
-	cohort: Cohort | null;
 	primaryStakeholderCategoryName: string | null;
 };
 
@@ -77,7 +72,6 @@ export type ProjectRow = {
 	rating: number | null;
 };
 
-const cohortOf = (raw: unknown): Cohort | null => (raw === "reviewed" || raw === "unreviewed" ? raw : null);
 
 /** The org's rating is its published percentile within its stakeholder category, or among all ranked orgs when that group is small. */
 export async function loadOrganization(
@@ -86,7 +80,7 @@ export async function loadOrganization(
 	endpoints: WhoWhatEndpoints,
 	fail: WhoWhatFail,
 ): Promise<SearchResult> {
-	const fields = "organizationKey,organizationName,rating,cohort,primaryStakeholderCategory";
+	const fields = "organizationKey,organizationName,rating,primaryStakeholderCategory";
 	const { item: org, scoreRunId } = await fetchItem<OrgRow>(
 		fetch,
 		`${endpoints.organization?.(organizationKey) ?? ""}?fields=${fields}`,
@@ -99,7 +93,6 @@ export async function loadOrganization(
 		key: org.organizationKey,
 		name: org.organizationName,
 		rating: shown(org.rating),
-		cohort: cohortOf(org.cohort),
 		scoreRunId,
 		hint: org.primaryStakeholderCategoryName,
 	};
@@ -125,7 +118,6 @@ export async function loadProject(
 		key: project.projectKey,
 		name: project.projectName,
 		rating: shown(project.rating),
-		cohort: null,
 		scoreRunId,
 	};
 }
