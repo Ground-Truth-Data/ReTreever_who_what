@@ -154,6 +154,15 @@ let {
 		}
 	}
 
+	/* Under 1100px the tally is a strip fixed at the screen's foot; the pinned
+	   stage ends above it. 48px + its bottom padding is WeedsTally's `.strip`. */
+	@media (max-width: 1099px) {
+		.underground.has-tally :global(.weeds-pin) {
+			box-sizing: border-box;
+			padding-bottom: calc(48px + max(8px, env(safe-area-inset-bottom, 0px)));
+		}
+	}
+
 	/* At 5% opacity the faint pine needs no more than a 1x tile on a phone. */
 	@media (max-width: 767px) {
 		.rating-hero::before {
