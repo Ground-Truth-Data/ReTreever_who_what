@@ -440,7 +440,7 @@ function barKeydown(e: KeyboardEvent) {
 		outline: none;
 		color: var(--rtvr-on-dark);
 		font-family: inherit;
-		font-size: clamp(14px, 1.4vw, 18px);
+		font-size: clamp(16px, 1.4vw, 18px);
 		caret-color: var(--color-gold-bar);
 		-webkit-appearance: none;
 		appearance: none;
