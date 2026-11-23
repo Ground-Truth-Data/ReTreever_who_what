@@ -114,6 +114,7 @@ export function formatCell(value: string | number | null | undefined, kind: Weed
 /** The text a cell shows, read with the `aside` value it carries. */
 export function cellText(row: WeedsRow, c: WeedsColumn): string {
 	const v = row[c.key];
+	if (Array.isArray(v)) return v.length ? v.map((n) => (n.scientific ? `${n.name} ${n.scientific}` : n.name)).join(", ") : EMPTY;
 	const aside = c.aside ? row[c.aside] : null;
 	switch (c.kind) {
 		case "money":

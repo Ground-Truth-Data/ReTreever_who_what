@@ -50,6 +50,10 @@ describe("money, points and sites", () => {
 		expect(cellText({ desc: "Ndaragwa", id: "site_1" }, site)).toBe("Ndaragwa");
 		expect(cellText({ desc: null, id: "site_1" }, site)).toBe("Unnamed site");
 		expect(cellText({ desc: null, id: null }, site)).toBe(EMPTY);
+		const species: WeedsColumn = { key: "species", label: "Species", kind: "names" };
+		const names = [{ name: "Teak", scientific: "Tectona grandis" }, { name: "Ghost tree", scientific: null }];
+		expect(cellText({ species: names }, species)).toBe("Teak Tectona grandis, Ghost tree");
+		expect(cellText({ species: null }, species)).toBe(EMPTY);
 	});
 
 	it("a column the host says no row fills is listed, unless it is optional; asides are never either", () => {
