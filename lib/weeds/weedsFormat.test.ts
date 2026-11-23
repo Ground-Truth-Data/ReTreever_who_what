@@ -52,16 +52,26 @@ describe("money, points and sites", () => {
 		expect(cellText({ desc: null, id: null }, site)).toBe(EMPTY);
 	});
 
-	it("a column no row publishes is listed, unless it is optional; asides are never either", () => {
+	it("a column the host says no row fills is listed, unless it is optional; asides are never either", () => {
 		const columns: WeedsColumn[] = [
 			{ key: "a", label: "A", kind: "text" },
 			{ key: "b", label: "B", kind: "number" },
 			{ key: "u", label: "Unit", kind: "text", optional: true },
 			{ key: "c", label: "Currency", kind: "aside" },
 		];
-		const { shown, missing } = splitPublished(columns, [{ a: "x", b: null, u: null, c: null }, { a: null, b: "", u: null, c: "EUR" }]);
+		const { shown, missing } = splitPublished(columns, ["a", "c"]);
 		expect(shown.map((c) => c.key)).toEqual(["a"]);
 		expect(missing.map((c) => c.key)).toEqual(["b"]);
+	});
+
+	it("a column filled only past the rows sent is shown, not listed", () => {
+		const columns: WeedsColumn[] = [
+			{ key: "survivalRatePct", label: "Surviving (%)", kind: "number" },
+			{ key: "reviews", label: "Reviews", kind: "text" },
+		];
+		const { shown, missing } = splitPublished(columns, ["reviews"]);
+		expect(shown.map((c) => c.key)).toEqual(["reviews"]);
+		expect(missing.map((c) => c.key)).toEqual(["survivalRatePct"]);
 	});
 });
 

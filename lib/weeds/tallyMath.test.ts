@@ -198,6 +198,13 @@ describe("ladderValue", () => {
 		expect(ladderValue(DEMO[2], 2, 3)).toBe("–");
 		expect(ladderValue(DEMO[4], 4, 3)).toBe("·");
 	});
+
+	it("shows a table with no record as 0 of what it offers, with an empty bar: never a dash or a gap", () => {
+		const empty = { table: "planting", awarded: 0, available: 16 } as const;
+		expect(ladderValue(empty, 2, 3)).toEqual({ awarded: 0, available: 16 });
+		expect(barFill(empty, 2, 3)).toBe(0);
+		expect(sumsThrough([DEMO[0], empty], 1)).toMatchObject({ scored: 4, available: 21 });
+	});
 });
 
 describe("the words", () => {

@@ -218,7 +218,7 @@ $effect(() => {
 const answer = $derived(answers[active]);
 const rows = $derived(answer ? filterRows(answer.rows, answer.columns, query) : []);
 // The project column is context, not a field: a table publishing nothing else draws its rows with every field empty.
-const split = $derived(answer ? splitPublished(answer.columns, answer.rows) : null);
+const split = $derived(answer ? splitPublished(answer.columns, answer.filled) : null);
 const bare = $derived(!!split && split.shown.every((c) => c.key === "project"));
 const from = $derived(
 	answer?.platforms.length
@@ -291,7 +291,7 @@ function barKeydown(e: KeyboardEvent) {
 					<p class="state-line">{m.ww_rating_weeds_empty()}</p>
 				</div>
 			{:else}
-				<WeedsTable columns={answer.columns} {rows} all={answer.rows} sweep={active} {open} blanks={bare} />
+				<WeedsTable columns={answer.columns} {rows} filled={answer.filled} sweep={active} {open} blanks={bare} />
 				<div class="foot">
 					<p class="count" aria-live="polite">
 						{#if query}
