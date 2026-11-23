@@ -390,9 +390,15 @@ const aspect = (svg: string) => {
 	const box = /viewBox="[-\d.]+ [-\d.]+ ([\d.]+) ([\d.]+)"/.exec(svg);
 	return box ? Number(box[1]) / Number(box[2]) : 0;
 };
-// The lockup's width in sticker heights, its three columns: the shovel (119 × 600) stands 1.9 heights tall.
-const lockupK =
-	Math.max(aspect(truthArt), aspect(digArt)) + 1.9 * (119 / 600) + Math.max(aspect(weedsArt), aspect(inArt) + aspect(deeperArt));
+// The lockup's width in sticker heights, its three columns: the shovel (119 × 600) stands 1.9 heights tall. Stacked,
+// the first phrase takes a row of its own above the shovel.
+const lockupWidth = (truth: string, weeds: string, dig: string, inn: string, deeper: string) => {
+	const right = Math.max(aspect(weeds), aspect(inn) + aspect(deeper));
+	return { k: Math.max(aspect(truth), aspect(dig)) + 1.9 * (119 / 600) + right, stacked: Math.max(aspect(truth), aspect(dig) + 1.9 * (119 / 600) + right) };
+};
+const lockupSize = lockupWidth(truthArt, weedsArt, digArt, inArt, deeperArt);
+// A translation a tenth wider than the English art would read under 90% of its size on a phone: it stacks instead.
+const longLockup = lockupSize.k > 1.1 * lockupWidth(TruthIsInRaw, TheWeedsRaw, DigRaw, InRaw, DeeperRaw).k;
 </script>
 
 <RatingGround bind:pageEl bind:heroEl bind:undergroundEl hasTally={tally !== null}>
@@ -511,7 +517,7 @@ const lockupK =
 	{#snippet underground()}
 	{#snippet lockup()}
 	<section class="soil-band">
-		<div class="lockup" style="--lockup-k: {lockupK}" aria-hidden="true">
+		<div class="lockup" class:long={longLockup} style="--lockup-k: {lockupSize.k}; --lockup-stacked: {lockupSize.stacked}" aria-hidden="true">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 			<div class="sticker truth">{@html truthArt}</div>
 			<img class="shovel" src={shovelUrl} alt="" draggable="false" />
@@ -1010,7 +1016,8 @@ const lockupK =
 	   never on a letter, whatever the width or the language. */
 	/* A longer translation widens the stickers; past the band's width the whole lockup scales down as one. */
 	.lockup {
-		--lockup-fit: min(clamp(30px, 5.5vw, 78px), calc((100cqi - 3 * clamp(6px, 1vw, 14px)) / var(--lockup-k)));
+		--lockup-width: var(--lockup-k);
+		--lockup-fit: min(clamp(30px, 5.5vw, 78px), calc((100cqi - 3 * clamp(6px, 1vw, 14px)) / var(--lockup-width)));
 		--lockup-h: var(--lockup-fit);
 		display: grid;
 		grid-template-columns: repeat(3, auto);
@@ -1034,6 +1041,31 @@ const lockupK =
 	.dig,
 	.tail {
 		grid-row: 3;
+	}
+
+	@container (max-width: 470px) {
+		.lockup.long {
+			--lockup-width: var(--lockup-stacked);
+		}
+
+		.lockup.long .truth {
+			grid-area: 1 / 1 / 2 / 4;
+			justify-self: center;
+		}
+
+		.lockup.long .shovel,
+		.lockup.long .weeds {
+			grid-row: 2;
+		}
+
+		.lockup.long .yellow-line {
+			grid-row: 3;
+		}
+
+		.lockup.long .dig,
+		.lockup.long .tail {
+			grid-row: 4;
+		}
 	}
 
 	.tail {
