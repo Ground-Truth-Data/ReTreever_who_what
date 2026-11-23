@@ -135,6 +135,15 @@ $effect(() => {
 		z-index: 21;
 	}
 
+	/* A phone's ledger is the strip at the window's foot, straight down through
+	   the tabs: the number passes under the weeds track, never over a tab's word,
+	   and the strip's own number takes over at the landing. */
+	@media (max-width: 1099px) {
+		.follower.travelling {
+			z-index: 5;
+		}
+	}
+
 	/* Where the number stood: the hero's gutter, its grid's centring margin
 	   and the score column's padding. */
 	.body {
