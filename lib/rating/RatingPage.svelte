@@ -396,10 +396,10 @@ const lockupWidth = (truth: string, weeds: string, dig: string, inn: string, dee
 	const right = Math.max(aspect(weeds), aspect(inn) + aspect(deeper));
 	return { k: Math.max(aspect(truth), aspect(dig)) + 1.9 * (119 / 600) + right, stacked: Math.max(aspect(truth), aspect(dig) + 1.9 * (119 / 600) + right) };
 };
-const lockup = lockupWidth(truthArt, weedsArt, digArt, inArt, deeperArt);
+const lockupSize = lockupWidth(truthArt, weedsArt, digArt, inArt, deeperArt);
 // A translation a tenth wider than the English art would read under 90% of its size on a phone: it takes the room
 // a phone has, the header the whole row and the lockup a row more.
-const longLockup = lockup.k > 1.1 * lockupWidth(TruthIsInRaw, TheWeedsRaw, DigRaw, InRaw, DeeperRaw).k;
+const longLockup = lockupSize.k > 1.1 * lockupWidth(TruthIsInRaw, TheWeedsRaw, DigRaw, InRaw, DeeperRaw).k;
 const longHead = aspect(headerArt) > 1.1 * aspect(HeaderRaw);
 </script>
 
@@ -519,7 +519,7 @@ const longHead = aspect(headerArt) > 1.1 * aspect(HeaderRaw);
 	{#snippet underground()}
 	{#snippet lockup()}
 	<section class="soil-band">
-		<div class="lockup" class:long={longLockup} style="--lockup-k: {lockup.k}; --lockup-stacked: {lockup.stacked}" aria-hidden="true">
+		<div class="lockup" class:long={longLockup} style="--lockup-k: {lockupSize.k}; --lockup-stacked: {lockupSize.stacked}" aria-hidden="true">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 			<div class="sticker truth">{@html truthArt}</div>
 			<img class="shovel" src={shovelUrl} alt="" draggable="false" />
