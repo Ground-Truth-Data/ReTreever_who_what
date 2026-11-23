@@ -302,7 +302,9 @@ $effect(() => {
 	/* Seven columns at 390px scroll sideways inside the wrapper, never the
 	   page. Rows scroll inside it too, up to the stage's cap, and the wheel
 	   chains to the page at the end: that is what walks the tabs, so the y
-	   axis is never contained, and its snap is proximity, never mandatory. */
+	   axis is never contained, and its snap is proximity, never mandatory.
+	   Only rows snap: Chrome re-snaps a sideways snap when the columns
+	   change, which opened a new tab one column in. */
 	.weeds-table-wrap {
 		position: relative;
 		isolation: isolate;
@@ -313,7 +315,7 @@ $effect(() => {
 		overflow-x: auto;
 		overflow-y: auto;
 		overscroll-behavior-x: contain;
-		scroll-snap-type: both proximity;
+		scroll-snap-type: y proximity;
 		scroll-padding-top: var(--head-h);
 		scroll-padding-left: var(--lead-w);
 		border: 3px solid var(--color-gold-bar);
@@ -388,7 +390,6 @@ $effect(() => {
 		font-weight: 500;
 		font-size: 13px;
 		letter-spacing: 0.02em;
-		scroll-snap-align: none start;
 	}
 
 	th.lit {
