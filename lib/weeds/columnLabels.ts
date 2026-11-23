@@ -29,6 +29,8 @@ const LABELS: Record<string, () => string> = {
 	"Price per tree": m.ww_rating_column_price_per_tree,
 	"People employed": m.ww_rating_column_people_employed,
 	"Counted as": m.ww_rating_column_counted_as,
+	"Why restore": m.ww_rating_column_why_restore,
+	"What harmed the land": m.ww_rating_column_what_harmed,
 	"Restoration type": m.ww_rating_column_restoration_type,
 	Treatment: m.ww_rating_column_treatment,
 	"Degraded on": m.ww_rating_column_degraded_on,
