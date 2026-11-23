@@ -131,7 +131,8 @@ async function search(q: string) {
 	}
 	const answer = list.now(q);
 	if (list.loading) notice = m.ww_rating_notice_loading();
-	const key = resolveSearchKey(q, await answer, null);
+	const items = await answer;
+	const key = resolveSearchKey(q, items, null);
 	if (!key) {
 		notice = m.ww_rating_notice_no_match();
 		return;
@@ -139,7 +140,9 @@ async function search(q: string) {
 	notice = null;
 	recordSearchHit(fetch, endpoints, tab, key);
 	const href = tab === "orgs" ? routes.whoOrg?.(key) : routes.whatProject?.(key);
-	if (href) curtain.wipe(localizeHref(href));
+	if (!href) return;
+	holdPickedName(localizeHref(href), items.find((item) => item.key === key)?.name);
+	curtain.wipe(localizeHref(href));
 }
 </script>
 
