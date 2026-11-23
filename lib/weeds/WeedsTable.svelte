@@ -263,6 +263,8 @@ $effect(() => {
 										{shown || String(v)}
 									{:else if open && c.key === open.column && v}
 										<button type="button" class="row-open" onclick={() => open.on(row)}>{shown}</button>
+									{:else if c.kind === "names" && Array.isArray(v)}
+										{#each v as s, k (k)}{k ? ", " : ""}{s.name}{#if s.scientific}<small class="sci">{s.scientific}</small>{/if}{/each}
 									{:else if c.kind === "site" && !v && c.aside && row[c.aside]}
 										{shown}<small class="site-id">{row[c.aside]}</small>
 									{:else}
@@ -530,6 +532,11 @@ $effect(() => {
 		color: var(--color-gold-shard);
 		text-decoration: underline;
 		text-underline-offset: 2px;
+	}
+
+	.sci {
+		margin-left: 0.3em;
+		font-size: var(--rt-fs-meta);
 	}
 
 	.dead-note {

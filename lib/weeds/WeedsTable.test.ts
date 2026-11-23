@@ -74,6 +74,13 @@ describe("the weeds land table", () => {
 		expect(html.match(/site_/g)).toHaveLength(1);
 	});
 
+	it("names a species with its scientific name after it in small type", () => {
+		const crop: WeedsColumn[] = [{ key: "species", label: "Species", kind: "names" }];
+		const species = [{ name: "Teak", scientific: "Tectona grandis" }, { name: "Ghost tree", scientific: null }];
+		const drawn = render(WeedsTable, { props: { columns: crop, rows: [{ species }], filled: ["species"] } }).body.replace(/<!--[\s\S]*?-->/g, "");
+		expect(drawn).toMatch(/Teak<small class="sci[^"]*">Tectona grandis<\/small>, Ghost tree<\/td>/);
+	});
+
 	// The fields it leaves out are listed by the panel's footer (NeverPublished), not by the table.
 	it("draws no empty column", () => {
 		expect(html.match(/<th[ >]/g)).toHaveLength(2);

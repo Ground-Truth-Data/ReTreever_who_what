@@ -37,10 +37,12 @@ export type WeedsTable = (typeof WEEDS_TABLES)[number];
  * opens a row; nor is `dead`, the date the row's link answered 404/410; nor `aside`, which rides in the cell of the
  * column naming it: a `money` cell's currency, a `points` cell's points available, a `site`'s id.
  */
-export type WeedsKind = "text" | "number" | "date" | "link" | "score" | "key" | "dead" | "money" | "points" | "site" | "aside";
+export type WeedsKind = "text" | "number" | "date" | "link" | "score" | "key" | "dead" | "money" | "points" | "site" | "aside" | "names";
 /** `optional`: drawn only when a row has it, and never listed as not published. */
 export type WeedsColumn = { key: string; label: string; kind: WeedsKind; aside?: string; optional?: true };
-export type WeedsRow = Record<string, string | number | null>;
+/** A species as the host names it: its scientific name is drawn small after the name, when it says something more. */
+export type WeedsName = { name: string; scientific: string | null };
+export type WeedsRow = Record<string, string | number | null | WeedsName[]>;
 /** A column the table draws; `key`, `dead` and `aside` ride along unseen. */
 export const isDrawn = (c: WeedsColumn): boolean => c.kind !== "key" && c.kind !== "dead" && c.kind !== "aside";
 /**
