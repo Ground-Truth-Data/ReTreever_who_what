@@ -10,15 +10,15 @@ import type { WeedsColumn, WeedsRow } from "../whoWhatTypes";
 let {
 	columns,
 	rows,
-	all = undefined,
+	filled,
 	sweep = undefined,
 	open = undefined,
 	blanks = false,
 }: {
 	columns: WeedsColumn[];
 	rows: WeedsRow[];
-	/** Every row the table has, filtered or not: what says a column is published. */
-	all?: WeedsRow[];
+	/** The drawn columns some row in scope fills, as the host judged them: what says a column is published. */
+	filled: string[];
 	/** Each new value digs the table from the top once, when it is on screen; till then its rows are hidden. */
 	sweep?: unknown;
 	/** The column whose cell opens the row, and what opening does. */
@@ -27,7 +27,7 @@ let {
 	blanks?: boolean;
 } = $props();
 
-const split = $derived(splitPublished(columns, all ?? rows));
+const split = $derived(splitPublished(columns, filled));
 const drawn = $derived(blanks ? columns.filter((c) => split.shown.includes(c) || split.missing.includes(c)) : split.shown);
 
 let wrap = $state<HTMLDivElement>();

@@ -1,4 +1,4 @@
-import { formatTransparencyScore, type WeedsColumn, type WeedsKind, type WeedsRow } from "../whoWhatTypes";
+import { formatTransparencyScore, isDrawn, type WeedsColumn, type WeedsKind, type WeedsRow } from "../whoWhatTypes";
 import { getLocale } from "$parent/src/lib/paraglide/runtime";
 import { m } from "$parent/src/lib/paraglide/messages";
 
@@ -129,9 +129,6 @@ export function cellText(row: WeedsRow, c: WeedsColumn): string {
 	}
 }
 
-/** A column the table draws; `key`, `dead` and `aside` ride along unseen. */
-export const isDrawn = (c: WeedsColumn): boolean => c.kind !== "key" && c.kind !== "dead" && c.kind !== "aside";
-
 const filled = (v: unknown) => v !== null && v !== undefined && v !== "";
 
 /** A site with no description still shows, by its id. */
@@ -139,12 +136,13 @@ const publishes = (row: WeedsRow, c: WeedsColumn) =>
 	filled(row[c.key]) || (c.kind === "site" && !!c.aside && filled(row[c.aside]));
 
 /**
- * The drawn columns some row publishes, and those no row does. Judged on every
- * row the table has, never the filtered ones, so a filter cannot hide a column.
+ * The drawn columns some row publishes, and those no row does, as the host
+ * judged them on every row in scope: never the capped page or the filtered
+ * rows, so neither the cap nor a filter can hide a column.
  */
-export function splitPublished(columns: WeedsColumn[], rows: WeedsRow[]): { shown: WeedsColumn[]; missing: WeedsColumn[] } {
+export function splitPublished(columns: WeedsColumn[], filled: string[]): { shown: WeedsColumn[]; missing: WeedsColumn[] } {
 	const drawn = columns.filter(isDrawn);
-	const shown = drawn.filter((c) => rows.some((r) => publishes(r, c)));
+	const shown = drawn.filter((c) => filled.includes(c.key));
 	return { shown, missing: drawn.filter((c) => !c.optional && !shown.includes(c)) };
 }
 

@@ -41,11 +41,17 @@ export type WeedsKind = "text" | "number" | "date" | "link" | "score" | "key" | 
 /** `optional`: drawn only when a row has it, and never listed as not published. */
 export type WeedsColumn = { key: string; label: string; kind: WeedsKind; aside?: string; optional?: true };
 export type WeedsRow = Record<string, string | number | null>;
-/** One table's answer from the host: `total` is `rows.length`; `more` says the cap cut it short; `platforms` are the rows' sources, named once. */
+/** A column the table draws; `key`, `dead` and `aside` ride along unseen. */
+export const isDrawn = (c: WeedsColumn): boolean => c.kind !== "key" && c.kind !== "dead" && c.kind !== "aside";
+/**
+ * One table's answer from the host: `total` is `rows.length`; `more` says the cap cut it short; `platforms` are the
+ * rows' sources, named once; `filled` the drawn columns any row in scope fills, the capped ones included.
+ */
 export type WeedsAnswer = {
 	table: WeedsTable;
 	columns: WeedsColumn[];
 	rows: WeedsRow[];
+	filled: string[];
 	platforms: string[];
 	total: number;
 	more: boolean;

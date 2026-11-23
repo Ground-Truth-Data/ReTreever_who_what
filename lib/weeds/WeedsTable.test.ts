@@ -9,7 +9,9 @@ const columns: WeedsColumn[] = [
 	{ key: "linkDeadAt", label: "Link dead", kind: "dead", aside: "linkAliveAt" },
 	{ key: "linkAliveAt", label: "Last alive", kind: "aside" },
 ];
-const draw = (row: WeedsRow) => render(WeedsTable, { props: { columns, rows: [row] } }).body.replace(/<!--[\s\S]*?-->/g, "");
+/** What the host answers: the drawn columns this one row fills. */
+const filledBy = (row: WeedsRow) => columns.map((c) => c.key).filter((k) => row[k] != null && row[k] !== "");
+const draw = (row: WeedsRow) => render(WeedsTable, { props: { columns, rows: [row], filled: filledBy(row) } }).body.replace(/<!--[\s\S]*?-->/g, "");
 
 describe("the weeds sources table", () => {
 	it("a dead link is its host as text, no anchor, with the day it was checked", () => {
@@ -35,13 +37,11 @@ describe("the weeds sources table", () => {
 		expect(html).not.toMatch(/<th[^>]*>[^<]*Description/);
 	});
 
-	it("a column is judged published on every row, not on the filtered ones", () => {
-		const all = [
-			{ url: "https://ok.example/a", sourceDesc: null, linkDeadAt: null },
-			{ url: null, sourceDesc: "Annual report", linkDeadAt: null },
-		];
-		const html = render(WeedsTable, { props: { columns, rows: [all[0]], all } }).body;
+	it("a column is judged published as the host says, not on the rows drawn", () => {
+		const shown = { url: "https://ok.example/a", sourceDesc: null, linkDeadAt: null };
+		const html = render(WeedsTable, { props: { columns, rows: [shown], filled: ["url", "sourceDesc"] } }).body;
 		expect(html.match(/<th[ >]/g)).toHaveLength(2);
+		expect(html).toMatch(/<th[^>]*>[^<]*Description/);
 	});
 
 	it("a link that is not http or https is text, never an anchor", () => {
@@ -65,7 +65,7 @@ describe("the weeds land table", () => {
 		{ landDesc: "ACTIVE TREES Planting Site Sakabusolo", landName: "site_gpNSH8W7R3Un64j", preparation: "planting", hectares: null },
 		{ landDesc: null, landName: "site_dEbhrbeGJdimr0Z", preparation: "planting", hectares: null },
 	];
-	const html = render(WeedsTable, { props: { columns: land, rows } }).body.replace(/<!--[\s\S]*?-->/g, "");
+	const html = render(WeedsTable, { props: { columns: land, rows, filled: ["landDesc", "preparation"] } }).body.replace(/<!--[\s\S]*?-->/g, "");
 
 	it("leads with the description; an unnamed site shows its id in small type, a named one none", () => {
 		expect(html).toContain("ACTIVE TREES Planting Site Sakabusolo");
@@ -90,14 +90,14 @@ describe("a table that publishes nothing", () => {
 	];
 
 	it("still draws its row, every field an empty cell, when asked for blanks", () => {
-		const html = render(WeedsTable, { props: { columns: impact, rows: [{ project: "Elm", survivalRate: null, reviews: null }], blanks: true } }).body;
+		const html = render(WeedsTable, { props: { columns: impact, rows: [{ project: "Elm", survivalRate: null, reviews: null }], filled: ["project"], blanks: true } }).body;
 		expect(html.match(/<th[ >]/g)).toHaveLength(3);
 		expect(html.match(/<tr[ >]/g)).toHaveLength(2);
 		expect(html).toContain("Elm");
 	});
 
 	it("draws its row with no project column to lead it", () => {
-		const html = render(WeedsTable, { props: { columns: impact.slice(1), rows: [{ survivalRate: null, reviews: null }], blanks: true } }).body;
+		const html = render(WeedsTable, { props: { columns: impact.slice(1), rows: [{ survivalRate: null, reviews: null }], filled: [], blanks: true } }).body;
 		expect(html.match(/<th[ >]/g)).toHaveLength(2);
 		expect(html.match(/<td[ >]/g)).toHaveLength(2);
 	});
