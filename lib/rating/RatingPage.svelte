@@ -386,6 +386,13 @@ const weedsArt = svgFit(TheWeedsRaw, [
 const digArt = svgFit(DigRaw, [["Dig", m.ww_rating_art_dig()]]);
 const inArt = svgFit(InRaw, [["in", m.ww_rating_art_in()]]);
 const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
+const aspect = (svg: string) => {
+	const box = /viewBox="[-\d.]+ [-\d.]+ ([\d.]+) ([\d.]+)"/.exec(svg);
+	return box ? Number(box[1]) / Number(box[2]) : 0;
+};
+// The lockup's width in sticker heights, its three columns: the shovel (119 × 600) stands 1.9 heights tall.
+const lockupK =
+	Math.max(aspect(truthArt), aspect(digArt)) + 1.9 * (119 / 600) + Math.max(aspect(weedsArt), aspect(inArt) + aspect(deeperArt));
 </script>
 
 <RatingGround bind:pageEl bind:heroEl bind:undergroundEl hasTally={tally !== null}>
@@ -504,7 +511,7 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 	{#snippet underground()}
 	{#snippet lockup()}
 	<section class="soil-band">
-		<div class="lockup" aria-hidden="true">
+		<div class="lockup" style:--lockup-k={lockupK} aria-hidden="true">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 			<div class="sticker truth">{@html truthArt}</div>
 			<img class="shovel" src={shovelUrl} alt="" draggable="false" />
@@ -691,9 +698,11 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		flex: 0 0 auto;
 	}
 
+	/* Capped at its cell, a longer translation's header scales down whole. */
 	.header-sticker :global(svg) {
 		height: clamp(56px, 8vw, 118px);
 		width: auto;
+		max-width: 100%;
 		display: block;
 		filter: drop-shadow(1px 2px 3px rgb(12 8 1 / 0.35));
 	}
@@ -979,6 +988,7 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		align-items: center;
 		padding: clamp(28px, 5vh, 56px) var(--pad) clamp(18px, 3vh, 36px);
 		transition: padding 220ms ease-out;
+		container-type: inline-size;
 	}
 
 	/* Pinned over the weeds, the lockup compacts so the table gets the room;
@@ -989,15 +999,17 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 	}
 
 	:global(.weeds-pin.pinned) .lockup {
-		--lockup-h: calc(clamp(30px, 5.5vw, 78px) * 0.57);
+		--lockup-h: calc(var(--lockup-fit) * 0.57);
 	}
 
 	/* Three columns, the shovel alone in the middle one: the words on each
 	   row close up to it from either side, so its blade, pushed through the
 	   line into the second row, lands in a gap the grid keeps for it and
 	   never on a letter, whatever the width or the language. */
+	/* A longer translation widens the stickers; past the band's width the whole lockup scales down as one. */
 	.lockup {
-		--lockup-h: clamp(30px, 5.5vw, 78px);
+		--lockup-fit: min(clamp(30px, 5.5vw, 78px), calc((100cqi - 3 * clamp(6px, 1vw, 14px)) / var(--lockup-k)));
+		--lockup-h: var(--lockup-fit);
 		display: grid;
 		grid-template-columns: repeat(3, auto);
 		justify-content: center;
