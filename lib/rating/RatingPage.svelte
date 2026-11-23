@@ -519,7 +519,7 @@ const longHead = aspect(headerArt) > 1.1 * aspect(HeaderRaw);
 	{#snippet underground()}
 	{#snippet lockup()}
 	<section class="soil-band">
-		<div class="lockup" class:long={longLockup} style:--lockup-k={lockup.k} style:--lockup-k-stacked={lockup.stacked} aria-hidden="true">
+		<div class="lockup" class:long={longLockup} style="--lockup-k: {lockup.k}; --lockup-stacked: {lockup.stacked}" aria-hidden="true">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 			<div class="sticker truth">{@html truthArt}</div>
 			<img class="shovel" src={shovelUrl} alt="" draggable="false" />
@@ -1016,7 +1016,8 @@ const longHead = aspect(headerArt) > 1.1 * aspect(HeaderRaw);
 	   never on a letter, whatever the width or the language. */
 	/* A longer translation widens the stickers; past the band's width the whole lockup scales down as one. */
 	.lockup {
-		--lockup-fit: min(clamp(30px, 5.5vw, 78px), calc((100cqi - 3 * clamp(6px, 1vw, 14px)) / var(--lockup-k)));
+		--lockup-width: var(--lockup-k);
+		--lockup-fit: min(clamp(30px, 5.5vw, 78px), calc((100cqi - 3 * clamp(6px, 1vw, 14px)) / var(--lockup-width)));
 		--lockup-h: var(--lockup-fit);
 		display: grid;
 		grid-template-columns: repeat(3, auto);
@@ -1044,7 +1045,7 @@ const longHead = aspect(headerArt) > 1.1 * aspect(HeaderRaw);
 
 	@container (max-width: 470px) {
 		.lockup.long {
-			--lockup-k: var(--lockup-k-stacked);
+			--lockup-width: var(--lockup-stacked);
 		}
 
 		.lockup.long .truth {
