@@ -1167,6 +1167,12 @@ const lockupK =
 			max-width: var(--card-max);
 		}
 
+		/* Taller than the tabs beside them: room above keeps them off the header's last line. */
+		.bar-row :global(.globe-icon),
+		.bar-row :global(.help-sticker) {
+			margin-top: 12px;
+		}
+
 		.bar-row :global(.globe-icon) {
 			grid-area: globe;
 			width: clamp(40px, calc(44.5 * var(--bar-scale)), 64px);
