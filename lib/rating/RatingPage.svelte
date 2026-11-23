@@ -717,7 +717,12 @@ const deeperArt = svgFit(DeeperRaw, [["deeper", m.ww_rating_art_deeper()]]);
 		word-break: break-word;
 	}
 
+	/* It sits where the hills' dark crest can fall behind it, so it carries its own light ground. */
 	.unscored {
+		align-self: flex-start;
+		padding: 0 0.4em;
+		border-radius: 4px;
+		background: rgb(255 255 255 / 0.75);
 		font-size: clamp(16px, 1.8vw, 26px);
 		font-weight: 700;
 	}
