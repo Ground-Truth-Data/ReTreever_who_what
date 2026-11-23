@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { compile } from "svelte/compiler";
 import { render } from "svelte/server";
 import { describe, expect, it } from "vitest";
 import WeedsTable from "./WeedsTable.svelte";
@@ -107,5 +109,16 @@ describe("a table that publishes nothing", () => {
 		const html = render(WeedsTable, { props: { columns: impact.slice(1), rows: [{ survivalRate: null, reviews: null }], filled: [], blanks: true } }).body;
 		expect(html.match(/<th[ >]/g)).toHaveLength(2);
 		expect(html.match(/<td[ >]/g)).toHaveLength(2);
+	});
+});
+
+describe("the table's scroll", () => {
+	// Chrome re-snaps a sideways snap after the columns change, so a new tab opened one column in, its second
+	// column hidden under the sticky first. Only the rows snap.
+	const css = compile(readFileSync(new URL("./WeedsTable.svelte", import.meta.url), "utf8"), { css: "external", filename: "WeedsTable.svelte" }).css!.code;
+
+	it("snaps rows, never columns, so a table opens at its left edge", () => {
+		expect(css).toMatch(/scroll-snap-type:\s*y proximity/);
+		expect(css).not.toMatch(/scroll-snap-align:\s*\S+\s+start/);
 	});
 });
