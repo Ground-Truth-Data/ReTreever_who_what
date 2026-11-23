@@ -7,6 +7,8 @@ const art = `<svg
    x="90" y="40">.</tspan></text></g></svg>`;
 const attr = (out: string, re: RegExp) => Number(re.exec(out)?.[1]);
 
+const twoLines = `<svg viewBox="0 0 100 60"><g transform="translate(0,0)"><text style="font-size:20px"><tspan x="0" y="20">Data</tspan></text><text style="font-size:40px"><tspan x="0" y="58">RATING:</tspan></text></g></svg>`;
+
 describe("svgFit", () => {
 	it("gives English back byte for byte", () => {
 		expect(svgFit(art, [["Dig", "Dig"]])).toBe(art);
@@ -33,5 +35,15 @@ describe("svgFit", () => {
 		const out = svgFit(art, [["Dig", "In"]]);
 		expect(attr(out, /x="([\d.]+)" y="40">\./)).toBeLessThan(90);
 		expect(attr(out, /viewBox="0 0 ([\d.]+) 50"/)).toBeLessThan(100);
+	});
+
+	it("lifts the line above an accented capital clear of its accent", () => {
+		const out = svgFit(twoLines, [["RATING:", "CALIFICACIÓN:"]]);
+		expect(attr(out, /y="([\d.]+)">Data/)).toBeLessThan(20);
+		expect(attr(out, /y="([\d.]+)">CALIFICACIÓN/)).toBe(58);
+	});
+
+	it("leaves the line above alone when no capital carries an accent", () => {
+		expect(svgFit(twoLines, [["RATING:", "NOTE :"]])).toContain(`y="20">Data`);
 	});
 });

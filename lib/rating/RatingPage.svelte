@@ -703,6 +703,8 @@ const lockupK =
 		height: clamp(56px, 8vw, 118px);
 		width: auto;
 		max-width: 100%;
+		/* svgFit lifts the line over an accented capital past the art's edge. */
+		overflow: visible;
 		display: block;
 		filter: drop-shadow(1px 2px 3px rgb(12 8 1 / 0.35));
 	}
