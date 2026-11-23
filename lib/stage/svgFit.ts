@@ -29,9 +29,10 @@ export function svgFit(raw: string, swaps: readonly (readonly [english: string, 
 		if (ems(shown) > ems(english)) {
 			const size = fontSize(tag) ?? fontSize(out.slice(out.lastIndexOf("<text", open), open));
 			if (size) {
-				// The word takes the English word's width at a smaller size: its start and width are the art's,
-				// and the baseline rises half the lost cap height (0.7 em) so it stays on the art's line.
-				const fit = (size * ems(english)) / ems(shown);
+				// The word takes the English word's width at a smaller size, less 4%: the art's viewBox is trimmed to the
+				// English ink, so a word at the full advance width loses its last stroke. The baseline rises half the
+				// lost cap height (0.7 em) so it stays on the art's line.
+				const fit = (0.96 * size * ems(english)) / ems(shown);
 				const px = `font-size:${fit.toFixed(2)}px`;
 				tag = tag.replace(/font-size:[\d.]+px;?/, "");
 				tag = tag.includes('style="') ? tag.replace('style="', `style="${px};`) : `${tag} style="${px}"`;
