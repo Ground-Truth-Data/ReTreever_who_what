@@ -390,9 +390,17 @@ const aspect = (svg: string) => {
 	const box = /viewBox="[-\d.]+ [-\d.]+ ([\d.]+) ([\d.]+)"/.exec(svg);
 	return box ? Number(box[1]) / Number(box[2]) : 0;
 };
-// The lockup's width in sticker heights, its three columns: the shovel (119 × 600) stands 1.9 heights tall.
-const lockupK =
-	Math.max(aspect(truthArt), aspect(digArt)) + 1.9 * (119 / 600) + Math.max(aspect(weedsArt), aspect(inArt) + aspect(deeperArt));
+// The lockup's width in sticker heights, its three columns: the shovel (119 × 600) stands 1.9 heights tall. Stacked,
+// the first phrase takes a row of its own above the shovel.
+const lockupWidth = (truth: string, weeds: string, dig: string, inn: string, deeper: string) => {
+	const right = Math.max(aspect(weeds), aspect(inn) + aspect(deeper));
+	return { k: Math.max(aspect(truth), aspect(dig)) + 1.9 * (119 / 600) + right, stacked: Math.max(aspect(truth), aspect(dig) + 1.9 * (119 / 600) + right) };
+};
+const lockup = lockupWidth(truthArt, weedsArt, digArt, inArt, deeperArt);
+// A translation a tenth wider than the English art would read under 90% of its size on a phone: it takes the room
+// a phone has, the header the whole row and the lockup a row more.
+const longLockup = lockup.k > 1.1 * lockupWidth(TruthIsInRaw, TheWeedsRaw, DigRaw, InRaw, DeeperRaw).k;
+const longHead = aspect(headerArt) > 1.1 * aspect(HeaderRaw);
 </script>
 
 <RatingGround bind:pageEl bind:heroEl bind:undergroundEl hasTally={tally !== null}>
@@ -409,7 +417,7 @@ const lockupK =
 			</div>
 	{/snippet}
 	{#snippet hero()}
-		<div class="hero-top">
+		<div class="hero-top" class:long-head={longHead}>
 			<div class="header-sticker" aria-hidden="true">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 				{@html headerArt}
@@ -511,7 +519,7 @@ const lockupK =
 	{#snippet underground()}
 	{#snippet lockup()}
 	<section class="soil-band">
-		<div class="lockup" style:--lockup-k={lockupK} aria-hidden="true">
+		<div class="lockup" class:long={longLockup} style:--lockup-k={lockup.k} style:--lockup-k-stacked={lockup.stacked} aria-hidden="true">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 			<div class="sticker truth">{@html truthArt}</div>
 			<img class="shovel" src={shovelUrl} alt="" draggable="false" />
@@ -1034,6 +1042,31 @@ const lockupK =
 		grid-row: 3;
 	}
 
+	@container (max-width: 470px) {
+		.lockup.long {
+			--lockup-k: var(--lockup-k-stacked);
+		}
+
+		.lockup.long .truth {
+			grid-area: 1 / 1 / 2 / 4;
+			justify-self: center;
+		}
+
+		.lockup.long .shovel,
+		.lockup.long .weeds {
+			grid-row: 2;
+		}
+
+		.lockup.long .yellow-line {
+			grid-row: 3;
+		}
+
+		.lockup.long .dig,
+		.lockup.long .tail {
+			grid-row: 4;
+		}
+	}
+
 	.tail {
 		display: flex;
 		align-items: flex-end;
@@ -1149,6 +1182,13 @@ const lockupK =
 
 		.header-sticker {
 			grid-area: head;
+		}
+
+		.hero-top.long-head {
+			grid-template-areas:
+				"head head head"
+				"tabs globe help"
+				"bar bar bar";
 		}
 
 		.tabs {
