@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { LIST_LIMIT, loadMostViewed, loadOrgList, loadProjectList } from "./searchLists";
+import { LIST_LIMIT, loadMostViewed, loadOrgList, loadProjectList, orderRows } from "./searchLists";
+import type { SearchListItem } from "./searchTypes";
 
 const ENDPOINTS = { organizations: "/api/who/organizations", projects: "/api/what/projects" };
 
@@ -11,7 +12,7 @@ function fetchReturning(body: unknown, ok = true) {
 afterEach(() => vi.restoreAllMocks());
 
 describe("loadOrgList", () => {
-	it("asks for one capped page of the best-rated, with the key, name, category and final score", async () => {
+	it("asks for one capped page of the biggest, with the key, name, category and final score", async () => {
 		const fetch = fetchReturning({ organizations: [] });
 		await loadOrgList(fetch, ENDPOINTS);
 		expect(fetch).toHaveBeenCalledTimes(1);
@@ -19,9 +20,18 @@ describe("loadOrgList", () => {
 		expect(url.pathname).toBe("/api/who/organizations");
 		expect(Object.fromEntries(url.searchParams)).toEqual({
 			fields: "organizationKey,organizationName,primaryStakeholderCategory,rating",
-			sort: "rating",
+			sort: "size",
 			limit: String(LIST_LIMIT),
 		});
+	});
+
+	it("asks the server for the panel's order; A–Z is the server's unsorted answer", async () => {
+		const fetch = fetchReturning({ organizations: [] });
+		await loadOrgList(fetch, ENDPOINTS, "", undefined, "rating");
+		await loadOrgList(fetch, ENDPOINTS, "", undefined, "name");
+		const sort = (n: number) => new URL(fetch.mock.calls[n][0] as string, "http://x").searchParams.get("sort");
+		expect(sort(0)).toBe("rating");
+		expect(sort(1)).toBeNull();
 	});
 
 	it("hands the bar's words to the server, and sends none for a blank bar", async () => {
@@ -33,7 +43,7 @@ describe("loadOrgList", () => {
 		expect(q(1)).toBeNull();
 	});
 
-	it("maps a row to key, name, hint and the 0–100 rating as sent, best first and unscored last", async () => {
+	it("maps a row to key, name, hint and the 0–100 rating as sent; by rating, best first and unscored last", async () => {
 		const fetch = fetchReturning({
 			organizations: [
 				{ organizationKey: "a", organizationName: "Aaranyak", primaryStakeholderCategoryName: "Developer", rating: 59.4 },
@@ -42,7 +52,7 @@ describe("loadOrgList", () => {
 				{ organizationKey: "d", organizationName: "Dune", primaryStakeholderCategoryName: null, rating: 59.4 },
 			],
 		});
-		const rows = await loadOrgList(fetch, ENDPOINTS);
+		const rows = await loadOrgList(fetch, ENDPOINTS, "", undefined, "rating");
 		expect(rows).toEqual([
 			{ key: "c", name: "Canopy", hint: "Funder", rating: 85.3 },
 			{ key: "a", name: "Aaranyak", hint: "Developer", rating: 59.4 },
@@ -83,7 +93,7 @@ describe("a request its page aborted", () => {
 });
 
 describe("loadProjectList", () => {
-	it("asks for one capped page of scored projects, best first, with key, name and score", async () => {
+	it("asks for one capped page of scored projects, biggest first, with key, name and score", async () => {
 		const fetch = fetchReturning({ projects: [] });
 		await loadProjectList(fetch, ENDPOINTS, "mangrove");
 		expect(fetch).toHaveBeenCalledTimes(1);
@@ -92,13 +102,13 @@ describe("loadProjectList", () => {
 		expect(Object.fromEntries(url.searchParams)).toEqual({
 			scored: "true",
 			fields: "projectKey,projectName,rating",
-			sort: "rating",
+			sort: "size",
 			limit: String(LIST_LIMIT),
 			q: "mangrove",
 		});
 	});
 
-	it("maps a row to key, name and rating, best first", async () => {
+	it("maps a row to key, name and rating, keeping the server's size order", async () => {
 		const fetch = fetchReturning({
 			projects: [
 				{ projectKey: "p1", projectName: "Waterways", rating: 55.7 },
@@ -106,11 +116,8 @@ describe("loadProjectList", () => {
 				{ projectKey: "p3", projectName: "Zero", rating: 0 },
 			],
 		});
-		expect(await loadProjectList(fetch, ENDPOINTS)).toEqual([
-			{ key: "p2", name: "Commons", rating: 58.3 },
-			{ key: "p1", name: "Waterways", rating: 55.7 },
-			{ key: "p3", name: "Zero", rating: 0 },
-		]);
+		expect((await loadProjectList(fetch, ENDPOINTS)).map((r) => r.key)).toEqual(["p1", "p2", "p3"]);
+		expect((await loadProjectList(fetch, ENDPOINTS, "", undefined, "rating")).map((r) => r.key)).toEqual(["p2", "p1", "p3"]);
 	});
 
 	it("resolves to [] on a failed response", async () => {
@@ -146,5 +153,27 @@ describe("loadMostViewed", () => {
 		}) as unknown as typeof globalThis.fetch;
 		await expect(loadMostViewed(fetch, { searchHits: "/x" }, "orgs", leaving.signal)).resolves.toEqual([]);
 		expect(error).not.toHaveBeenCalled();
+	});
+});
+
+describe("orderRows", () => {
+	const row = (key: string, name: string, rating: number | null = null): SearchListItem => ({ key, name, rating });
+	// As the server sent them, biggest first.
+	const bySize = [row("1", "Big Canopy", 40), row("2", "Canada Trees", 90), row("3", "Can", null), row("4", "Pecan Grove", 70), row("5", "Oak", 10)];
+	const keys = (rows: SearchListItem[]) => rows.map((r) => r.key);
+
+	it("a typed query leads with the exact name, then names that start with it, then the rest, each biggest first", () => {
+		expect(keys(orderRows(bySize, "size", " CAN "))).toEqual(["3", "2", "1", "4"]);
+	});
+
+	it("the panel's order holds inside each match group", () => {
+		expect(keys(orderRows(bySize, "rating", "can"))).toEqual(["3", "2", "4", "1"]);
+		expect(keys(orderRows(bySize, "name", "can"))).toEqual(["3", "2", "1", "4"]);
+	});
+
+	it("an empty bar keeps every row in the panel's order", () => {
+		expect(keys(orderRows(bySize, "size"))).toEqual(["1", "2", "3", "4", "5"]);
+		expect(keys(orderRows(bySize, "rating"))).toEqual(["2", "4", "1", "5", "3"]);
+		expect(keys(orderRows(bySize, "name"))).toEqual(["1", "3", "2", "5", "4"]);
 	});
 });

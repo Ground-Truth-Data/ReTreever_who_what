@@ -7,6 +7,8 @@ import FrameClipPlayer from "$gc/FrameClipPlayer.svelte";
 import { frameUrls, loadClips, type ClipFacts } from "$gc/frameClips";
 import WindowRaw from "../assets/svg/rating/Rating_page_search_dropdown.svg?raw";
 import { WINDOW_BOX, windowBorderCss, windowSliceCss } from "./dropWindow";
+import { orderRows } from "./searchLists";
+import SearchTools, { orderLabel, searchOrder } from "./SearchTools.svelte";
 import type { SearchListItem } from "./searchTypes";
 import { m } from "$parent/src/lib/paraglide/messages";
 
@@ -44,14 +46,10 @@ let {
 	onpick?: (item: SearchListItem, go: boolean) => void;
 } = $props();
 
-const searchIndex = $derived(items.map((item) => ({ item, hay: item.name.toLowerCase() })));
-
-// Every row, in the order the list arrived (best rating first); a query only narrows it.
-const listed = $derived.by(() => {
-	const q = query.trim().toLowerCase();
-	return q ? searchIndex.filter((e) => e.hay.includes(q)).map((e) => e.item) : items;
-});
-const lead = $derived(query.trim() ? [] : mostViewed);
+// The tools panel's order; a query narrows the rows and leads with the closest names.
+const listed = $derived(orderRows(items, searchOrder.by, query));
+const browsing = $derived(!query.trim());
+const lead = $derived(browsing ? mostViewed : []);
 // One run for the keyboard: the most-viewed rows, then the list.
 const rows = $derived([...lead, ...listed]);
 
@@ -180,15 +178,21 @@ $effect(() => {
 
 {#if open}
 	<div class="drop-window">
+		<div
+			class="drop-frame"
+			style:--win-w={WINDOW_BOX.w}
+			style:--win-art={WINDOW_ART}
+			style:--win-slice={WINDOW_SLICE}
+			style:--win-border={WINDOW_BORDER}
+		>
+		<div class="drop-tools">
+			<SearchTools id="{listId}-tools" />
+		</div>
 		<ul
 			class="search-dropdown"
 			id={listId}
 			role="listbox"
 			aria-busy={listLoading}
-			style:--win-w={WINDOW_BOX.w}
-			style:--win-art={WINDOW_ART}
-			style:--win-slice={WINDOW_SLICE}
-			style:--win-border={WINDOW_BORDER}
 		>
 			{#snippet empty()}
 				<li class="dropdown-empty" role="presentation">
@@ -206,9 +210,9 @@ $effect(() => {
 			{/snippet}
 			{#each painted as item, i (`${i < lead.length ? "m" : "l"}:${item.key}`)}
 				{@const href = hrefOf(item)}
-				{#if lead.length && (i === 0 || i === lead.length)}
+				{#if browsing && (i === lead.length || (i === 0 && lead.length))}
 					<li class="dropdown-heading" role="presentation">
-						{i === 0 ? m.ww_search_list_most_viewed() : m.ww_search_list_best_rated()}
+						{i < lead.length ? m.ww_search_list_most_viewed() : orderLabel(searchOrder.by)}
 					</li>
 				{/if}
 				{#snippet rowBody()}
@@ -240,6 +244,7 @@ $effect(() => {
 				<li class="dropdown-sentinel" role="presentation" aria-hidden="true" {@attach watchEnd}></li>
 			{/if}
 		</ul>
+		</div>
 	</div>
 {/if}
 
@@ -258,22 +263,35 @@ $effect(() => {
 	/* Nine-slice of the drawn window: corners keep the designer's skew, the
 	   straight runs stretch to the rows. `fill` paints the black panel. The
 	   inline vars sit here, not on the container: a var() resolves where it is
-	   declared, and `--u` only exists on this element. */
-	.search-dropdown {
+	   declared, and `--u` only exists on this element. The tools row sits
+	   inside the frame, above the list, so it stays put while the rows scroll. */
+	.drop-frame {
 		--u: calc(100cqw / var(--win-w));
 		--row-x: max(8px, calc(3.5 * var(--u)));
 		--row-y: max(7px, calc(2.6 * var(--u)));
 		box-sizing: border-box;
+		display: flex;
+		flex-direction: column;
 		width: 100%;
 		max-height: min(40vh, 320px);
-		overflow-y: auto;
-		margin: 0;
-		padding: 0;
-		list-style: none;
 		background: #000;
 		border-style: solid;
 		border-width: var(--win-border);
 		border-image: var(--win-art) var(--win-slice) fill;
+	}
+
+	.drop-tools {
+		flex: none;
+		padding: 0 calc(var(--row-x) - 6px);
+	}
+
+	.search-dropdown {
+		flex: 1 1 auto;
+		min-height: 0;
+		overflow-y: auto;
+		margin: 0;
+		padding: 0;
+		list-style: none;
 	}
 
 	.dropdown-row {

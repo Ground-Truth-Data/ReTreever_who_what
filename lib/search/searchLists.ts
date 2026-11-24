@@ -1,4 +1,5 @@
 import type { WhoWhatEndpoints } from "../whoWhatTypes";
+import { normalizeQuery } from "./searchResolve";
 import type { SearchListItem } from "./searchTypes";
 
 // Every endpoint emits the 0–100 rating already; this only refuses what is not a number.
@@ -23,36 +24,66 @@ export type ProjectListRow = {
 	rating: number | null;
 };
 
-/** Best rating first, unscored last, ties by name: the API's order, kept by the client for a list it merges. */
+/** How the panel orders a list: the server's size order, the published rating, or the name. */
+export type SearchOrder = "size" | "rating" | "name";
+export const SEARCH_ORDERS: readonly SearchOrder[] = ["size", "rating", "name"];
+
+const byName = (a: SearchListItem, b: SearchListItem) => a.name.localeCompare(b.name);
+
+/** Best rating first, unscored last, ties by name. */
 function byRating(a: SearchListItem, b: SearchListItem): number {
 	if (a.rating !== b.rating) {
 		if (a.rating === null) return 1;
 		if (b.rating === null) return -1;
 		return b.rating - a.rating;
 	}
-	return a.name.localeCompare(b.name);
+	return byName(a, b);
+}
+
+/**
+ * The rows a query shows, in the panel's order: an exact name, then names
+ * that start with the words, then the rest that contain them. Size has no
+ * number on the client: the loader asked the server for it, so it is the
+ * order the rows arrived in.
+ */
+export function orderRows(items: SearchListItem[], order: SearchOrder, query = ""): SearchListItem[] {
+	const q = normalizeQuery(query);
+	const within = order === "rating" ? byRating : order === "name" ? byName : () => 0;
+	const group = (item: SearchListItem) => {
+		const name = normalizeQuery(item.name);
+		return name === q ? 0 : name.startsWith(q) ? 1 : 2;
+	};
+	const shown = q ? items.filter((item) => normalizeQuery(item.name).includes(q)) : items;
+	return shown
+		.map((item) => ({ item, group: q ? group(item) : 0 }))
+		.sort((a, b) => a.group - b.group || within(a.item, b.item))
+		.map((e) => e.item);
 }
 
 /** The API's ceiling for a key-less list; the bar narrows by asking again, never by paging. */
 export const LIST_LIMIT = 50;
 
-const listQuery = (fields: string, query: string, extra: Record<string, string> = {}) => {
-	const params = new URLSearchParams({ ...extra, fields, sort: "rating", limit: String(LIST_LIMIT) });
+const listQuery = (fields: string, query: string, order: SearchOrder, extra: Record<string, string> = {}) => {
+	const params = new URLSearchParams({ ...extra, fields });
+	// Unsorted, the API answers A–Z.
+	if (order !== "name") params.set("sort", order);
+	params.set("limit", String(LIST_LIMIT));
 	const q = query.trim();
 	if (q) params.set("q", q);
 	return params.toString();
 };
 
-/** The best-rated orgs whose name contains `query`, or the best-rated of all when it is empty. */
+/** The first page of orgs whose name contains `query` (all when it is empty), in `order`. */
 export async function loadOrgList(
 	fetch: typeof globalThis.fetch,
 	endpoints: WhoWhatEndpoints,
 	query = "",
 	signal?: AbortSignal,
+	order: SearchOrder = "size",
 ): Promise<SearchListItem[]> {
 	// Empty, not a fetch at "/undefined".
 	if (!endpoints.organizations) return [];
-	const endpoint = `${endpoints.organizations}?${listQuery("organizationKey,organizationName,primaryStakeholderCategory,rating", query)}`;
+	const endpoint = `${endpoints.organizations}?${listQuery("organizationKey,organizationName,primaryStakeholderCategory,rating", query, order)}`;
 
 	try {
 		const res = await fetch(endpoint, { signal });
@@ -63,14 +94,13 @@ export async function loadOrgList(
 			organizations: OrgListRow[];
 		};
 
-		return organizations
-			.map((org) => ({
-				key: org.organizationKey,
-				name: org.organizationName,
-				hint: org.primaryStakeholderCategoryName,
-				rating: shown(org.rating),
-			}))
-			.sort(byRating);
+		const rows = organizations.map((org) => ({
+			key: org.organizationKey,
+			name: org.organizationName,
+			hint: org.primaryStakeholderCategoryName,
+			rating: shown(org.rating),
+		}));
+		return order === "rating" ? rows.sort(byRating) : rows;
 	} catch (error) {
 		if (signal?.aborted) return [];
 		console.error("who: failed to load organizations list", error);
@@ -83,10 +113,11 @@ export async function loadProjectList(
 	endpoints: WhoWhatEndpoints,
 	query = "",
 	signal?: AbortSignal,
+	order: SearchOrder = "size",
 ): Promise<SearchListItem[]> {
 	if (!endpoints.projects) return [];
 	// scored: only projects the published run scored.
-	const endpoint = `${endpoints.projects}?${listQuery("projectKey,projectName,rating", query, { scored: "true" })}`;
+	const endpoint = `${endpoints.projects}?${listQuery("projectKey,projectName,rating", query, order, { scored: "true" })}`;
 
 	try {
 		const res = await fetch(endpoint, { signal });
@@ -97,13 +128,12 @@ export async function loadProjectList(
 			projects: ProjectListRow[];
 		};
 
-		return projects
-			.map((project) => ({
-				key: project.projectKey,
-				name: project.projectName,
-				rating: shown(project.rating),
-			}))
-			.sort(byRating);
+		const rows = projects.map((project) => ({
+			key: project.projectKey,
+			name: project.projectName,
+			rating: shown(project.rating),
+		}));
+		return order === "rating" ? rows.sort(byRating) : rows;
 	} catch (error) {
 		if (signal?.aborted) return [];
 		console.error("what: failed to load projects list", error);

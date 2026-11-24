@@ -7,7 +7,8 @@ import { curtain } from "../stage/curtain.svelte";
 import type { WhoWhatEndpoints, WhoWhatRoutes } from "../whoWhatTypes";
 import SearchPage from "./SearchPage.svelte";
 import { LiveList } from "./liveList.svelte";
-import { loadMostViewed, loadOrgList, loadProjectList, recordSearchHit } from "./searchLists";
+import { loadMostViewed, loadOrgList, loadProjectList, recordSearchHit, SEARCH_ORDERS, type SearchOrder } from "./searchLists";
+import { searchOrder } from "./SearchTools.svelte";
 import { resolveSearchKey } from "./searchResolve";
 import type { SearchListItem } from "./searchTypes";
 
@@ -28,10 +29,17 @@ let {
 	endpoints?: WhoWhatEndpoints;
 } = $props();
 
-const lists = {
-	orgs: new LiveList((q, signal) => loadOrgList(fetch, endpoints, q, signal)),
-	projects: new LiveList((q, signal) => loadProjectList(fetch, endpoints, q, signal)),
-};
+// One pair per order: the server caps a list at its first page, so another order is another page.
+const byOrder = Object.fromEntries(
+	SEARCH_ORDERS.map((order) => [
+		order,
+		{
+			orgs: new LiveList((q, signal) => loadOrgList(fetch, endpoints, q, signal, order)),
+			projects: new LiveList((q, signal) => loadProjectList(fetch, endpoints, q, signal, order)),
+		},
+	]),
+) as Record<SearchOrder, { orgs: LiveList; projects: LiveList }>;
+const lists = $derived(byOrder[searchOrder.by]);
 let activated = false;
 let mostViewed = $state<SearchListItem[]>([]);
 
@@ -55,6 +63,12 @@ $effect(() => {
 	const words = query;
 	const list = lists[tab];
 	if (activated) list.ask(words);
+});
+
+// A new order is a click, not typing: ask at once.
+$effect(() => {
+	const now = lists;
+	if (activated) untrack(() => void now[tab].now(query));
 });
 
 // Idle warm-up; now() skips words already asked, so a real interaction can't double-fetch.
