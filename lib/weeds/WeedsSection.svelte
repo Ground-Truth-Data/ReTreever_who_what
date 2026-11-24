@@ -7,16 +7,16 @@ import { loadClips, type ClipManifest } from "$gc/frameClips";
 import WeedsBarArt from "../assets/svg/rating/Rating_page_weeds_search_bar.svg?raw";
 import WeedsBarPhoneArt from "../assets/svg/rating/Rating_page_weeds_search_bar_phone.svg?raw";
 import WeedsTable from "./WeedsTable.svelte";
+import WeedsProjects from "./WeedsProjects.svelte";
 import WeedsCount from "./WeedsCount.svelte";
-import NeverPublished from "./NeverPublished.svelte";
 import WeedsTabs from "./WeedsTabs.svelte";
-import { filterRows, splitPublished } from "./weedsFormat";
-import { columnLabel } from "./columnLabels";
+import { filterAttributes, filterRows } from "./weedsFormat";
+import { attributeLabel } from "./columnLabels";
 import { TABLE_LABELS } from "./tallyMath";
 import { m } from "$parent/src/lib/paraglide/messages";
 import { getLocale } from "$parent/src/lib/paraglide/runtime";
-import { progressFor, scrollTopFor, tabIndexFor } from "./weedsScroll";
-import { WEEDS_TABLES, type WeedsAnswer, type WeedsRow, type WeedsTable as WeedsTableName } from "../whoWhatTypes";
+import { lineFor, progressFor, scrollTopFor, tabIndexFor } from "./weedsScroll";
+import { WEEDS_TABLES, type WeedsAttributes, type WeedsRow, type WeedsTable as WeedsTableName } from "../whoWhatTypes";
 
 let {
 	tab,
@@ -42,7 +42,7 @@ const PANEL_ID = "weeds-panel";
 const FETCH_CLIP = "fetch-seedling";
 
 let active = $state<WeedsTableName>("projects");
-let answers = $state<Partial<Record<WeedsTableName, WeedsAnswer>>>({});
+let answers = $state<Partial<Record<WeedsTableName, WeedsAttributes>>>({});
 let failed = $state<Partial<Record<WeedsTableName, true>>>({});
 let inFlight = new Set<WeedsTableName>();
 let loading = $state<Partial<Record<WeedsTableName, true>>>({});
@@ -65,7 +65,7 @@ async function load(table: WeedsTableName) {
 	try {
 		const res = await fetch(href(table));
 		if (!res.ok) throw new Error(`${table}: ${res.status}`);
-		answers = { ...answers, [table]: (await res.json()) as WeedsAnswer };
+		answers = { ...answers, [table]: (await res.json()) as WeedsAttributes };
 		const { [table]: _gone, ...rest } = failed;
 		failed = rest;
 	} catch (cause) {
@@ -216,10 +216,13 @@ $effect(() => {
 });
 
 const answer = $derived(answers[active]);
-const rows = $derived(answer ? filterRows(answer.rows, answer.columns, query) : []);
-// The project column is context, not a field: a table publishing nothing else draws its rows with every field empty.
-const split = $derived(answer ? splitPublished(answer.columns, answer.filled) : null);
-const bare = $derived(!!split && split.shown.every((c) => c.key === "project"));
+// An org's Projects tab lists its projects; every other table is its attributes.
+const list = $derived(answer?.projects);
+const rows = $derived(list ? filterRows(list.rows, list.columns, query) : []);
+const attributes = $derived(answer ? filterAttributes(answer.attributes, attributeLabel, query) : []);
+const filledCount = $derived(answer ? answer.attributes.filter((a) => a.filled > 0).length : 0);
+// The scroll line walks the lit table's rows while the stage is pinned.
+const line = $derived(pinned ? lineFor(progress, WEEDS_TABLES.indexOf(active), WEEDS_TABLES.length) : null);
 const from = $derived(
 	answer?.platforms.length
 		? m.ww_rating_weeds_from({ platforms: new Intl.ListFormat(getLocale(), { type: "conjunction" }).format(answer.platforms) })
@@ -282,29 +285,33 @@ function barKeydown(e: KeyboardEvent) {
 
 	<div id={PANEL_ID} class="panel" role="tabpanel" aria-labelledby="weeds-tab-{active}" aria-busy={!!loading[active]}>
 		{#if answer}
-			{#if from && answer.rows.length > 0}
+			{#if from}
 				<p class="from">{from}</p>
 			{/if}
-			{#if answer.rows.length === 0}
+			{#if list && list.rows.length === 0}
 				<div class="state">
 					<WeedsCount count={0} text={m.ww_rating_weeds_rows({ count: 0 })} />
 					<p class="state-line">{m.ww_rating_weeds_empty()}</p>
 				</div>
-			{:else}
-				<WeedsTable columns={answer.columns} {rows} filled={answer.filled} sweep={active} {open} blanks={bare} />
+			{:else if list}
+				<WeedsProjects columns={list.columns} {rows} filled={list.filled} {open} />
 				<div class="foot">
 					<p class="count" aria-live="polite">
 						{#if query}
-							<WeedsCount count={rows.length} text={m.ww_rating_weeds_rows_filtered({ shown: rows.length, total: answer.rows.length })} />
-						{:else if answer.more}
-							<WeedsCount count={answer.rows.length} text={m.ww_rating_weeds_rows_capped({ count: answer.rows.length })} />
+							<WeedsCount count={rows.length} text={m.ww_rating_weeds_rows_filtered({ shown: rows.length, total: list.rows.length })} />
+						{:else if list.more}
+							<WeedsCount count={list.rows.length} text={m.ww_rating_weeds_rows_capped({ count: list.rows.length })} />
 						{:else}
-							<WeedsCount count={answer.rows.length} text={m.ww_rating_weeds_rows({ count: answer.rows.length })} />
+							<WeedsCount count={list.rows.length} text={m.ww_rating_weeds_rows({ count: list.rows.length })} />
 						{/if}
 					</p>
-					{#if split?.missing.length}
-						<NeverPublished fields={split.missing.map(columnLabel)} />
-					{/if}
+				</div>
+			{:else}
+				<WeedsTable {attributes} {line} sweep={active} />
+				<div class="foot">
+					<p class="count" aria-live="polite">
+						<WeedsCount count={filledCount} text={m.ww_rating_weeds_attributes_filled({ filled: filledCount, count: answer.attributes.length })} />
+					</p>
 				</div>
 			{/if}
 		{:else if failed[active]}
@@ -528,7 +535,7 @@ function barKeydown(e: KeyboardEvent) {
 		font-size: 14px;
 	}
 
-	/* Under the table: the count, then the empty slots, divided from the rows by a gold hairline. */
+	/* Under the table: the count, divided from the rows by a gold hairline. */
 	.foot {
 		flex: none;
 		display: flex;

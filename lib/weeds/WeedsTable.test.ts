@@ -1,124 +1,71 @@
-import { readFileSync } from "node:fs";
-import { compile } from "svelte/compiler";
 import { render } from "svelte/server";
 import { describe, expect, it } from "vitest";
 import WeedsTable from "./WeedsTable.svelte";
-import type { WeedsColumn, WeedsRow } from "../whoWhatTypes";
+import type { WeedsAttribute } from "../whoWhatTypes";
 
-const columns: WeedsColumn[] = [
-	{ key: "url", label: "URL", kind: "link" },
-	{ key: "sourceDesc", label: "Description", kind: "text" },
-	{ key: "linkDeadAt", label: "Link dead", kind: "dead", aside: "linkAliveAt" },
-	{ key: "linkAliveAt", label: "Last alive", kind: "aside" },
+const attr = (field: string, more: Partial<WeedsAttribute>): WeedsAttribute => ({
+	field,
+	label: "ww_rating_column_unit",
+	kind: "text",
+	pointsAwarded: 0,
+	pointsAvailable: 367,
+	filled: 0,
+	records: 367,
+	example: null,
+	...more,
+});
+
+const attributes = [
+	attr("PlantingTable.plantedQty", { label: "ww_rating_column_trees_planted", kind: "number", example: 15000, filled: 331, pointsAwarded: 993, pointsAvailable: 1101 }),
+	attr("PlantingTable.unitType", {}),
+	attr("PlantingTable.pricePerUnit", { label: "ww_rating_column_price_per_unit", kind: "money", example: 10.63, unit: "EUR", filled: 367, pointsAwarded: 734, pointsAvailable: 734 }),
+	attr("LandTable.latitude", { label: "ww_rating_attr_latitude", withheld: true, filled: 4 }),
+	attr("SourceTable.url", { label: "ww_rating_column_link", kind: "link", example: "javascript:alert(1)", filled: 1 }),
+	attr("ProjectTable.projectEndDt", { label: "ww_rating_column_ends", kind: "date", pointsAwarded: null, pointsAvailable: null }),
 ];
-/** What the host answers: the drawn columns this one row fills. */
-const filledBy = (row: WeedsRow) => columns.map((c) => c.key).filter((k) => row[k] != null && row[k] !== "");
-const draw = (row: WeedsRow) => render(WeedsTable, { props: { columns, rows: [row], filled: filledBy(row) } }).body.replace(/<!--[\s\S]*?-->/g, "");
 
-describe("the weeds sources table", () => {
-	it("a dead link is its host as text, no anchor, with the day it was checked", () => {
-		const html = draw({ url: "https://www.gone.example/a", sourceDesc: "Project website", linkDeadAt: "2026-11-10T17:10:44.938Z" });
-		expect(html).not.toContain("<a");
-		expect(html).toContain("gone.example");
-		expect(html).toContain("link dead · checked 2026/11/10");
-		expect(html).not.toContain("last alive");
+const html = (props: { attributes: WeedsAttribute[]; line?: number | null }) => render(WeedsTable, { props }).body.replace(/<!--[\s\S]*?-->/g, "");
+const rowOf = (out: string, field: string) => out.match(new RegExp(`<tr[^>]*data-field="${field.replace(".", "\\.")}"[\\s\\S]*?</tr>`))?.[0] ?? "";
+
+describe("the weeds table, one row per attribute", () => {
+	it("draws every attribute as a row, with its value and points, before any scroll", () => {
+		const out = html({ attributes });
+		expect(out.match(/<tr[^>]*data-field=/g)).toHaveLength(attributes.length);
+		expect(rowOf(out, "PlantingTable.plantedQty")).toContain("15,000");
+		expect(rowOf(out, "PlantingTable.plantedQty")).toMatch(/993[\s\S]*1,101/);
+		expect(rowOf(out, "PlantingTable.pricePerUnit")).toContain("€10.63");
+		// Nothing waits on the scroll to be seen.
+		expect(out).not.toMatch(/class="[^"]*digging/);
+		expect(out).not.toMatch(/opacity:\s*0/);
 	});
 
-	it("a dead link the check once saw alive names that day too", () => {
-		const html = draw({ url: "https://www.gone.example/a", sourceDesc: null, linkDeadAt: "2026-11-10T17:10:44.938Z", linkAliveAt: "2026-10-28T09:00:00.000Z" });
-		expect(html).toContain("link dead · checked 2026/11/10 · last alive 2026/10/28");
-		expect(html).not.toMatch(/<th[^>]*>[^<]*Last alive/);
+	it("an attribute no record fills is still a row: an empty value and none of its points", () => {
+		const row = rowOf(html({ attributes }), "PlantingTable.unitType");
+		expect(row).toMatch(/class="shown[^"]*">\s*—/);
+		expect(row).toMatch(/class="share[^"]*">[^<]*\b0\b[^<]*367/);
+		expect(row).toMatch(/aria-label="[^"]*\b0\b[^"]*367"/);
 	});
 
-	it("a live or unchecked link is a link, and the dead column is never drawn", () => {
-		const html = draw({ url: "https://ok.example/a", sourceDesc: null, linkDeadAt: null });
-		expect(html).toContain('href="https://ok.example/a"');
-		expect(html).not.toContain("link dead");
-		expect(html).not.toMatch(/<th[^>]*>[^<]*Link dead/);
-		expect(html.match(/<th[ >]/g)).toHaveLength(1);
-		expect(html).not.toMatch(/<th[^>]*>[^<]*Description/);
-	});
-
-	it("a column is judged published as the host says, not on the rows drawn", () => {
-		const shown = { url: "https://ok.example/a", sourceDesc: null, linkDeadAt: null };
-		const html = render(WeedsTable, { props: { columns, rows: [shown], filled: ["url", "sourceDesc"] } }).body;
-		expect(html.match(/<th[ >]/g)).toHaveLength(2);
-		expect(html).toMatch(/<th[^>]*>[^<]*Description/);
+	it("a withheld value is never drawn, only that it is published", () => {
+		const row = rowOf(html({ attributes }), "LandTable.latitude");
+		expect(row).toContain('class="withheld');
+		expect(row).toMatch(/class="share[^"]*">[^<]*\b4\b[^<]*367/);
 	});
 
 	it("a link that is not http or https is text, never an anchor", () => {
-		for (const url of ["javascript:alert(1)", "data:text/html,hi", "/who/acme"]) {
-			const html = draw({ url, sourceDesc: null, linkDeadAt: null });
-			expect(html).not.toContain("<a");
-			expect(html).not.toContain("href=");
-		}
-		expect(draw({ url: "javascript:alert(1)", sourceDesc: null, linkDeadAt: null })).toContain("javascript:alert(1)");
-	});
-});
-
-describe("the weeds land table", () => {
-	const land: WeedsColumn[] = [
-		{ key: "landDesc", label: "Site", kind: "site", aside: "landName" },
-		{ key: "landName", label: "Site id", kind: "aside" },
-		{ key: "preparation", label: "Status", kind: "text" },
-		{ key: "hectares", label: "Hectares", kind: "number" },
-	];
-	const rows = [
-		{ landDesc: "ACTIVE TREES Planting Site Sakabusolo", landName: "site_gpNSH8W7R3Un64j", preparation: "planting", hectares: null },
-		{ landDesc: null, landName: "site_dEbhrbeGJdimr0Z", preparation: "planting", hectares: null },
-	];
-	const html = render(WeedsTable, { props: { columns: land, rows, filled: ["landDesc", "preparation"] } }).body.replace(/<!--[\s\S]*?-->/g, "");
-
-	it("leads with the description; an unnamed site shows its id in small type, a named one none", () => {
-		expect(html).toContain("ACTIVE TREES Planting Site Sakabusolo");
-		expect(html).not.toContain("site_gpNSH8W7R3Un64j");
-		expect(html).toMatch(/Unnamed site<small class="site-id[^"]*">site_dEbhrbeGJdimr0Z<\/small>/);
-		expect(html.match(/site_/g)).toHaveLength(1);
+		const row = rowOf(html({ attributes }), "SourceTable.url");
+		expect(row).not.toContain("<a");
+		expect(row).toContain("javascript:alert(1)");
+		const safe = rowOf(html({ attributes: [attr("SourceTable.url", { kind: "link", example: "https://www.ok.example/a", filled: 1 })] }), "SourceTable.url");
+		expect(safe).toContain('href="https://www.ok.example/a"');
+		expect(safe).toContain("ok.example");
 	});
 
-	it("names a species with its scientific name after it in small type", () => {
-		const crop: WeedsColumn[] = [{ key: "species", label: "Species", kind: "names" }];
-		const species = [{ name: "Teak", scientific: "Tectona grandis" }, { name: "Ghost tree", scientific: null }];
-		const drawn = render(WeedsTable, { props: { columns: crop, rows: [{ species }], filled: ["species"] } }).body.replace(/<!--[\s\S]*?-->/g, "");
-		expect(drawn).toMatch(/Teak<small class="sci[^"]*">Tectona grandis<\/small>, Ghost tree<\/td>/);
+	it("points a run never broke down read as a dash", () => {
+		expect(rowOf(html({ attributes }), "ProjectTable.projectEndDt")).toMatch(/class="points[^"]*">\s*—/);
 	});
 
-	// The fields it leaves out are listed by the panel's footer (NeverPublished), not by the table.
-	it("draws no empty column", () => {
-		expect(html.match(/<th[ >]/g)).toHaveLength(2);
-		expect(html).not.toMatch(/<th[^>]*>[^<]*Hectares/);
-	});
-});
-
-describe("a table that publishes nothing", () => {
-	const impact: WeedsColumn[] = [
-		{ key: "project", label: "Project", kind: "text" },
-		{ key: "survivalRate", label: "Surviving (%)", kind: "number" },
-		{ key: "reviews", label: "Reviews", kind: "text" },
-		{ key: "linkDeadAt", label: "Link dead", kind: "dead" },
-	];
-
-	it("still draws its row, every field an empty cell, when asked for blanks", () => {
-		const html = render(WeedsTable, { props: { columns: impact, rows: [{ project: "Elm", survivalRate: null, reviews: null }], filled: ["project"], blanks: true } }).body;
-		expect(html.match(/<th[ >]/g)).toHaveLength(3);
-		expect(html.match(/<tr[ >]/g)).toHaveLength(2);
-		expect(html).toContain("Elm");
-	});
-
-	it("draws its row with no project column to lead it", () => {
-		const html = render(WeedsTable, { props: { columns: impact.slice(1), rows: [{ survivalRate: null, reviews: null }], filled: [], blanks: true } }).body;
-		expect(html.match(/<th[ >]/g)).toHaveLength(2);
-		expect(html.match(/<td[ >]/g)).toHaveLength(2);
-	});
-});
-
-describe("the table's scroll", () => {
-	// Chrome re-snaps a sideways snap after the columns change, so a new tab opened one column in, its second
-	// column hidden under the sticky first. Only the rows snap.
-	const css = compile(readFileSync(new URL("./WeedsTable.svelte", import.meta.url), "utf8"), { css: "external", filename: "WeedsTable.svelte" }).css!.code;
-
-	it("snaps rows, never columns, so a table opens at its left edge", () => {
-		expect(css).toMatch(/scroll-snap-type:\s*y proximity/);
-		expect(css).not.toMatch(/scroll-snap-align:\s*\S+\s+start/);
+	it("no row is active before the reader reaches the table", () => {
+		expect(html({ attributes, line: null })).not.toMatch(/<tr[^>]*class="[^"]*\bactive/);
 	});
 });

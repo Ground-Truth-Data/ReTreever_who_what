@@ -1,4 +1,4 @@
-import { formatTransparencyScore, isDrawn, type WeedsColumn, type WeedsKind, type WeedsRow } from "../whoWhatTypes";
+import { formatTransparencyScore, isDrawn, type WeedsAttribute, type WeedsColumn, type WeedsKind, type WeedsRow } from "../whoWhatTypes";
 import { getLocale } from "$parent/src/lib/paraglide/runtime";
 import { m } from "$parent/src/lib/paraglide/messages";
 
@@ -83,10 +83,10 @@ export function formatWeedsDate(iso: string): string {
 	return `${d.getUTCFullYear()}/${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
 }
 
-/** The host of a link, the part a reader can judge at a glance. */
+/** The host of a link, the part a reader can judge at a glance; a link with no host reads as sent. */
 export function linkLabel(url: string): string {
 	try {
-		return new URL(url).host.replace(/^www\./, "");
+		return new URL(url).host.replace(/^www\./, "") || url;
 	} catch {
 		return url;
 	}
@@ -123,8 +123,6 @@ export function cellText(row: WeedsRow, c: WeedsColumn): string {
 			return typeof v === "number" && typeof aside === "number"
 				? m.ww_rating_weeds_points_of({ scored: number().format(v), available: number().format(aside) })
 				: formatCell(v, "number");
-		case "site":
-			return filled(v) ? String(v) : filled(aside) ? m.ww_rating_weeds_unnamed_site() : EMPTY;
 		default:
 			return formatCell(v, c.kind);
 	}
@@ -132,9 +130,6 @@ export function cellText(row: WeedsRow, c: WeedsColumn): string {
 
 const filled = (v: unknown) => v !== null && v !== undefined && v !== "";
 
-/** A site with no description still shows, by its id. */
-const publishes = (row: WeedsRow, c: WeedsColumn) =>
-	filled(row[c.key]) || (c.kind === "site" && !!c.aside && filled(row[c.aside]));
 
 /**
  * The drawn columns some row publishes, and those no row does, as the host
@@ -147,27 +142,31 @@ export function splitPublished(columns: WeedsColumn[], filled: string[]): { show
 	return { shown, missing: drawn.filter((c) => !c.optional && !shown.includes(c)) };
 }
 
-/** When the row's link answered 404/410, the day it was checked and, if the check ever saw it alive, the last day it did; else null and the link is live. */
-export function deadOn(row: WeedsRow, columns: WeedsColumn[]): { checked: string; alive: string | null } | null {
-	const at = columns.find((c) => c.kind === "dead");
-	const v = at && row[at.key];
-	if (!v) return null;
-	// null means not seen alive since the column landed (18 Nov 2026), not never alive: the line then names no date.
-	const alive = at.aside ? row[at.aside] : null;
-	return { checked: formatWeedsDate(String(v)), alive: alive ? formatWeedsDate(String(alive)) : null };
-}
-
-/** The weeds bar: keeps rows where any drawn cell, as shown, as a link's full URL or as a site's id, contains the text. */
+/** The weeds bar: keeps rows where any drawn cell, as shown, or a link's full URL, contains the text. */
 export function filterRows(rows: WeedsRow[], columns: WeedsColumn[], query: string): WeedsRow[] {
 	const q = query.trim().toLowerCase();
 	if (!q) return rows;
 	return rows.filter((row) =>
 		columns.some((c) => {
-			if (!isDrawn(c)) return false;
-			if (!publishes(row, c)) return false;
+			if (!isDrawn(c) || !filled(row[c.key])) return false;
 			if (cellText(row, c).toLowerCase().includes(q)) return true;
-			const full = c.kind === "link" ? row[c.key] : c.kind === "site" && c.aside ? row[c.aside] : null;
-			return filled(full) && String(full).toLowerCase().includes(q);
+			return c.kind === "link" && String(row[c.key]).toLowerCase().includes(q);
 		}),
 	);
+}
+
+/** An attribute's value as the table draws it: its example by kind, with its unit; a dash when none is sent. */
+export function attributeText(a: Pick<WeedsAttribute, "example" | "kind" | "unit">): string {
+	const v = a.example;
+	if (Array.isArray(v)) return v.length ? v.map((n) => (n.scientific ? `${n.name} ${n.scientific}` : n.name)).join(", ") : EMPTY;
+	if (a.kind === "money" && typeof v === "number") return formatMoney(v, a.unit);
+	const text = formatCell(v, a.kind);
+	return a.unit && typeof v === "number" ? `${text} ${a.unit}` : text;
+}
+
+/** The weeds bar on an attribute table: keeps the attributes whose name or value contains the text. */
+export function filterAttributes<A extends WeedsAttribute>(attributes: A[], name: (a: A) => string, query: string): A[] {
+	const q = query.trim().toLowerCase();
+	if (!q) return attributes;
+	return attributes.filter((a) => name(a).toLowerCase().includes(q) || (a.example != null && attributeText(a).toLowerCase().includes(q)));
 }

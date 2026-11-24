@@ -1,5 +1,5 @@
 import { m } from "$parent/src/lib/paraglide/messages";
-import type { WeedsColumn } from "../whoWhatTypes";
+import type { WeedsAttribute, WeedsColumn } from "../whoWhatTypes";
 
 // Keyed by the English label the host's /api/weeds sends: a column key like `parent` reads differently per table.
 // A label missing here is drawn as sent.
@@ -47,3 +47,85 @@ const LABELS: Record<string, () => string> = {
 export function columnLabel(column: WeedsColumn): string {
 	return Object.hasOwn(LABELS, column.label) ? LABELS[column.label]() : column.label;
 }
+
+// Keyed by the message key the host's /weeds sends as an attribute's `label`.
+const ATTRIBUTES: Record<string, () => string> = {
+	ww_rating_attr_address: m.ww_rating_attr_address,
+	ww_rating_attr_centre: m.ww_rating_attr_centre,
+	ww_rating_attr_claim_date: m.ww_rating_attr_claim_date,
+	ww_rating_attr_claim_hectares: m.ww_rating_attr_claim_hectares,
+	ww_rating_attr_claim_sites: m.ww_rating_attr_claim_sites,
+	ww_rating_attr_claim_trees: m.ww_rating_attr_claim_trees,
+	ww_rating_attr_common_name: m.ww_rating_attr_common_name,
+	ww_rating_attr_contact_email: m.ww_rating_attr_contact_email,
+	ww_rating_attr_contact_name: m.ww_rating_attr_contact_name,
+	ww_rating_attr_contact_phone: m.ww_rating_attr_contact_phone,
+	ww_rating_attr_currency: m.ww_rating_attr_currency,
+	ww_rating_attr_family: m.ww_rating_attr_family,
+	ww_rating_attr_harm_id: m.ww_rating_attr_harm_id,
+	ww_rating_attr_hectares_mapped: m.ww_rating_attr_hectares_mapped,
+	ww_rating_attr_latitude: m.ww_rating_attr_latitude,
+	ww_rating_attr_longitude: m.ww_rating_attr_longitude,
+	ww_rating_attr_motivation_id: m.ww_rating_attr_motivation_id,
+	ww_rating_attr_plant_type: m.ww_rating_attr_plant_type,
+	ww_rating_attr_plot_centre: m.ww_rating_attr_plot_centre,
+	ww_rating_attr_plot_radius: m.ww_rating_attr_plot_radius,
+	ww_rating_attr_price_usd: m.ww_rating_attr_price_usd,
+	ww_rating_attr_project_name: m.ww_rating_attr_project_name,
+	ww_rating_attr_publisher_role: m.ww_rating_attr_publisher_role,
+	ww_rating_attr_quality_pass: m.ww_rating_attr_quality_pass,
+	ww_rating_attr_quality_pct: m.ww_rating_attr_quality_pct,
+	ww_rating_attr_reference: m.ww_rating_attr_reference,
+	ww_rating_attr_restoration_source: m.ww_rating_attr_restoration_source,
+	ww_rating_attr_scientific_name: m.ww_rating_attr_scientific_name,
+	ww_rating_attr_shape: m.ww_rating_attr_shape,
+	ww_rating_attr_shape_name: m.ww_rating_attr_shape_name,
+	ww_rating_attr_shape_notes: m.ww_rating_attr_shape_notes,
+	ww_rating_attr_shape_type: m.ww_rating_attr_shape_type,
+	ww_rating_attr_site_name: m.ww_rating_attr_site_name,
+	ww_rating_attr_slug: m.ww_rating_attr_slug,
+	ww_rating_attr_species_source: m.ww_rating_attr_species_source,
+	ww_rating_attr_treatment_source: m.ww_rating_attr_treatment_source,
+	ww_rating_attr_tree_capacity: m.ww_rating_attr_tree_capacity,
+	ww_rating_attr_website: m.ww_rating_attr_website,
+	ww_rating_column_counted_as: m.ww_rating_column_counted_as,
+	ww_rating_column_credit: m.ww_rating_column_credit,
+	ww_rating_column_crop: m.ww_rating_column_crop,
+	ww_rating_column_degraded_on: m.ww_rating_column_degraded_on,
+	ww_rating_column_description: m.ww_rating_column_description,
+	ww_rating_column_ends: m.ww_rating_column_ends,
+	ww_rating_column_hectares: m.ww_rating_column_hectares,
+	ww_rating_column_kind: m.ww_rating_column_kind,
+	ww_rating_column_link: m.ww_rating_column_link,
+	ww_rating_column_nursery_stock: m.ww_rating_column_nursery_stock,
+	ww_rating_column_organization: m.ww_rating_column_organization,
+	ww_rating_column_people_employed: m.ww_rating_column_people_employed,
+	ww_rating_column_planted_on: m.ww_rating_column_planted_on,
+	ww_rating_column_price_per_tree: m.ww_rating_column_price_per_tree,
+	ww_rating_column_price_per_unit: m.ww_rating_column_price_per_unit,
+	ww_rating_column_published_by: m.ww_rating_column_published_by,
+	ww_rating_column_restoration_type: m.ww_rating_column_restoration_type,
+	ww_rating_column_reviews: m.ww_rating_column_reviews,
+	ww_rating_column_role: m.ww_rating_column_role,
+	ww_rating_column_seed_source: m.ww_rating_column_seed_source,
+	ww_rating_column_site: m.ww_rating_column_site,
+	ww_rating_column_species: m.ww_rating_column_species,
+	ww_rating_column_started: m.ww_rating_column_started,
+	ww_rating_column_status: m.ww_rating_column_status,
+	ww_rating_column_surviving_pct: m.ww_rating_column_surviving_pct,
+	ww_rating_column_treatment: m.ww_rating_column_treatment,
+	ww_rating_column_trees_planned: m.ww_rating_column_trees_planned,
+	ww_rating_column_trees_planted: m.ww_rating_column_trees_planted,
+	ww_rating_column_unit: m.ww_rating_column_unit,
+	ww_rating_column_units: m.ww_rating_column_units,
+	ww_rating_column_what_harmed: m.ww_rating_column_what_harmed,
+	ww_rating_column_why_restore: m.ww_rating_column_why_restore,
+};
+
+/** The name a reader sees for a weeds attribute; a key missing here is drawn as sent. */
+export function attributeLabel(a: Pick<WeedsAttribute, "label">): string {
+	return Object.hasOwn(ATTRIBUTES, a.label) ? ATTRIBUTES[a.label]() : a.label;
+}
+
+/** Every label key this page can word, for the host's test that it sends no other. */
+export const ATTRIBUTE_KEYS = Object.keys(ATTRIBUTES);

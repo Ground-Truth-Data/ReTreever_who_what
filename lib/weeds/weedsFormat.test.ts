@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { EMPTY, cellText, filterRows, formatCell, formatMoney, formatWeedsDate, fullCount, linkLabel, shortCount, splitPublished, symbolCount } from "./weedsFormat";
-import type { WeedsColumn } from "../whoWhatTypes";
+import { EMPTY, attributeText, cellText, filterAttributes, filterRows, formatCell, formatMoney, formatWeedsDate, fullCount, linkLabel, shortCount, splitPublished, symbolCount } from "./weedsFormat";
+import type { WeedsAttribute, WeedsColumn } from "../whoWhatTypes";
 
 const lang = vi.hoisted(() => ({ locale: "en" }));
 vi.mock(import("$parent/src/lib/paraglide/runtime"), async (actual) => ({ ...(await actual()), getLocale: () => lang.locale as never }));
@@ -29,7 +29,7 @@ describe("weeds cells", () => {
 	});
 });
 
-describe("money, points and sites", () => {
+describe("money and points", () => {
 	it("every dollar is a plain $; € and £ keep their sign; any other currency reads its code", () => {
 		expect(formatMoney(8, "EUR")).toBe("€8.00");
 		expect(formatMoney(8, "GBP")).toBe("£8.00");
@@ -46,10 +46,6 @@ describe("money, points and sites", () => {
 		expect(cellText({ price: null, currency: "EUR" }, price)).toBe(EMPTY);
 		const points: WeedsColumn = { key: "scored", label: "Points", kind: "points", aside: "available" };
 		expect(cellText({ scored: 514, available: 1560 }, points)).toBe("514 of 1,560");
-		const site: WeedsColumn = { key: "desc", label: "Site", kind: "site", aside: "id" };
-		expect(cellText({ desc: "Ndaragwa", id: "site_1" }, site)).toBe("Ndaragwa");
-		expect(cellText({ desc: null, id: "site_1" }, site)).toBe("Unnamed site");
-		expect(cellText({ desc: null, id: null }, site)).toBe(EMPTY);
 		const species: WeedsColumn = { key: "species", label: "Species", kind: "names" };
 		const names = [{ name: "Teak", scientific: "Tectona grandis" }, { name: "Ghost tree", scientific: null }];
 		expect(cellText({ species: names }, species)).toBe("Teak Tectona grandis, Ghost tree");
@@ -109,21 +105,57 @@ describe("the weeds bar's filter", () => {
 		expect(filterRows(rows, columns, "mangrove").map((r) => r.name)).toEqual(["Mangrove"]);
 	});
 
-	it("a site matches on its id, a price on its sign", () => {
+	it("a price matches on its sign", () => {
 		const cols: WeedsColumn[] = [
-			{ key: "desc", label: "Site", kind: "site", aside: "id" },
-			{ key: "id", label: "Site id", kind: "aside" },
 			{ key: "price", label: "Price per unit", kind: "money", aside: "cur" },
+			{ key: "cur", label: "Currency", kind: "aside" },
 		];
-		const land = [{ desc: null, id: "site_dEbh", price: 8, cur: "EUR" }];
-		expect(filterRows(land, cols, "dEbh")).toHaveLength(1);
-		expect(filterRows(land, cols, "€8")).toHaveLength(1);
-		expect(filterRows(land, cols, "EUR")).toHaveLength(0);
+		const plantings = [{ price: 8, cur: "EUR" }];
+		expect(filterRows(plantings, cols, "€8")).toHaveLength(1);
+		expect(filterRows(plantings, cols, "EUR")).toHaveLength(0);
 	});
 
 	it("a link matches on its host and on its full URL", () => {
 		expect(filterRows(rows, columns, "ok.example")).toHaveLength(1);
 		expect(filterRows(rows, columns, "teak-plot")).toHaveLength(1);
+	});
+});
+
+describe("an attribute's value", () => {
+	const attr = (more: Partial<WeedsAttribute>): WeedsAttribute => ({
+		field: "PlantingTable.x",
+		label: "x",
+		kind: "text",
+		pointsAwarded: 0,
+		pointsAvailable: 0,
+		filled: 0,
+		records: 0,
+		example: null,
+		...more,
+	});
+
+	it("reads by its kind, with the unit beside it", () => {
+		expect(attributeText(attr({ kind: "money", example: 8, unit: "EUR" }))).toBe("€8.00");
+		expect(attributeText(attr({ kind: "money", example: 8, unit: "USD" }))).toBe("$8.00");
+		expect(attributeText(attr({ kind: "number", example: 1200, unit: "Tree" }))).toBe("1,200 Tree");
+		expect(attributeText(attr({ kind: "date", example: "2013-03-01T00:00:00.000Z" }))).toBe("2013/3/1");
+		expect(attributeText(attr({ kind: "link", example: "https://www.ok.example/a" }))).toBe("ok.example");
+		expect(attributeText(attr({ kind: "names", example: [{ name: "Teak", scientific: "Tectona grandis" }] }))).toBe("Teak Tectona grandis");
+	});
+
+	it("an attribute no record fills reads as a dash", () => {
+		expect(attributeText(attr({ example: null }))).toBe(EMPTY);
+		expect(attributeText(attr({ kind: "money", example: null, unit: null }))).toBe(EMPTY);
+	});
+
+	it("the bar keeps the attributes whose name or value holds the text", () => {
+		const list = [attr({ field: "a", label: "Currency", example: "EUR" }), attr({ field: "b", label: "Unit", example: null }), attr({ field: "c", label: "Planted on", kind: "date", example: "2013-03-01T00:00:00.000Z" })];
+		const name = (a: WeedsAttribute) => a.label;
+		expect(filterAttributes(list, name, "")).toBe(list);
+		expect(filterAttributes(list, name, "unit").map((a) => a.field)).toEqual(["b"]);
+		expect(filterAttributes(list, name, "eur").map((a) => a.field)).toEqual(["a"]);
+		expect(filterAttributes(list, name, "2013/3").map((a) => a.field)).toEqual(["c"]);
+		expect(filterAttributes(list, name, "—")).toEqual([]);
 	});
 });
 

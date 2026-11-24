@@ -1,127 +1,91 @@
 <script lang="ts">
+// One weeds table as the host worked it out: a row per attribute the method
+// offers, its first value and the points it earns, every number final from
+// the first paint. Only the row under the scroll line counts its points up.
 import { untrack } from "svelte";
 import { m } from "$parent/src/lib/paraglide/messages";
-import { cellText, deadOn, splitPublished } from "./weedsFormat";
-import { columnLabel } from "./columnLabels";
-import { safeHref } from "./safeHref";
+import CountUp from "../trace/CountUp.svelte";
+import { attributeLabel } from "./columnLabels";
+import { attributeText, EMPTY, fullCount } from "./weedsFormat";
 import { focusIndex } from "./weedsFocus";
-import type { WeedsColumn, WeedsRow } from "../whoWhatTypes";
+import { rowAt } from "./weedsScroll";
+import { safeHref } from "./safeHref";
+import type { WeedsAttribute } from "../whoWhatTypes";
 
 let {
-	columns,
-	rows,
-	filled,
+	attributes,
+	line = null,
 	sweep = undefined,
-	open = undefined,
-	blanks = false,
 }: {
-	columns: WeedsColumn[];
-	rows: WeedsRow[];
-	/** The drawn columns some row in scope fills, as the host judged them: what says a column is published. */
-	filled: string[];
-	/** Each new value digs the table from the top once, when it is on screen; till then its rows are hidden. */
+	attributes: WeedsAttribute[];
+	/** Where the page's scroll line is through this table, 0 to 1; null while the reader is not in the weeds. */
+	line?: number | null;
+	/** A new value is a new table: it opens at its top and its rows count again. */
 	sweep?: unknown;
-	/** The column whose cell opens the row, and what opening does. */
-	open?: { column: string; on: (row: WeedsRow) => void };
-	/** Draw the columns no row publishes too, as empty cells: a table that publishes nothing still shows its rows. */
-	blanks?: boolean;
 } = $props();
-
-const split = $derived(splitPublished(columns, filled));
-const drawn = $derived(blanks ? columns.filter((c) => split.shown.includes(c) || split.missing.includes(c)) : split.shown);
 
 let wrap = $state<HTMLDivElement>();
 let table = $state<HTMLTableElement>();
-
-// Laid-out boxes, read once per layout so a scroll frame does no DOM reads but the scroll position.
 let rowBoxes: { top: number; h: number }[] = [];
-let colBoxes: { left: number; w: number }[] = [];
 let headH = $state(0);
-let leadW = $state(0);
 let tableW = $state(0);
-let tableH = $state(0);
-
-let activeRow = $state(0);
-let activeCol = $state(-1);
+let active = $state(-1);
 let band = $state({ top: 0, h: 0 });
-let colBand = $state({ left: 0, w: 0 });
-let edge = $state({ left: false, right: false, bottom: false });
+let edge = $state({ bottom: false });
+// A scroll this table made itself, to keep the active row in view, is not the reader's.
+let ownScrollUntil = 0;
 
 function measure() {
 	if (!table) return;
 	headH = table.tHead?.offsetHeight ?? 0;
-	const head = table.tHead?.rows[0];
-	colBoxes = head ? [...head.cells].map((c) => ({ left: c.offsetLeft, w: c.offsetWidth })) : [];
-	leadW = colBoxes[0]?.w ?? 0;
 	rowBoxes = table.tBodies[0] ? [...table.tBodies[0].rows].map((r) => ({ top: r.offsetTop, h: r.offsetHeight })) : [];
 	tableW = table.offsetWidth;
-	tableH = table.offsetHeight;
-	// Re-place the bands on what is lit; only a scroll moves the cursor, or a resize would undo a hover.
-	lightRow(activeRow);
-	lightCol(activeCol);
+	place();
 	edges();
 }
 
-function lightRow(i: number) {
-	activeRow = Math.min(Math.max(i, 0), rowBoxes.length - 1);
-	const box = rowBoxes[activeRow];
+function place() {
+	const box = rowBoxes[active];
 	if (box) band = { top: box.top, h: box.h };
-}
-
-function lightCol(j: number) {
-	activeCol = j;
-	const box = colBoxes[j];
-	if (box) colBand = { left: box.left, w: box.w };
 }
 
 function edges() {
 	if (!wrap) return;
-	const { scrollTop, scrollLeft, scrollHeight, scrollWidth, clientHeight, clientWidth } = wrap;
-	edge = {
-		left: scrollLeft > 1,
-		right: scrollLeft < scrollWidth - clientWidth - 1,
-		bottom: scrollTop < scrollHeight - clientHeight - 1,
-	};
+	edge = { bottom: wrap.scrollTop < wrap.scrollHeight - wrap.clientHeight - 1 };
 }
 
-/** The scroll position picks the lit row and column: a reading cursor that walks first to last as the table scrolls. */
-function follow() {
-	if (!wrap) return;
-	const { scrollTop, scrollLeft, scrollHeight, scrollWidth, clientHeight, clientWidth } = wrap;
-	const maxY = scrollHeight - clientHeight;
-	const maxX = scrollWidth - clientWidth;
-	edges();
-	if (maxY > 1) {
-		lightRow(focusIndex(rowBoxes.map((b) => b.top), scrollTop + headH, clientHeight - headH, scrollTop / maxY));
-	}
-	if (maxX > 1) {
-		const lefts = colBoxes.slice(1).map((b) => b.left);
-		lightCol(1 + focusIndex(lefts, scrollLeft + leadW, clientWidth - leadW, scrollLeft / maxX));
-	}
+function activate(i: number, reveal: boolean) {
+	active = i;
+	place();
+	const box = rowBoxes[i];
+	if (!reveal || !box || !wrap) return;
+	const view = wrap.clientHeight - headH;
+	const top = wrap.scrollTop;
+	if (box.top - headH >= top && box.top + box.h <= top + headH + view) return;
+	ownScrollUntil = performance.now() + 120;
+	wrap.scrollTop = Math.max(0, box.top - headH - (view - box.h) / 2);
 }
 
+// The page's scroll line leads: as it walks down the tab, it walks down the rows.
+$effect(() => {
+	if (line === null) return;
+	const i = rowAt(line, attributes.length);
+	untrack(() => {
+		if (i !== active) activate(i, true);
+	});
+});
+
+// The reader scrolling the table itself moves the line too.
 let frame = 0;
 function onScroll() {
-	if (frame) return;
+	edges();
+	if (performance.now() < ownScrollUntil || frame) return;
 	frame = requestAnimationFrame(() => {
 		frame = 0;
-		follow();
+		if (!wrap) return;
+		const max = wrap.scrollHeight - wrap.clientHeight;
+		if (max > 1) activate(focusIndex(rowBoxes.map((b) => b.top), wrap.scrollTop + headH, wrap.clientHeight - headH, wrap.scrollTop / max), false);
 	});
-}
-
-function cellOf(target: EventTarget | null) {
-	const cell = (target as Element | null)?.closest?.("td, th") as HTMLTableCellElement | null;
-	const row = cell?.parentElement as HTMLTableRowElement | null;
-	if (!cell || !row || row.parentElement?.tagName !== "TBODY") return null;
-	return { i: row.rowIndex - 1, j: cell.cellIndex };
-}
-
-// Whichever moved last leads: the pointer, a tap, a focused link, or the scroll.
-function point(e: PointerEvent | FocusEvent) {
-	const at = cellOf(e.target);
-	if (!at || (at.i === activeRow && at.j === activeCol)) return;
-	lightRow(at.i);
-	lightCol(at.j);
 }
 
 $effect(() => {
@@ -135,161 +99,79 @@ $effect(() => {
 	};
 });
 
-// A new table starts at its top-left; a narrowed filter keeps the reader where they are.
 $effect(() => {
-	void columns;
-	wrap?.scrollTo({ top: 0, left: 0 });
-	activeRow = 0;
-	activeCol = -1;
-});
-
-// The dig ends inside the tally's 750 ms count: the edge reaches the visible
-// bottom by 340 and the last row's 260 ms drop and wash are over by 600, with
-// the observer's callback and the first frames counted in.
-const SWEEP_MS = 340;
-const LAND_MS = 260;
-// The sweep value whose dig is over: its rows simply show, so a filter keystroke redraws them at once.
-let dug = $state<unknown>(undefined);
-// Rows the edge has passed, keyed to their sweep: a new value hides every row in the very render it arrives.
-let reached = $state<{ key: unknown; n: number }>({ key: undefined, n: 0 });
-let edgeY = $state(-1);
-
-$effect(() => {
-	const key = sweep;
-	const el = wrap;
-	if (!el) return;
-	let raf = 0;
-	let timer: ReturnType<typeof setTimeout> | undefined;
-	edgeY = -1;
-	const run = () => {
-		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-			dug = key;
-			return;
-		}
-		measure();
-		const tops = rowBoxes.map((b) => b.top);
-		const top = headH;
-		const bottom = Math.max(top, Math.min(el.scrollHeight, el.clientHeight));
-		const t0 = performance.now();
-		const tick = (now: number) => {
-			const k = Math.min(1, (now - t0) / SWEEP_MS);
-			const y = top + (bottom - top) * (1 - (1 - k) ** 2);
-			edgeY = y;
-			let n = reached.key === key ? reached.n : 0;
-			while (n < tops.length && tops[n] <= y) n++;
-			reached = { key, n };
-			if (k < 1) {
-				raf = requestAnimationFrame(tick);
-				return;
-			}
-			reached = { key, n: tops.length };
-			edgeY = -1;
-			timer = setTimeout(() => (dug = key), LAND_MS);
-		};
-		raf = requestAnimationFrame(tick);
-	};
-	const seen = new IntersectionObserver(
-		([entry]) => {
-			if (!entry?.isIntersecting) return;
-			seen.disconnect();
-			run();
-		},
-		{ threshold: 0.25 },
-	);
-	seen.observe(el);
-	return () => {
-		seen.disconnect();
-		cancelAnimationFrame(raf);
-		clearTimeout(timer);
-		// A dig cut short leaves nothing behind, so coming back to that table digs it again.
-		dug = undefined;
-		reached = { key: undefined, n: 0 };
-	};
-});
-
-// Untracked: measuring lights a row, and a lit row must not re-run the measure that undoes a hover.
-$effect(() => {
-	void rows;
-	void drawn;
+	void attributes;
 	untrack(measure);
 });
+
+// A new table opens at its top, its active row wherever the line already is.
+$effect(() => {
+	void sweep;
+	untrack(() => {
+		wrap?.scrollTo({ top: 0, left: 0 });
+		active = -1;
+		measure();
+		if (line !== null) activate(rowAt(line, attributes.length), true);
+	});
+});
+
+const pointsLabel = (a: WeedsAttribute) =>
+	m.ww_rating_weeds_points_of({ scored: fullCount(a.pointsAwarded ?? 0), available: fullCount(a.pointsAvailable ?? 0) });
 </script>
 
-<div class="weeds-frame" class:fade-left={edge.left} class:fade-right={edge.right} class:fade-bottom={edge.bottom}>
-	<div
-		class="weeds-table-wrap"
-		bind:this={wrap}
-		onscroll={onScroll}
-		onpointermove={(e) => e.pointerType === "mouse" && point(e)}
-		onpointerdown={point}
-		onfocusin={point}
-		style="--head-h: {headH}px; --lead-w: {leadW}px"
-	>
-		<div
-			class="row-band"
-			class:on={rows.length > 0}
-			style="width: {tableW}px; height: {band.h}px; transform: translateY({band.top}px)"
-		></div>
-		<div
-			class="col-band"
-			class:on={activeCol > 0}
-			style="height: {tableH}px; width: {colBand.w}px; transform: translateX({colBand.left}px)"
-		></div>
-		<span class="scan" class:on={edgeY >= 0} style="width: {tableW}px; transform: translateY({Math.max(edgeY, headH)}px)"></span>
-		<table class="weeds-table" class:digging={dug !== sweep} bind:this={table}>
+<div class="weeds-frame" class:fade-bottom={edge.bottom}>
+	<div class="weeds-table-wrap" bind:this={wrap} onscroll={onScroll} style="--head-h: {headH}px">
+		<div class="row-band" class:on={active >= 0} style="width: {tableW}px; height: {band.h}px; transform: translateY({band.top}px)"></div>
+		<table class="weeds-table" bind:this={table}>
 			<thead>
 				<tr>
-					{#each drawn as c, j (c.key)}
-						<th scope="col" class={c.kind} class:lit={j === activeCol && j > 0}>{columnLabel(c)}</th>
-					{/each}
+					<th scope="col">{m.ww_rating_weeds_col_attribute()}</th>
+					<th scope="col">{m.ww_rating_weeds_col_value()}</th>
+					<th scope="col" class="points">{m.ww_rating_column_points()}</th>
 				</tr>
 			</thead>
-			{#key columns}
+			{#key sweep}
 				<tbody>
-					{#each rows as row, i (i)}
-						<tr class:lit={i === activeRow} class:in={dug === sweep || (reached.key === sweep && i < reached.n)}>
-							{#each drawn as c, j (c.key)}
-								{@const v = row[c.key]}
-								{@const shown = cellText(row, c)}
-								{@const dead = c.kind === "link" && v ? deadOn(row, columns) : null}
-								{@const href = c.kind === "link" ? safeHref(v) : null}
-								<td class={c.kind} class:cross={i === activeRow && j === activeCol && j > 0}>
-									{#if dead}
-										<span class="dead">{shown}</span>
-										<small class="dead-note">{dead.alive ? m.ww_rating_weeds_link_dead_alive({ date: dead.checked, alive: dead.alive }) : m.ww_rating_weeds_link_dead({ date: dead.checked })}</small>
+					{#each attributes as a, i (a.field)}
+						{@const href = a.kind === "link" ? safeHref(a.example) : null}
+						<tr class:active={i === active} class:unfilled={a.filled === 0} data-field={a.field}>
+							<th scope="row" class="name">{attributeLabel(a)}</th>
+							<td class="value {a.kind}">
+								<span class="shown">
+									{#if a.withheld && a.filled > 0}
+										<span class="withheld">{m.ww_rating_weeds_withheld()}</span>
 									{:else if href}
-										<a {href} rel="noopener" target="_blank">{shown}</a>
-									{:else if c.kind === "link" && v}
-										{shown || String(v)}
-									{:else if open && c.key === open.column && v}
-										<button type="button" class="row-open" onclick={() => open.on(row)}>{shown}</button>
-									{:else if c.kind === "names" && Array.isArray(v)}
-										{#each v as s, k (k)}{k ? ", " : ""}{s.name}{#if s.scientific}<small class="sci">{s.scientific}</small>{/if}{/each}
-									{:else if c.kind === "site" && !v && c.aside && row[c.aside]}
-										{shown}<small class="site-id">{row[c.aside]}</small>
+										<a {href} rel="noopener" target="_blank">{attributeText(a)}</a>
+									{:else if a.kind === "names" && Array.isArray(a.example)}
+										{#each a.example as s, k (k)}{k ? ", " : ""}{s.name}{#if s.scientific}<small class="sci">{s.scientific}</small>{/if}{/each}
 									{:else}
-										{shown}
+										{attributeText(a)}
 									{/if}
-								</td>
-							{/each}
+								</span>
+								{#if a.records > 0}
+									<small class="share">{m.ww_rating_weeds_filled_of({ filled: fullCount(a.filled), records: fullCount(a.records) })}</small>
+								{/if}
+							</td>
+							<td class="points">
+								{#if a.pointsAwarded === null || a.pointsAvailable === null}
+									{EMPTY}
+								{:else}
+									<span class="earned"><CountUp value={a.pointsAwarded} format={fullCount} run={i === active} label={pointsLabel(a)} /></span>
+									<span class="of" aria-hidden="true">/ {fullCount(a.pointsAvailable)}</span>
+								{/if}
+							</td>
 						</tr>
 					{/each}
 				</tbody>
 			{/key}
 		</table>
 	</div>
-	<span class="fade left" aria-hidden="true"></span>
-	<span class="fade right" aria-hidden="true"></span>
 	<span class="fade bottom" aria-hidden="true"></span>
 </div>
 
 <style>
-	/* The frame takes the wrapper's old place in the panel's column, so the
-	   table still shrinks to the stage's cap; the fades sit on it, outside
-	   the scroll, so they stay put while the rows move. */
 	.weeds-frame {
 		--glide: 260ms cubic-bezier(0.2, 0.9, 0.25, 1.12);
-		--lit: color-mix(in srgb, var(--rt-yellow) 10%, #000);
 		position: relative;
 		width: 100%;
 		max-width: 100%;
@@ -299,12 +181,8 @@ $effect(() => {
 		flex-direction: column;
 	}
 
-	/* Seven columns at 390px scroll sideways inside the wrapper, never the
-	   page. Rows scroll inside it too, up to the stage's cap, and the wheel
-	   chains to the page at the end: that is what walks the tabs, so the y
-	   axis is never contained, and its snap is proximity, never mandatory.
-	   Only rows snap: Chrome re-snaps a sideways snap when the columns
-	   change, which opened a new tab one column in. */
+	/* Rows scroll inside the wrapper up to the stage's cap; the wheel chains
+	   to the page at the end, which is what walks the tabs. */
 	.weeds-table-wrap {
 		position: relative;
 		isolation: isolate;
@@ -315,50 +193,37 @@ $effect(() => {
 		overflow-x: auto;
 		overflow-y: auto;
 		overscroll-behavior-x: contain;
-		scroll-snap-type: y proximity;
-		scroll-padding-top: var(--head-h);
-		scroll-padding-left: var(--lead-w);
 		border: 3px solid var(--color-gold-bar);
 		border-radius: 2px;
 		background: #000;
 	}
 
-	/* Under the cells (z -1 in the wrapper's own stack), so text stays crisp
-	   and the pinned header and lead column cover them. */
-	.row-band,
-	.col-band {
+	/* Under the cells, so the text stays crisp and the pinned header covers it. */
+	.row-band {
 		position: absolute;
 		top: 0;
 		left: 0;
 		z-index: -1;
 		opacity: 0;
 		pointer-events: none;
-		transition:
-			transform var(--glide),
-			height var(--glide),
-			width var(--glide),
-			opacity 200ms ease-out;
-	}
-
-	.row-band {
 		background: color-mix(in srgb, var(--rt-yellow) 9%, transparent);
 		box-shadow:
 			inset 0 1px 0 color-mix(in srgb, var(--rt-yellow) 35%, transparent),
 			inset 0 -1px 0 color-mix(in srgb, var(--rt-yellow) 35%, transparent);
+		transition:
+			transform var(--glide),
+			height var(--glide),
+			opacity 200ms ease-out;
 	}
 
-	.col-band {
-		background: color-mix(in srgb, var(--rt-yellow) 5%, transparent);
-	}
-
-	.row-band.on,
-	.col-band.on {
+	.row-band.on {
 		opacity: 1;
 	}
 
 	.weeds-table {
 		border-collapse: collapse;
-		min-width: 100%;
+		width: 100%;
+		table-layout: fixed;
 		font-family: var(--rt-font-web);
 		font-size: 14px;
 		line-height: 1.3;
@@ -367,21 +232,13 @@ $effect(() => {
 
 	th,
 	td {
-		padding: 10px 12px;
-		border: 1px solid #2e3342;
+		padding: 8px 12px;
+		border: 1px solid color-mix(in srgb, var(--rtvr-on-dark) 16%, transparent);
 		text-align: left;
-		vertical-align: top;
-		white-space: nowrap;
-		max-width: 28rem;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		transition:
-			color 160ms ease-out,
-			box-shadow 160ms ease-out,
-			background-color 160ms ease-out;
+		vertical-align: middle;
 	}
 
-	th {
+	thead th {
 		position: sticky;
 		top: 0;
 		z-index: 3;
@@ -392,147 +249,77 @@ $effect(() => {
 		letter-spacing: 0.02em;
 	}
 
-	th.lit {
-		color: var(--rt-yellow);
+	thead th:first-child {
+		width: 32%;
 	}
 
-	th::after {
-		content: "";
-		position: absolute;
-		left: 12px;
-		right: 12px;
-		bottom: 4px;
-		height: 2px;
-		background: var(--rt-yellow);
-		transform: scaleX(0);
-		transform-origin: left;
-		transition: transform var(--glide);
-	}
-
-	th.lit::after {
-		transform: scaleX(1);
-	}
-
-	/* The project stays in view while the other columns slide under it. */
-	th:first-child,
-	td:first-child {
-		position: sticky;
-		left: 0;
-		background: #000;
-	}
-
-	th:first-child {
-		z-index: 4;
-	}
-
-	td:first-child {
-		z-index: 1;
-	}
-
-	tbody tr {
-		scroll-snap-align: start none;
-	}
-
-	/* The dig through a table: a gold edge sweeps down from the header, and
-	   each row drops into place from above as it passes, with a brief wash.
-	   A row the edge has not reached is not seen. */
-	.digging tbody tr:not(.in) {
-		opacity: 0;
-		transform: translateY(-10px);
-	}
-
-	.digging tbody tr.in {
-		transition:
-			opacity 200ms ease-out,
-			transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
-	}
-
-	.digging tbody tr.in td {
-		animation: wash 260ms ease-out;
-	}
-
-	@keyframes wash {
-		from {
-			background-color: color-mix(in srgb, var(--color-gold-shard) 16%, #000);
-		}
-	}
-
-	/* Above the cells, under the pinned header; its trail glows up behind it. */
-	.scan {
-		position: absolute;
-		top: 0;
-		left: 0;
-		z-index: 2;
-		height: 2px;
-		pointer-events: none;
-		background: var(--color-gold-shard);
-		box-shadow: 0 0 10px 2px rgb(240 182 10 / 0.55);
-		opacity: 0;
-		transition: opacity 200ms ease;
-	}
-
-	.scan.on {
-		opacity: 1;
-		transition: none;
-	}
-
-	.scan::before {
-		content: "";
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: 2px;
-		height: 72px;
-		background: linear-gradient(transparent, rgb(240 182 10 / 0.16));
-	}
-
-	tbody tr.lit td:first-child {
-		background: var(--lit);
-		box-shadow: inset 3px 0 0 var(--rt-yellow);
-	}
-
-	td.cross {
-		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rt-yellow) 60%, transparent);
-	}
-
-	th.number,
-	td.number,
-	th.score,
-	td.score {
+	thead th.points {
+		width: 9.5rem;
 		text-align: right;
-		font-variant-numeric: tabular-nums;
 	}
 
+	.name {
+		font-weight: 500;
+		color: var(--rtvr-on-dark);
+		overflow-wrap: anywhere;
+	}
+
+	/* A long description reads two lines and ends in an ellipsis; the count under it always shows. */
+	.shown {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
+		overflow: hidden;
+		overflow-wrap: anywhere;
+	}
+
+	.share {
+		display: block;
+		margin-top: 2px;
+		color: color-mix(in srgb, var(--rtvr-on-dark) 58%, transparent);
+		font-size: 12px;
+	}
+
+	.withheld {
+		color: color-mix(in srgb, var(--rtvr-on-dark) 58%, transparent);
+		font-style: italic;
+	}
+
+	td.number,
+	td.money,
 	td.date {
 		font-variant-numeric: tabular-nums;
 	}
 
-	th.money,
-	td.money,
-	th.points,
+	/* The earned figure and its "of" wrap apart when the column is narrow, never out of it. */
 	td.points {
+		--glyph-h: 20px;
 		text-align: right;
 		font-variant-numeric: tabular-nums;
 	}
 
-	/* A site's name is read in full: it wraps, never ellipses. */
-	td.site {
-		white-space: normal;
-		min-width: 14rem;
+	.earned {
+		display: inline-flex;
+		vertical-align: bottom;
 	}
 
-	.site-id {
-		display: block;
-		margin-top: 2px;
-		color: #8d93a6;
-		font-size: 12px;
+	.of {
+		display: inline-block;
+		white-space: nowrap;
+		margin-left: 4px;
+		color: color-mix(in srgb, var(--rtvr-on-dark) 58%, transparent);
+		font-size: 13px;
 	}
 
-	a,
-	.row-open {
-		color: var(--color-gold-shard);
-		text-decoration: underline;
-		text-underline-offset: 2px;
+	.unfilled .name,
+	.unfilled .shown {
+		color: color-mix(in srgb, var(--rtvr-on-dark) 58%, transparent);
+	}
+
+	tr.active .name {
+		color: var(--rt-yellow);
+		box-shadow: inset 3px 0 0 var(--rt-yellow);
 	}
 
 	.sci {
@@ -540,60 +327,28 @@ $effect(() => {
 		font-size: var(--rt-fs-meta);
 	}
 
-	.dead-note {
-		margin-left: 8px;
-		font-size: 0.85em;
-		opacity: 0.7;
-	}
-
-	.row-open {
-		padding: 0;
-		margin: 0;
-		background: none;
-		border: none;
-		font: inherit;
-		cursor: pointer;
+	a {
+		color: var(--color-gold-shard);
+		text-decoration: underline;
+		text-underline-offset: 2px;
 	}
 
 	a:hover,
-	a:focus-visible,
-	.row-open:hover,
-	.row-open:focus-visible,
-	tr.lit a,
-	tr.lit .row-open {
+	a:focus-visible {
 		color: var(--color-gold-bar);
-		outline: none;
 	}
 
-	.row-open:focus-visible,
 	a:focus-visible {
 		outline: 2px solid var(--color-gold-bar);
 		outline-offset: 1px;
 	}
 
-	/* More table past this edge; inside the 3px border, the left one past the pinned column. */
 	.fade {
 		position: absolute;
 		z-index: 1;
 		opacity: 0;
 		pointer-events: none;
 		transition: opacity 200ms ease-out;
-	}
-
-	.fade.left {
-		top: 3px;
-		bottom: 3px;
-		left: calc(3px + var(--lead-w, 0px));
-		width: 24px;
-		background: linear-gradient(to right, rgb(0 0 0 / 0.85), transparent);
-	}
-
-	.fade.right {
-		top: 3px;
-		bottom: 3px;
-		right: 3px;
-		width: 32px;
-		background: linear-gradient(to left, #000, transparent);
 	}
 
 	.fade.bottom {
@@ -604,56 +359,28 @@ $effect(() => {
 		background: linear-gradient(to top, #000, transparent);
 	}
 
-	.fade-left .fade.left,
-	.fade-right .fade.right,
 	.fade-bottom .fade.bottom {
 		opacity: 1;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.row-band,
-		.col-band,
-		th,
-		td,
-		th::after {
+		.row-band {
 			transition: none;
-		}
-
-		.digging tbody tr:not(.in) {
-			opacity: 1;
-			transform: none;
-		}
-
-		.digging tbody tr.in td {
-			animation: none;
-		}
-
-		.scan {
-			display: none;
 		}
 	}
 
-	/* On a phone a cell's link or button fills the cell, 44px tall. */
 	@media (max-width: 767px) {
-		td:has(> a, > .row-open) {
-			padding: 0;
+		th,
+		td {
+			padding: 8px;
 		}
 
-		td > a,
-		td > .row-open {
-			display: block;
-			box-sizing: border-box;
-			width: 100%;
-			min-height: 44px;
-			padding: 13px 12px;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			text-align: left;
+		thead th:first-child {
+			width: 36%;
 		}
 
-		td > .row-open:focus-visible,
-		td > a:focus-visible {
-			outline-offset: -2px;
+		thead th.points {
+			width: 7.5rem;
 		}
 	}
 </style>

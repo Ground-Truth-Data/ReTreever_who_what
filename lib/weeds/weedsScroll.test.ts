@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { headX, progressFor, scrollTopFor, tabIndexFor } from "./weedsScroll";
+import { headX, lineFor, progressFor, rowAt, scrollTopFor, tabIndexFor } from "./weedsScroll";
 
 const STEP = 500;
 const N = 7;
@@ -89,6 +89,36 @@ describe("headX", () => {
 		expect(headX(9, centres)).toBe(450);
 		expect(headX(3, [])).toBe(0);
 		expect(headX(3, [12])).toBe(12);
+	});
+});
+
+describe("the scroll line through a table", () => {
+	it("runs 0 to 1 across the tab's own stretch, which agrees with the lit tab", () => {
+		expect(lineFor(0, 0, N)).toBe(0);
+		expect(lineFor(0.5, 0, N)).toBe(1);
+		expect(lineFor(2.5, 3, N)).toBe(0);
+		expect(lineFor(3, 3, N)).toBe(0.5);
+		expect(lineFor(3.5, 3, N)).toBe(1);
+		expect(lineFor(N - 1, N - 1, N)).toBe(1);
+		for (const p of [0.6, 1.4, 2.51, 4.49, 5.6]) {
+			const i = tabIndexFor(p * STEP, STEP, N);
+			expect(lineFor(p, i, N), String(p)).toBeGreaterThanOrEqual(0);
+			expect(lineFor(p, i, N), String(p)).toBeLessThanOrEqual(1);
+		}
+	});
+
+	it("holds its ends outside the stretch", () => {
+		expect(lineFor(-2, 0, N)).toBe(0);
+		expect(lineFor(9, N - 1, N)).toBe(1);
+		expect(lineFor(1, 3, N)).toBe(0);
+	});
+
+	it("walks every row once, first to last", () => {
+		expect(rowAt(0, 16)).toBe(0);
+		expect(rowAt(1, 16)).toBe(15);
+		const seen = new Set(Array.from({ length: 1001 }, (_, k) => rowAt(k / 1000, 16)));
+		expect([...seen]).toEqual(Array.from({ length: 16 }, (_, i) => i));
+		expect(rowAt(0.5, 0)).toBe(-1);
 	});
 });
 

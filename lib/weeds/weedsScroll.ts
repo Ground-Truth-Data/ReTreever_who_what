@@ -23,3 +23,20 @@ export function headX(progress: number, centres: readonly number[]): number {
 	const f = Math.min(1, Math.max(0, progress - i));
 	return centres[i] + (centres[i + 1] - centres[i]) * f;
 }
+
+/**
+ * Where the scroll line is through tab `index`'s stretch of the run, 0 to 1: the stretch is the half step either side
+ * of its centre, the first and last tabs' clipped at the run's ends, so every tab's line starts at 0 and ends at 1.
+ */
+export function lineFor(progress: number, index: number, n: number): number {
+	if (n <= 1) return Math.min(1, Math.max(0, progress));
+	const lo = index === 0 ? 0 : index - 0.5;
+	const hi = index === n - 1 ? n - 1 : index + 0.5;
+	return Math.min(1, Math.max(0, (progress - lo) / (hi - lo))) || 0;
+}
+
+/** The row the scroll line is on: the first at 0, the last at 1, each holding an equal share between. */
+export function rowAt(line: number, rows: number): number {
+	if (rows <= 0) return -1;
+	return Math.min(rows - 1, Math.max(0, Math.floor(line * rows)));
+}

@@ -1,21 +1,10 @@
 import { render } from "svelte/server";
 import { describe, expect, it } from "vitest";
-import NeverPublished from "./NeverPublished.svelte";
 import WeedsCount from "./WeedsCount.svelte";
 
 const html = (body: string) => body.replace(/<!--[\s\S]*?-->/g, "");
 
-describe("the weeds panel's footer pieces", () => {
-	it("lists each never-published field as its own chip under one label", () => {
-		const out = html(render(NeverPublished, { props: { fields: ["Ends", "Last updated"] } }).body);
-		expect(out).toContain("Never published");
-		expect(out.match(/<li[ >]/g)).toHaveLength(2);
-		expect(out).toMatch(/<li[^>]*>Ends<\/li>/);
-		expect(out).toMatch(/<li[^>]*>Last updated<\/li>/);
-		const label = out.match(/id="([^"]+)"[^>]*>Never published/)?.[1];
-		expect(out).toContain(`aria-labelledby="${label}"`);
-	});
-
+describe("the weeds panel's count", () => {
 	it("draws a count's number in the numerals and keeps the whole sentence for a screen reader", () => {
 		const out = html(render(WeedsCount, { props: { count: 22, text: "22 rows" } }).body);
 		expect(out).toContain('class="sr');
