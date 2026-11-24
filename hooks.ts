@@ -1,4 +1,4 @@
-import type { Reroute } from "@sveltejs/kit";
+import type { Reroute } from "@sveltejs/kit/hooks";
 
 // Unknown paths reroute to DEFAULT; a root +page.ts redirect 500s in this mount.
 // Keep in step with this child's defaultPath in $rig/childRegistry.ts.
