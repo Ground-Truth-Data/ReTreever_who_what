@@ -15,6 +15,7 @@ import {
 	type StackKey,
 } from "./tallyMath";
 import { fullCount, shortCount } from "./weedsFormat";
+import { downloadSummary } from "../rating/summaryExport";
 import type { ScoreTally } from "../whoWhatTypes";
 import { m } from "$parent/src/lib/paraglide/messages";
 import { getLocale } from "$parent/src/lib/paraglide/runtime";
@@ -25,6 +26,7 @@ let {
 	visible,
 	landed = true,
 	traceHref = undefined,
+	name = undefined,
 }: {
 	tally: ScoreTally;
 	litIndex: number;
@@ -33,6 +35,8 @@ let {
 	landed?: boolean;
 	/** The page that walks this score down to its parts, linked once after the last table; absent, no link. */
 	traceHref?: string;
+	/** The record's name, for the printed and downloaded summary; absent, neither is offered. */
+	name?: string;
 } = $props();
 
 const COUNT_MS = 750;
@@ -63,6 +67,19 @@ $effect(() => {
 	raf = requestAnimationFrame(tick);
 	return () => cancelAnimationFrame(raf);
 });
+
+// The print sheet applies only while a tally is on the page.
+let here = $state("");
+$effect(() => {
+	here = location.href;
+	const root = document.documentElement;
+	root.classList.add("rating-print");
+	return () => root.classList.remove("rating-print");
+});
+const runDay = $derived(
+	tally.scoredAt ? new Intl.DateTimeFormat(getLocale(), { dateStyle: "long" }).format(new Date(tally.scoredAt)) : null,
+);
+const csv = () => name && downloadSummary({ name, url: location.href, tally });
 
 const one = (n: number) => n.toFixed(1);
 const bigText = $derived(one(tally.rating ?? tally.score ?? 0));
@@ -113,6 +130,7 @@ const status = $derived.by(() => {
 
 <aside class="tally corner" class:on={visible} class:waiting={!landed} class:done>
 	<div class="face" aria-hidden="true">
+		{#if name}<p class="print-head"><strong>{name}</strong>{#if runDay}{` · ${runDay}`}{/if}<br />{here}</p>{/if}
 		<p class="caption">{m.ww_rating_tally_adds_up({ rating: headline })}</p>
 		<div class="big"><RatingNumber text={bigText} outOf={100} /></div>
 		<ol class="stack">
@@ -139,6 +157,7 @@ const status = $derived.by(() => {
 			<p class="note">{m.ww_rating_tally_not_broken_down_long()}</p>
 		{/if}
 	</div>
+	{#if name}{@render exporter()}{/if}
 </aside>
 
 <div class="tally strip" class:on={visible} class:waiting={!landed} class:done>
@@ -147,7 +166,15 @@ const status = $derived.by(() => {
 		<span class="what">{stripLine}</span>
 		<span class="walk">{walk}</span>
 	</div>
+	{#if name}{@render exporter()}{/if}
 </div>
+
+{#snippet exporter()}
+	<div class="export" role="group" aria-label={m.ww_rating_export_label()}>
+		<button type="button" onclick={() => window.print()}>{m.ww_rating_export_print()}</button>
+		<button type="button" onclick={csv}>{m.ww_rating_export_csv()}</button>
+	</div>
+{/snippet}
 
 {#if traceHref}<p class="trace-end"><a href={traceHref}>{m.ww_rating_trace_link()}</a></p>{/if}
 
@@ -364,6 +391,49 @@ const status = $derived.by(() => {
 		font-size: 13px;
 	}
 
+	.print-head {
+		display: none;
+	}
+
+	/* The card's one control: the summary to print or to keep as a CSV. The rest lets clicks through to the table. */
+	.export {
+		display: flex;
+		gap: 8px;
+		pointer-events: auto;
+	}
+
+	.export button {
+		min-height: 32px;
+		padding: 4px 12px;
+		border: 1px solid var(--color-gold-bar);
+		border-radius: 3px;
+		background: transparent;
+		color: var(--color-gold-bar);
+		font: 700 12px var(--rt-font-web);
+		letter-spacing: 0.04em;
+		cursor: pointer;
+	}
+
+	.export button:hover {
+		background: color-mix(in srgb, var(--color-gold-bar) 14%, transparent);
+	}
+
+	.export button:focus-visible {
+		outline: 2px solid var(--color-gold-bar);
+		outline-offset: 2px;
+	}
+
+	.strip .export {
+		grid-column: 3;
+		grid-row: 1 / 3;
+		gap: 4px;
+	}
+
+	.strip .export button {
+		min-height: 36px;
+		padding: 4px 8px;
+	}
+
 	/* The phone strip: the rating, the table in hand, and the walk to the rating on one line. */
 	.strip {
 		--tally-mark: var(--color-gold-shard);
@@ -371,7 +441,7 @@ const status = $derived.by(() => {
 		right: 0;
 		bottom: 0;
 		display: grid;
-		grid-template-columns: auto minmax(0, 1fr);
+		grid-template-columns: auto minmax(0, 1fr) auto;
 		grid-template-rows: auto auto;
 		align-items: center;
 		gap: 2px 12px;
@@ -442,6 +512,65 @@ const status = $derived.by(() => {
 		}
 
 		.strip {
+			display: none;
+		}
+	}
+
+	/* Printed, the page is the card alone: every branch that does not hold it
+	   goes, and the ones that do lose their own box, so it lands at the top of
+	   one sheet in its screen dress. */
+	@media print {
+		:global(html.rating-print body *:not(:has(.tally.corner)):not(.tally.corner):not(.tally.corner *)) {
+			display: none !important;
+		}
+
+		:global(html.rating-print body *:has(.tally.corner)) {
+			position: static !important;
+			transform: none !important;
+			min-height: 0 !important;
+			height: auto !important;
+			max-height: none !important;
+			margin: 0 !important;
+			padding: 0 !important;
+			border: 0 !important;
+			overflow: visible !important;
+			background: none !important;
+			box-shadow: none !important;
+			filter: none !important;
+		}
+
+		:global(html.rating-print),
+		:global(html.rating-print body) {
+			background: none !important;
+		}
+
+		.tally.corner {
+			display: flex;
+			position: static;
+			width: 100%;
+			max-width: 120mm;
+			max-height: none;
+			margin: 0 auto;
+			opacity: 1;
+			visibility: visible;
+			transform: none;
+			box-shadow: none;
+			print-color-adjust: exact;
+			-webkit-print-color-adjust: exact;
+			break-inside: avoid;
+		}
+
+		.print-head {
+			display: block;
+			font-size: 11px;
+			line-height: 1.4;
+			color: var(--rtvr-on-dark);
+			overflow-wrap: anywhere;
+		}
+
+		.export,
+		.strip,
+		.trace-end {
 			display: none;
 		}
 	}

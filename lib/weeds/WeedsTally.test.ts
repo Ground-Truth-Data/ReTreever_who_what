@@ -29,10 +29,13 @@ const org: ScoreTally = {
 	org: { projects: 367, mean: 64.8, claimed: null, planted: 0, undisclosed: null, reviewed: false, ratio: null },
 };
 
-const draw = (props: Partial<{ litIndex: number; landed: boolean; traceHref: string }> = {}) =>
+const draw = (props: Partial<{ litIndex: number; landed: boolean; traceHref: string; name: string }> = {}) =>
 	render(WeedsTally, { props: { tally: org, litIndex: 0, visible: true, ...props } }).body.replace(/<!--[\s\S]*?-->/g, "");
 const card = (html: string) => html.slice(html.indexOf("<aside"), html.indexOf("</aside>"));
-const strip = (html: string) => html.slice(html.indexOf('class="tally strip'), html.indexOf("</div></div>", html.indexOf('class="tally strip')));
+const strip = (html: string) => {
+	const end = html.indexOf('class="trace-end');
+	return html.slice(html.indexOf('class="tally strip'), end === -1 ? undefined : end);
+};
 
 describe("the tally card", () => {
 	it("shows every figure on the first table: six in the stack, every table's line with its points", () => {
@@ -64,5 +67,12 @@ describe("the tally card", () => {
 		expect(strip(html)).not.toMatch(/<a\s/);
 		expect(html.match(/href="\/who\/a-a\/score"/g)).toHaveLength(1);
 		expect(html.indexOf('href="/who/a-a/score"')).toBeGreaterThan(html.indexOf('class="tally strip'));
+	});
+
+	it("offers the summary to print or download only when it can name the record, in the card and the strip", () => {
+		expect(draw()).not.toContain('class="export');
+		const html = draw({ name: "Plant for the Planet" });
+		expect(card(html).match(/<button/g)).toHaveLength(2);
+		expect(html.match(/class="export/g)).toHaveLength(2);
 	});
 });

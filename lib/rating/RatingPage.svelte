@@ -543,7 +543,7 @@ const longLockup = lockupSize.k > 1.1 * lockupWidth(TruthIsInRaw, TheWeedsRaw, D
 	{#if weedsHref}
 		<WeedsSection bind:this={weeds} {tab} href={weedsHref} head={lockup} {clipRoot} {onopenproject} onactive={(i) => (litIndex = i)} />
 		{#if tally}
-			<WeedsTally {tally} {litIndex} visible={tallyVisible || (land > 0 && land < 1)} landed={!travels || land >= 1} traceHref={scoreHref} />
+			<WeedsTally {tally} {litIndex} visible={tallyVisible || (land > 0 && land < 1)} landed={!travels || land >= 1} traceHref={scoreHref} name={record?.name} />
 		{/if}
 	{:else}
 		{@render lockup()}
