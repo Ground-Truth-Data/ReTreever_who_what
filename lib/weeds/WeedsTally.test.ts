@@ -25,7 +25,6 @@ const org: ScoreTally = {
 	scoreRunId: "run-1",
 	scoredAt: "2026-11-23T13:33:43.001Z",
 	reconciled: true,
-	attributes: null,
 	org: { projects: 367, mean: 64.8, claimed: null, planted: 0, undisclosed: null, reviewed: false, ratio: null },
 };
 

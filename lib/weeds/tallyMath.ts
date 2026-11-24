@@ -1,7 +1,7 @@
 // The tally's arithmetic: the stack of figures from the attributes on offer to
 // the rating, each table's line, the count's easing, and each figure's words.
 // Pure, so the card and the phone strip draw one truth.
-import { WEEDS_TABLES, type ScoreTally, type TallyLine, type WeedsTable } from "../whoWhatTypes";
+import { WEEDS_TABLES, type ScoreTally, type TallyLine, type WeedsAttributes, type WeedsTable } from "../whoWhatTypes";
 import { fullCount } from "./weedsFormat";
 import { m } from "$parent/src/lib/paraglide/messages";
 import { getLocale } from "$parent/src/lib/paraglide/runtime";
@@ -28,6 +28,26 @@ export function runningPoints(tally: ScoreTally, index: number): { scored: numbe
 	return { scored: tally.pointsScored ?? sums.scored, available: tally.pointsAvailable ?? sums.available };
 }
 
+/** Attributes the method offers the record and how many its records fill. */
+export type AttributeCounts = { possible: number; filled: number };
+
+/**
+ * The counts summed over the seven weeds answers the page loads, each worked
+ * out on the server; null until every table has answered, so a figure is never
+ * shown part-counted.
+ */
+export function attributeCounts(answers: Partial<Record<WeedsTable, WeedsAttributes>>): AttributeCounts | null {
+	let possible = 0;
+	let filled = 0;
+	for (const table of WEEDS_TABLES) {
+		const answer = answers[table];
+		if (!answer) return null;
+		possible += answer.attributes.length;
+		filled += answer.attributes.filter((a) => a.filled > 0).length;
+	}
+	return { possible, filled };
+}
+
 export type StackKey = "possible" | "filled" | "share" | "claim" | "place" | "rating";
 export type StackRow = { key: StackKey; value: string };
 
@@ -49,8 +69,7 @@ export function claimFactor(tally: ScoreTally): string {
  * paint: what is on offer, what is filled, the share, the claim step, the
  * place among peers, the rating. A figure the record has none of reads "—".
  */
-export function stackRows(tally: ScoreTally): StackRow[] {
-	const counts = tally.attributes;
+export function stackRows(tally: ScoreTally, counts: AttributeCounts | null): StackRow[] {
 	const share =
 		counts && counts.possible > 0
 			? new Intl.NumberFormat(getLocale(), { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(

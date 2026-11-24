@@ -2,10 +2,10 @@
 // already holds: the record, the six figures and each table's points, never a
 // record row. The site is a window on the data, not a download of it.
 import type { ScoreTally } from "../whoWhatTypes";
-import { TABLE_LABELS } from "../weeds/tallyMath";
+import { TABLE_LABELS, type AttributeCounts } from "../weeds/tallyMath";
 import { m } from "$parent/src/lib/paraglide/messages";
 
-export type SummaryInput = { name: string; url: string; tally: ScoreTally };
+export type SummaryInput = { name: string; url: string; tally: ScoreTally; counts: AttributeCounts | null };
 type Row = [section: string, figure: string, value: string, outOf: string];
 
 // Spreadsheet numbers: no grouping, a "." decimal, whatever the page's language.
@@ -19,8 +19,7 @@ function claimValue(tally: ScoreTally): string {
 }
 
 /** The export's rows, header first; every row has four cells. */
-export function summaryRows({ name, url, tally }: SummaryInput): Row[] {
-	const counts = tally.attributes;
+export function summaryRows({ name, url, tally, counts }: SummaryInput): Row[] {
 	const record = m.ww_rating_export_section_record();
 	const summary = m.ww_rating_export_section_summary();
 	const tables = m.ww_rating_export_section_tables();

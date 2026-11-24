@@ -22,14 +22,14 @@ import SearchBar from "../search/SearchBar.svelte";
 import SearchDropdown from "../search/SearchDropdown.svelte";
 import WeedsSection from "../weeds/WeedsSection.svelte";
 import WeedsTally from "../weeds/WeedsTally.svelte";
-import { placeLine } from "../weeds/tallyMath";
+import { attributeCounts, placeLine } from "../weeds/tallyMath";
 import RatingFeedback from "./RatingFeedback.svelte";
 import RatingGround from "./RatingGround.svelte";
 import type { SearchResult } from "./resultLoad";
 import type { SearchListItem } from "../search/searchTypes";
 import { holdPickedName, pickedNameFor } from "./pickedName";
 import { ratingState, type RatingState } from "./ratingState";
-import { WEEDS_TABLES, formatRatingOutOf, type ScoreTally, type WeedsTable, type WhoWhatRoutes } from "../whoWhatTypes";
+import { WEEDS_TABLES, formatRatingOutOf, type ScoreTally, type WeedsAttributes, type WeedsTable, type WhoWhatRoutes } from "../whoWhatTypes";
 import { svgWords } from "../search/svgWords";
 import { svgFit } from "../stage/svgFit";
 import { m } from "$parent/src/lib/paraglide/messages";
@@ -82,6 +82,9 @@ let {
 // the viewport's middle. Any earlier and it floats over the hills. The
 // observer gates the scroll work.
 let litIndex = $state(0);
+// The tally sums the weeds answers as they land, so /score never waits on the count.
+let weedsAnswers = $state<Partial<Record<WeedsTable, WeedsAttributes>>>({});
+const counts = $derived(attributeCounts(weedsAnswers));
 let tallyVisible = $state(false);
 let undergroundEl = $state<HTMLElement | null>(null);
 $effect(() => {
@@ -541,9 +544,9 @@ const longLockup = lockupSize.k > 1.1 * lockupWidth(TruthIsInRaw, TheWeedsRaw, D
 	{/snippet}
 
 	{#if weedsHref}
-		<WeedsSection bind:this={weeds} {tab} href={weedsHref} head={lockup} {clipRoot} {onopenproject} onactive={(i) => (litIndex = i)} />
+		<WeedsSection bind:this={weeds} {tab} href={weedsHref} head={lockup} {clipRoot} {onopenproject} onactive={(i) => (litIndex = i)} onanswer={(t, a) => (weedsAnswers = { ...weedsAnswers, [t]: a })} />
 		{#if tally}
-			<WeedsTally {tally} {litIndex} visible={tallyVisible || (land > 0 && land < 1)} landed={!travels || land >= 1} traceHref={scoreHref} name={record?.name} />
+			<WeedsTally {tally} {litIndex} visible={tallyVisible || (land > 0 && land < 1)} landed={!travels || land >= 1} traceHref={scoreHref} name={record?.name} {counts} />
 		{/if}
 	{:else}
 		{@render lockup()}

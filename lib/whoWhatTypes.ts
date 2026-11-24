@@ -137,8 +137,6 @@ export type ScoreAnswer = {
 	scoredAt: string | null;
 	/** Whether this row's breakdown reached its stored points when the run froze; null before a first publish. */
 	reconciled: boolean | null;
-	/** Attributes the method offers the record's records and how many they fill, summed on the server; null when not counted. */
-	attributes: { possible: number; filled: number } | null;
 };
 
 /** A tally the page draws: a scored answer whose breakdown reconciled. */

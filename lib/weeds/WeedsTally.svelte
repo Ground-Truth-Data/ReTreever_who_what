@@ -12,6 +12,7 @@ import {
 	stackRows,
 	tallyDone,
 	tween,
+	type AttributeCounts,
 	type StackKey,
 } from "./tallyMath";
 import { fullCount, shortCount } from "./weedsFormat";
@@ -27,6 +28,7 @@ let {
 	landed = true,
 	traceHref = undefined,
 	name = undefined,
+	counts = null,
 }: {
 	tally: ScoreTally;
 	litIndex: number;
@@ -37,13 +39,15 @@ let {
 	traceHref?: string;
 	/** The record's name, for the printed and downloaded summary; absent, neither is offered. */
 	name?: string;
+	/** The attributes on offer and filled, once every weeds table has answered; null till then. */
+	counts?: AttributeCounts | null;
 } = $props();
 
 const COUNT_MS = 750;
 
 // An org's score was not broken down when it averaged nothing.
 const brokenDown = $derived(tally.kind === "project" || (tally.org?.projects ?? 0) > 0);
-const rows = $derived(stackRows(tally));
+const rows = $derived(stackRows(tally, counts));
 const place = $derived(placeLine(tally));
 const done = $derived(brokenDown && tallyDone(tally, litIndex, landed));
 const lit = $derived(tally.tables[litIndex] ?? tally.tables[0]);
@@ -79,7 +83,7 @@ $effect(() => {
 const runDay = $derived(
 	tally.scoredAt ? new Intl.DateTimeFormat(getLocale(), { dateStyle: "long" }).format(new Date(tally.scoredAt)) : null,
 );
-const csv = () => name && downloadSummary({ name, url: location.href, tally });
+const csv = () => name && downloadSummary({ name, url: location.href, tally, counts });
 
 const one = (n: number) => n.toFixed(1);
 const bigText = $derived(one(tally.rating ?? tally.score ?? 0));

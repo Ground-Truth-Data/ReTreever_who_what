@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { WEEDS_TABLES, type ScoreTally, type TallyLine } from "../whoWhatTypes";
 import {
 	TABLE_LABELS,
+	attributeCounts,
 	claimFactor,
 	lineFill,
 	lineValue,
@@ -64,7 +65,6 @@ const project: ScoreTally = {
 	scoreRunId: "run-1",
 	scoredAt: "2026-11-23T13:33:43.001Z",
 	reconciled: true,
-	attributes: null,
 };
 // P-TREE ADOPTION UGANDA's shape: 22 projects' mean 64.4, no reviewed claim, 13th of 46 developers at 73.9.
 const org: ScoreTally = {
@@ -90,7 +90,7 @@ describe("the stack", () => {
 	const keys = ["possible", "filled", "share", "claim", "place", "rating"];
 
 	it("holds six figures in the walk's order, every one filled from the start", () => {
-		const rows = stackRows({ ...org, attributes: counts });
+		const rows = stackRows(org, counts);
 		expect(rows.map((r) => r.key)).toEqual(keys);
 		for (const r of rows) expect(r.value).not.toBe("—");
 		const [possible, filled, share, claim, place, rating] = rows.map((r) => r.value);
@@ -101,12 +101,12 @@ describe("the stack", () => {
 	});
 
 	it("gives a project no claim step and an unranked record no place", () => {
-		expect(stackRows({ ...project, attributes: counts }).find((r) => r.key === "claim")?.value).toBe("—");
-		expect(stackRows({ ...org, place: null, attributes: counts }).find((r) => r.key === "place")?.value).toBe("—");
+		expect(stackRows(project, counts).find((r) => r.key === "claim")?.value).toBe("—");
+		expect(stackRows({ ...org, place: null }, counts).find((r) => r.key === "place")?.value).toBe("—");
 	});
 
 	it("has no share with nothing on offer", () => {
-		expect(stackRows({ ...org, attributes: { possible: 0, filled: 0 } }).find((r) => r.key === "share")?.value).toBe("—");
+		expect(stackRows(org, { possible: 0, filled: 0 }).find((r) => r.key === "share")?.value).toBe("—");
 	});
 
 	it("multiplies by a reviewed claim only", () => {
@@ -173,5 +173,23 @@ describe("the words", () => {
 		for (const t of WEEDS_TABLES) {
 			expect(TABLE_LABELS[t]).toMatch(/^[A-Z]/);
 		}
+	});
+});
+
+describe("attributeCounts", () => {
+	const answer = (table: (typeof WEEDS_TABLES)[number], filled: number[]) => ({
+		table,
+		platforms: [],
+		attributes: filled.map((f, i) => ({ field: `T.f${i}`, label: "x", kind: "text" as const, pointsAwarded: null, pointsAvailable: null, filled: f, records: 3, example: null })),
+	});
+
+	it("sums every table's offered attributes and those any record fills", () => {
+		const all = Object.fromEntries(WEEDS_TABLES.map((t, i) => [t, answer(t, i === 2 ? [1, 0, 3] : [0, 2])]));
+		expect(attributeCounts(all)).toEqual({ possible: 15, filled: 8 });
+	});
+
+	it("has no figure until every table has answered", () => {
+		expect(attributeCounts({ projects: answer("projects", [1]) })).toBeNull();
+		expect(attributeCounts({})).toBeNull();
 	});
 });

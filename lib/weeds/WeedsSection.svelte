@@ -25,6 +25,7 @@ let {
 	clipRoot = undefined,
 	onopenproject = undefined,
 	onactive = undefined,
+	onanswer = undefined,
 }: {
 	tab: "orgs" | "projects";
 	/** The host's URL for one table of this record. */
@@ -36,6 +37,8 @@ let {
 	onopenproject?: (projectKey: string, name?: string) => void;
 	/** The lit tab's index, whenever it changes — by scroll, click or key. */
 	onactive?: (index: number) => void;
+	/** Each table's answer, once, as it lands. */
+	onanswer?: (table: WeedsTableName, answer: WeedsAttributes) => void;
 } = $props();
 
 const PANEL_ID = "weeds-panel";
@@ -65,7 +68,9 @@ async function load(table: WeedsTableName) {
 	try {
 		const res = await fetch(href(table));
 		if (!res.ok) throw new Error(`${table}: ${res.status}`);
-		answers = { ...answers, [table]: (await res.json()) as WeedsAttributes };
+		const answer = (await res.json()) as WeedsAttributes;
+		answers = { ...answers, [table]: answer };
+		onanswer?.(table, answer);
 		const { [table]: _gone, ...rest } = failed;
 		failed = rest;
 	} catch (cause) {

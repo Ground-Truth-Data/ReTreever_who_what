@@ -24,10 +24,9 @@ const org: ScoreTally = {
 	scoreRunId: "run-1",
 	scoredAt: "2026-11-23T13:33:43.001Z",
 	reconciled: true,
-	attributes: { possible: 240, filled: 96 },
 	org: { projects: 367, mean: 64.8, claimed: null, planted: 0, undisclosed: null, reviewed: true, ratio: 0.42 },
 };
-const input = { name: 'Plant for the Planet, "PftP"', url: "https://retreever.org/who/a-a", tally: org };
+const input = { name: 'Plant for the Planet, "PftP"', url: "https://retreever.org/who/a-a", tally: org, counts: { possible: 240, filled: 96 } };
 
 describe("the summary export", () => {
 	const rows = summaryRows(input);
@@ -59,7 +58,7 @@ describe("the summary export", () => {
 	});
 
 	it("leaves a figure the record lacks empty: a project's claim, a missing count, an unranked place", () => {
-		const bare = summaryRows({ ...input, tally: { ...org, kind: "project", attributes: null, place: null, scoredAt: null } });
+		const bare = summaryRows({ ...input, counts: null, tally: { ...org, kind: "project", place: null, scoredAt: null } });
 		expect(bare[3][2]).toBe("");
 		expect(bare.slice(4, 10).map((r) => r[2])).toEqual(["", "", "", "", "", "85.7"]);
 	});
