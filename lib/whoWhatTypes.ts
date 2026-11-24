@@ -59,6 +59,38 @@ export type WeedsAnswer = {
 	more: boolean;
 };
 
+/**
+ * One attribute the method offers on a weeds table, worked out by the host over every record in scope, in the
+ * method's order. `field` is the scorer's own name (`PlantingTable.unitType`); `label` is the message key that names
+ * it. The points are this attribute's share of the table's published line, so a table's attributes add up to its
+ * tally line; null when the published run kept no per-field rows. `filled` of `records` fill it; `example` is the
+ * first value one does, drawn by `kind` (a `money` or `number` example reads `unit` beside it), null when none does or
+ * when it is `withheld`: filled, but never sent (a site's coordinates, a contact).
+ */
+export type WeedsAttribute = {
+	field: string;
+	label: string;
+	kind: WeedsKind;
+	pointsAwarded: number | null;
+	pointsAvailable: number | null;
+	filled: number;
+	records: number;
+	example: WeedsRow[string];
+	unit?: string | null;
+	withheld?: true;
+};
+
+/**
+ * One table's answer as attributes. `platforms` name the records' sources once. `projects` is an org's Projects tab
+ * only: the one table that lists records, its linked projects best first, capped.
+ */
+export type WeedsAttributes = {
+	table: WeedsTable;
+	attributes: WeedsAttribute[];
+	platforms: string[];
+	projects?: Omit<WeedsAnswer, "table" | "platforms">;
+};
+
 /** One weeds table's points in a tally. */
 export type TallyLine = { table: WeedsTable; awarded: number; available: number };
 
