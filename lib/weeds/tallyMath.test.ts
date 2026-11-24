@@ -2,18 +2,14 @@ import { describe, expect, it } from "vitest";
 import { WEEDS_TABLES, type ScoreTally, type TallyLine } from "../whoWhatTypes";
 import {
 	TABLE_LABELS,
-	barFill,
-	claimLine,
-	ladderValue,
-	landingBeats,
-	ownBar,
-	peerBars,
-	peersLit,
+	claimFactor,
+	lineFill,
+	lineValue,
 	placeLine,
-	stepFigure,
+	runningPoints,
+	stackRows,
 	sumsThrough,
-	tallySteps,
-	tallyTargets,
+	tallyDone,
 	tween,
 } from "./tallyMath";
 
@@ -78,55 +74,52 @@ const org: ScoreTally = {
 	place: { rank: 13, of: 46, group: "developer_ish", peers: Array.from({ length: 46 }, (_, i) => i * 2) },
 };
 
-describe("tallyTargets", () => {
-	it("counts the tables' running sums before the last tab", () => {
-		expect(tallyTargets(project, 0)).toEqual({ scored: 4, available: 5, big: 80 });
-		expect(tallyTargets(project, 5)).toEqual({ scored: 504, available: 548, big: 92 });
-	});
-
-	it("lands the last tab on the stored totals and the score despite drift", () => {
-		expect(sumsThrough(ACTIVE, 6)).toEqual({ scored: 513, available: 560, pct: 91.6 });
-		expect(tallyTargets(project, 6)).toEqual({ scored: 514, available: 560, big: 91.8 });
-	});
-
-	it("follows an org's running points too, and settles the last tab on its projects' mean", () => {
-		expect(tallyTargets(org, 0)).toEqual({ scored: 4, available: 5, big: 80 });
-		expect(tallyTargets(org, 6)).toEqual({ scored: 514, available: 560, big: 64.4 });
-	});
-
-	it("falls back to the sums where nothing is stored", () => {
-		const bare: ScoreTally = { ...project, score: null, rating: null, pointsScored: null, pointsAvailable: null };
-		expect(tallyTargets(bare, 6)).toEqual({ scored: 513, available: 560, big: 91.6 });
+describe("runningPoints", () => {
+	it("counts the tables' running sums before the last tab, the stored totals on it", () => {
+		expect(runningPoints(project, 0)).toMatchObject({ scored: 4, available: 5 });
+		expect(runningPoints(project, 5)).toMatchObject({ scored: 504, available: 548 });
+		expect(runningPoints(project, 6)).toEqual({ scored: 514, available: 560 });
+		expect(runningPoints({ ...project, pointsScored: null, pointsAvailable: null }, 6)).toEqual({ scored: 513, available: 560 });
 	});
 });
 
-describe("the walk to the rating", () => {
-	it("takes an org through its claims and a project straight to its peers", () => {
-		expect(tallySteps(org)).toEqual(["points", "claims", "place"]);
-		expect(tallySteps(project)).toEqual(["points", "place"]);
-		expect(tallySteps({ ...org, place: null })).toEqual(["points", "claims"]);
-		expect(tallySteps({ ...project, rating: null })).toEqual(["points"]);
+describe("the stack", () => {
+	const counts = { possible: 240, filled: 96 };
+	const keys = ["possible", "filled", "share", "claim", "place", "rating"];
+
+	it("holds six figures in the walk's order, every one filled from the start", () => {
+		const rows = stackRows(org, counts);
+		expect(rows.map((r) => r.key)).toEqual(keys);
+		for (const r of rows) expect(r.value).not.toBe("—");
+		const [possible, filled, share, claim, place, rating] = rows.map((r) => r.value);
+		expect([possible, filled, rating]).toEqual(["240", "96", "73.9"]);
+		expect(share).toMatch(/^40\.0\s?%$/);
+		expect(claim).toMatch(/1$/);
+		expect(place).toMatch(/^13\D+46$/);
 	});
 
-	it("settles each step on its figure and ends on the hero's number", () => {
-		const claimed: ScoreTally = { ...org, score: 27, org: { ...org.org!, reviewed: true, ratio: 0.42 } };
-		expect(tallySteps(claimed).map((s) => stepFigure(claimed, s))).toEqual([64.4, 27, 73.9]);
-		expect(landingBeats(org).map((b) => b.to)).toEqual([64.4, 64.4, 73.9]);
-		expect(landingBeats(org).map((b) => b.peers)).toEqual([false, false, true]);
-		expect(landingBeats(project).map((b) => b.to)).toEqual([91.8, 91.8]);
+	it("gives a project no claim step and an unranked record no place", () => {
+		expect(stackRows(project, counts).find((r) => r.key === "claim")?.value).toBe("—");
+		expect(stackRows({ ...org, place: null }, counts).find((r) => r.key === "place")?.value).toBe("—");
+	});
+
+	it("has no share with nothing on offer", () => {
+		expect(stackRows(org, { possible: 0, filled: 0 }).find((r) => r.key === "share")?.value).toBe("—");
+	});
+
+	it("multiplies by a reviewed claim only", () => {
+		expect(claimFactor(org)).toBe("× 1");
+		expect(claimFactor({ ...org, org: { ...org.org!, reviewed: false, ratio: 0.5 } })).toBe("× 1");
+		expect(claimFactor({ ...org, org: { ...org.org!, reviewed: true, ratio: 0.42 } })).toBe("× 0.42");
+		expect(claimFactor({ ...org, org: { ...org.org!, reviewed: true, ratio: 1.3 } })).toBe("× 1");
 	});
 });
 
-describe("claimLine", () => {
-	it("takes nothing off without a reviewed claim", () => {
-		expect(claimLine(org)).toEqual({ words: "No reviewed claim yet", factor: "× 1", leaves: null });
-		expect(claimLine({ ...org, org: { ...org.org!, reviewed: false, ratio: 0.5 } }).factor).toBe("× 1");
-	});
-
-	it("divides planted by claimed and says the score it leaves", () => {
-		const claimed: ScoreTally = { ...org, score: 27, org: { ...org.org!, reviewed: true, ratio: 0.42 } };
-		expect(claimLine(claimed)).toEqual({ words: "Planted ÷ claimed", factor: "× 0.42", leaves: "Leaves 27.0" });
-		expect(claimLine({ ...claimed, org: { ...claimed.org!, ratio: 1 } }).factor).toBe("× 1");
+describe("tallyDone", () => {
+	it("is finished on the last table once the hero's number has landed", () => {
+		expect(tallyDone(org, 6, true)).toBe(true);
+		expect(tallyDone(org, 5, true)).toBe(false);
+		expect(tallyDone(org, 6, false)).toBe(false);
 	});
 });
 
@@ -137,37 +130,19 @@ describe("the peers", () => {
 		expect(placeLine(project)?.among).toBe("Among all 5 projects");
 		expect(placeLine({ ...org, place: null })).toBeNull();
 	});
-
-	it("finds its own bar among ascending peers, scaled onto quantiles", () => {
-		expect(ownBar(project.place!)).toBe(3);
-		expect(ownBar(org.place!)).toBe(33);
-		expect(ownBar({ rank: 1, of: 1000, peers: Array(120).fill(0) })).toBe(119);
-		expect(ownBar({ rank: 1000, of: 1000, peers: Array(120).fill(0) })).toBe(0);
-		expect(ownBar({ rank: 1, of: 1, peers: [50] })).toBe(0);
-	});
-
-	it("lights the bars below its own from the lowest, never its own", () => {
-		expect(peersLit(33, 0)).toBe(0);
-		expect(peersLit(33, 0.5)).toBe(17);
-		expect(peersLit(33, 1)).toBe(33);
-		expect(peersLit(0, 1)).toBe(0);
-	});
-
-	it("draws every peer inside the strip, a zero as a sliver", () => {
-		const bars = peerBars([0, 50, 100]);
-		expect(bars.map((b) => b.h)).toEqual([1, 16, 32]);
-		const last = bars[bars.length - 1];
-		expect(last.x + last.w).toBeCloseTo(240);
-		expect(peerBars([])).toEqual([]);
-	});
 });
 
-describe("barFill", () => {
-	it("fills to the share through the lit tab, empty past it, none with nothing on offer", () => {
-		expect(barFill(ACTIVE[0], 0, 3)).toBe(0.8);
-		expect(barFill(ACTIVE[5], 5, 6)).toBe(1);
-		expect(barFill(ACTIVE[1], 1, 6)).toBeNull();
-		expect(barFill(ACTIVE[4], 4, 3)).toBe(0);
+describe("a table's line", () => {
+	it("reads its final figure, or counts up to it while lit", () => {
+		expect(lineValue(ACTIVE[0])).toEqual({ awarded: 4, available: 5, fill: 0.8 });
+		expect(lineValue(ACTIVE[0], 0)).toEqual({ awarded: 0, available: 5, fill: 0 });
+		expect(lineValue(ACTIVE[0], 0.5)).toEqual({ awarded: 2, available: 5, fill: 0.4 });
+	});
+
+	it("is a dash with nothing on offer, and 0 of what it offers with no record", () => {
+		expect(lineValue(ACTIVE[1])).toBe("–");
+		expect(lineFill(ACTIVE[1])).toBeNull();
+		expect(lineValue({ table: "planting", awarded: 0, available: 16 })).toEqual({ awarded: 0, available: 16, fill: 0 });
 	});
 });
 
@@ -188,22 +163,6 @@ describe("tween", () => {
 		}
 		expect(tween(0, 10, -1)).toBe(0);
 		expect(tween(0, 10, 2)).toBe(10);
-	});
-});
-
-describe("ladderValue", () => {
-	it("shows a line's points through the lit tab, a dash with nothing on offer, a dot past it", () => {
-		expect(ladderValue(DEMO[0], 0, 3)).toEqual({ awarded: 4, available: 5 });
-		expect(ladderValue(DEMO[3], 3, 3)).toEqual({ awarded: 576, available: 624 });
-		expect(ladderValue(DEMO[2], 2, 3)).toBe("–");
-		expect(ladderValue(DEMO[4], 4, 3)).toBe("·");
-	});
-
-	it("shows a table with no record as 0 of what it offers, with an empty bar: never a dash or a gap", () => {
-		const empty = { table: "planting", awarded: 0, available: 16 } as const;
-		expect(ladderValue(empty, 2, 3)).toEqual({ awarded: 0, available: 16 });
-		expect(barFill(empty, 2, 3)).toBe(0);
-		expect(sumsThrough([DEMO[0], empty], 1)).toMatchObject({ scored: 4, available: 21 });
 	});
 });
 
