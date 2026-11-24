@@ -23,7 +23,9 @@ const org: ScoreTally = {
 	],
 	place: { rank: 2, of: 7, group: "marketplace_ish", peers: [23.3, 24.5, 35.5, 40.9, 41.3, 64.8, 70.6] },
 	scoreRunId: "run-1",
+	scoredAt: "2026-11-23T13:33:43.001Z",
 	reconciled: true,
+	attributes: null,
 	org: { projects: 367, mean: 64.8, claimed: null, planted: 0, undisclosed: null, reviewed: false, ratio: null },
 };
 

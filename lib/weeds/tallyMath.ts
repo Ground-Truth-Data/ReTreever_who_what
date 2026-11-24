@@ -28,9 +28,6 @@ export function runningPoints(tally: ScoreTally, index: number): { scored: numbe
 	return { scored: tally.pointsScored ?? sums.scored, available: tally.pointsAvailable ?? sums.available };
 }
 
-/** Attributes the method offers the record and how many its records fill, summed on the server. */
-export type AttributeCounts = { possible: number; filled: number };
-
 export type StackKey = "possible" | "filled" | "share" | "claim" | "place" | "rating";
 export type StackRow = { key: StackKey; value: string };
 
@@ -50,7 +47,8 @@ export function claimFactor(tally: ScoreTally): string {
  * paint: what is on offer, what is filled, the share, the claim step, the
  * place among peers, the rating. A figure the record has none of reads "—".
  */
-export function stackRows(tally: ScoreTally, counts: AttributeCounts | null): StackRow[] {
+export function stackRows(tally: ScoreTally): StackRow[] {
+	const counts = tally.attributes;
 	const share =
 		counts && counts.possible > 0
 			? new Intl.NumberFormat(getLocale(), { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(

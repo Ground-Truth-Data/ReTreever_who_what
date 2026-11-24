@@ -12,7 +12,6 @@ import {
 	stackRows,
 	tallyDone,
 	tween,
-	type AttributeCounts,
 	type StackKey,
 } from "./tallyMath";
 import { fullCount, shortCount } from "./weedsFormat";
@@ -40,8 +39,7 @@ const COUNT_MS = 750;
 
 // An org's score was not broken down when it averaged nothing.
 const brokenDown = $derived(tally.kind === "project" || (tally.org?.projects ?? 0) > 0);
-const counts: AttributeCounts | null = null;
-const rows = $derived(stackRows(tally, counts));
+const rows = $derived(stackRows(tally));
 const place = $derived(placeLine(tally));
 const done = $derived(brokenDown && tallyDone(tally, litIndex, landed));
 const lit = $derived(tally.tables[litIndex] ?? tally.tables[0]);
