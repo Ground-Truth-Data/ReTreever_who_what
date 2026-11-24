@@ -101,8 +101,12 @@ export type ScoreAnswer = {
 	place: { rank: number; of: number; group: string | null; peers: number[] } | null;
 	/** The published run the answer was read from; null before a first publish. */
 	scoreRunId: string | null;
+	/** When that run scored, ISO; null before a first publish. */
+	scoredAt: string | null;
 	/** Whether this row's breakdown reached its stored points when the run froze; null before a first publish. */
 	reconciled: boolean | null;
+	/** Attributes the method offers the record's records and how many they fill, summed on the server; null when not counted. */
+	attributes: { possible: number; filled: number } | null;
 };
 
 /** A tally the page draws: a scored answer whose breakdown reconciled. */
@@ -133,12 +137,8 @@ export type WhoWhatEndpoints = {
 	/** Search hits: POST a landing; GET ?tab= answers the most viewed. Absent → nothing logged, no most-viewed rows. */
 	searchHits?: string;
 	/** One weeds table of a record. Absent → the weeds section does not render. */
-	/** When that run scored, ISO; null before a first publish. */
-	scoredAt: string | null;
 	weeds?: (tab: "orgs" | "projects", key: string, table: WeedsTable) => string;
 	/** How a record's score adds up. Absent → no tally beside the weeds. */
-	/** Attributes the method offers the record's records and how many they fill, summed on the server; null when not counted. */
-	attributes: { possible: number; filled: number } | null;
 	score?: (tab: "orgs" | "projects", key: string) => string;
 	/** POST a reader's feedback on the record (a `FeedbackBody`). Absent → no feedback line on the rating page. */
 	feedback?: string;
