@@ -32,8 +32,10 @@ export type StackKey = "possible" | "filled" | "share" | "claim" | "place" | "ra
 export type StackRow = { key: StackKey; value: string };
 
 const DASH = "—";
-const one = (n: number) => n.toFixed(1);
-const ratioText = (r: number) => (r >= 1 ? "1" : r.toFixed(2));
+// The reader's decimal mark: "85,7" in French.
+const decimal = (n: number, digits: number) =>
+	new Intl.NumberFormat(getLocale(), { minimumFractionDigits: digits, maximumFractionDigits: digits, useGrouping: false }).format(n);
+const ratioText = (r: number) => (r >= 1 ? "1" : decimal(r, 2));
 
 /** An org's claim step as a multiplier: a reviewed claim's planted ÷ claimed, else × 1. A project has no claim step. */
 export function claimFactor(tally: ScoreTally): string {
@@ -62,7 +64,7 @@ export function stackRows(tally: ScoreTally): StackRow[] {
 		{ key: "share", value: share },
 		{ key: "claim", value: claimFactor(tally) },
 		{ key: "place", value: place ? m.ww_rating_tally_rank({ rank: fullCount(place.rank), count: fullCount(place.of) }) : DASH },
-		{ key: "rating", value: tally.rating === null ? DASH : one(tally.rating) },
+		{ key: "rating", value: tally.rating === null ? DASH : decimal(tally.rating, 1) },
 	];
 }
 
