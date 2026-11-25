@@ -34,27 +34,25 @@ export type WeedsTable = (typeof WEEDS_TABLES)[number];
 
 /**
  * How a cell is drawn; the answer says, so the page never knows the schema. A `key` column is never drawn: it is what
- * opens a row; nor is `dead`, the date the row's link answered 404/410; nor `aside`, which rides in the cell of the
- * column naming it: a `money` cell's currency, a `points` cell's points available, a `site`'s id.
+ * opens a row; nor is `aside`, which rides in the cell of the column naming it: a `money` cell's currency, a `points`
+ * cell's points available.
  */
-export type WeedsKind = "text" | "number" | "date" | "link" | "score" | "key" | "dead" | "money" | "points" | "site" | "aside" | "names";
+export type WeedsKind = "text" | "number" | "date" | "link" | "score" | "key" | "money" | "points" | "aside" | "names";
 /** `optional`: drawn only when a row has it, and never listed as not published. */
 export type WeedsColumn = { key: string; label: string; kind: WeedsKind; aside?: string; optional?: true };
 /** A species as the host names it: its scientific name is drawn small after the name, when it says something more. */
 export type WeedsName = { name: string; scientific: string | null };
 export type WeedsRow = Record<string, string | number | null | WeedsName[]>;
-/** A column the table draws; `key`, `dead` and `aside` ride along unseen. */
-export const isDrawn = (c: WeedsColumn): boolean => c.kind !== "key" && c.kind !== "dead" && c.kind !== "aside";
+/** A column the table draws; `key` and `aside` ride along unseen. */
+export const isDrawn = (c: WeedsColumn): boolean => c.kind !== "key" && c.kind !== "aside";
 /**
- * One table's answer from the host: `total` is `rows.length`; `more` says the cap cut it short; `platforms` are the
- * rows' sources, named once; `filled` the drawn columns any row in scope fills, the capped ones included.
+ * An org's linked projects as the host lists them: `total` is `rows.length`; `more` says the cap cut it short;
+ * `filled` the drawn columns any row in scope fills, the capped ones included.
  */
-export type WeedsAnswer = {
-	table: WeedsTable;
+export type WeedsProjectList = {
 	columns: WeedsColumn[];
 	rows: WeedsRow[];
 	filled: string[];
-	platforms: string[];
 	total: number;
 	more: boolean;
 };
@@ -88,7 +86,7 @@ export type WeedsAttributes = {
 	table: WeedsTable;
 	attributes: WeedsAttribute[];
 	platforms: string[];
-	projects?: Omit<WeedsAnswer, "table" | "platforms">;
+	projects?: WeedsProjectList;
 };
 
 /** One weeds table's points in a tally. */
