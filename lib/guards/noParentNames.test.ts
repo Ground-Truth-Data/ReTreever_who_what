@@ -12,7 +12,8 @@ const isTest = (name: string) => /\.test\.[^.]+$/.test(name);
 
 function sources(dir: string, out: string[] = []): string[] {
 	for (const e of readdirSync(dir, { withFileTypes: true })) {
-		if (e.name === "node_modules" || e.name === "assets") continue;
+		// A dressed clone holds rapper in _rapper/ and its siblings in _siblings/: not this child's source.
+		if (e.name === "node_modules" || e.name === "assets" || e.name === "_rapper" || e.name === "_siblings") continue;
 		if (e.name.startsWith(".")) continue;
 		const full = join(dir, e.name);
 		if (e.isDirectory()) sources(full, out);
