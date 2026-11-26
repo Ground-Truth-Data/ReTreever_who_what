@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { m } from "$parent/src/lib/paraglide/messages";
 import { WEEDS_TABLES, type ScoreTally, type TallyLine } from "../whoWhatTypes";
 import {
 	TABLE_LABELS,
@@ -127,7 +128,10 @@ describe("tallyDone", () => {
 
 describe("the peers", () => {
 	it("names the group as the trace page does", () => {
-		expect(placeLine(org)).toEqual({ among: "Among the 46 developers", ranked: "Ranked among the 46 developers", place: "Place 13 of 46", short: "Place 13 of 46 developers" });
+		expect(placeLine(org)).toMatchObject({ among: "Among the 46 developers", place: "Place 13 of 46", short: "Place 13 of 46 developers" });
+		expect(placeLine(org)?.ranked).toBe(m.ww_rating_hero_ranked({ count: "46", peers: "developers" }));
+		expect(placeLine({ ...org, place: { ...org.place!, group: "all" } })?.ranked).toBe(m.ww_rating_hero_ranked_all({ count: "46", peers: "organizations" }));
+		expect(placeLine(project)?.ranked).toBe(m.ww_rating_hero_ranked_all({ count: "5", peers: "projects" }));
 		expect(placeLine({ ...org, place: { ...org.place!, group: "all" } })?.among).toBe("Among all 46 organizations");
 		expect(placeLine(project)?.among).toBe("Among all 5 projects");
 		expect(placeLine({ ...org, place: null })).toBeNull();
