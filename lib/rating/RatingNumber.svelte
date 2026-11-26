@@ -18,15 +18,12 @@ function glyphUrl(ch: string): string | undefined {
 let {
 	rating = undefined,
 	text = undefined,
-	settled = true,
 	outOf = undefined,
 	label = undefined,
 }: {
 	rating?: number;
 	/** Drawn as given: digits and "." as glyphs, anything else ("," "K" " mil") as type on the baseline. Wins over `rating`. */
 	text?: string;
-	/** False holds the period back; it fades in when this flips. The label carries the full score throughout. */
-	settled?: boolean;
 	/** A small "/100" on the number's baseline, so it reads as a share of that. */
 	outOf?: number;
 	/** What a screen reader hears; defaults to `text`, else the rating out of 100. */
@@ -52,7 +49,7 @@ const denominator = $derived(outOf === undefined ? [] : String(outOf).split(""))
 const spoken = $derived(label ?? text ?? formatRatingOutOf(rating));
 </script>
 
-<span class="rating-number" class:unsettled={!settled} role="img" aria-label={spoken}>
+<span class="rating-number" role="img" aria-label={spoken}>
 	{#each parts as part, i (i)}
 		{#if part.glyph}
 			<img class="glyph" class:period={part.s === "."} src={glyphUrl(part.s)} alt="" draggable="false" />
@@ -91,14 +88,6 @@ const spoken = $derived(label ?? text ?? formatRatingOutOf(rating));
 		display: block;
 		user-select: none;
 		-webkit-user-drag: none;
-	}
-
-	.period {
-		transition: opacity 160ms ease-out;
-	}
-
-	.unsettled .period {
-		opacity: 0;
 	}
 
 	/* A separator or compact suffix the glyphs have no drawing for: the site's type, a third of the glyph high. */

@@ -17,6 +17,7 @@ import HelpSticker from "../stage/HelpSticker.svelte";
 import NumberFollower from "./NumberFollower.svelte";
 import GlobeSpinIcon from "../stage/GlobeSpinIcon.svelte";
 import RatingNumber from "./RatingNumber.svelte";
+import { heroGhost, heroScore, heroScoreOutOf } from "./heroScore";
 import MeasureSticker from "./MeasureSticker.svelte";
 import SearchBar from "../search/SearchBar.svelte";
 import SearchDropdown from "../search/SearchDropdown.svelte";
@@ -29,7 +30,7 @@ import type { SearchResult } from "./resultLoad";
 import type { SearchListItem } from "../search/searchTypes";
 import { holdPickedName, pickedNameFor } from "./pickedName";
 import { ratingState, type RatingState } from "./ratingState";
-import { WEEDS_TABLES, formatRatingOutOf, type ScoreTally, type WeedsAttributes, type WeedsTable, type WhoWhatRoutes } from "../whoWhatTypes";
+import { WEEDS_TABLES, type ScoreTally, type WeedsAttributes, type WeedsTable, type WhoWhatRoutes } from "../whoWhatTypes";
 import { svgWords } from "../search/svgWords";
 import { svgFit } from "../stage/svgFit";
 import { m } from "$parent/src/lib/paraglide/messages";
@@ -369,7 +370,7 @@ const STATE_WORDS: Record<RatingState, () => string> = {
 };
 const numberLabel = (rating: number) => {
 	const state = ratingState(rating);
-	return state ? m.ww_rating_number_label({ score: formatRatingOutOf(rating), state: STATE_WORDS[state]() }) : formatRatingOutOf(rating);
+	return state ? m.ww_rating_number_label({ score: heroScoreOutOf(rating), state: STATE_WORDS[state]() }) : heroScoreOutOf(rating);
 };
 
 const headerArt = svgFit(HeaderRaw, [
@@ -482,13 +483,13 @@ const longLockup = lockupSize.k > 1.1 * lockupWidth(TruthIsInRaw, TheWeedsRaw, D
 						{/if}
 					</h1>
 					{#if record.rating !== null}
-						<div class="number-slot" class:wide={record.rating.toFixed(1).length > 4}>
-							<!-- Holds the place while the dog brings the number: zeros, so the score is not told early ("000.0" would be). -->
+						<div class="number-slot">
+							<!-- Holds the place while the dog brings the number: zeros as wide as it, so nothing moves when it lands. -->
 							<div class="number-ghost" class:gone={revealed} aria-hidden="true">
-								<RatingNumber text={record.rating.toFixed(1).length > 3 ? "00.0" : "0.0"} outOf={100} />
+								<RatingNumber text={heroGhost(record.rating)} outOf={100} />
 							</div>
 							<div class="number" class:revealed class:away={land > 0} bind:this={numberEl}>
-								<RatingNumber rating={record.rating} settled={periodIn} outOf={100} label={numberLabel(record.rating)} />
+								<RatingNumber text={heroScore(record.rating)} outOf={100} label={numberLabel(record.rating)} />
 							</div>
 						</div>
 						<!-- Its own line, held from first paint like the measure's slot, so neither a long figure nor the sticker's arrival moves it. -->
@@ -508,7 +509,7 @@ const longLockup = lockupSize.k > 1.1 * lockupWidth(TruthIsInRaw, TheWeedsRaw, D
 					<!-- Holds the record's height while it streams, so the hills and the dog stand where they will: the picked name's lines, or one line when nothing was picked. -->
 					<div class="ghost" aria-hidden="true">
 						<div class="name"><span class="name-text">{heldName || "\u00a0"}</span></div>
-						<div class="number"><RatingNumber rating={0} outOf={100} /></div>
+						<div class="number"><RatingNumber text="00" outOf={100} /></div>
 						<div class="score-link-row"></div>
 						<div class="measure-slot"></div>
 					</div>
@@ -819,12 +820,6 @@ const longLockup = lockupSize.k > 1.1 * lockupWidth(TruthIsInRaw, TheWeedsRaw, D
 			opacity: 1;
 			visibility: visible;
 		}
-	}
-
-	/* "100.0/100" is 3.8 glyph-heights wide, the widest four-character score 3.3:
-	   scaled to that footprint it clears the dog, and a phone's 16px gutters. */
-	.number-slot.wide {
-		--glyph-h: min(calc(clamp(96px, 14vw, 210px) * 0.86), calc((100vw - 32px) / 3.85));
 	}
 
 	/* The slot's box is the hidden number's; the ghost lies over it and adds no

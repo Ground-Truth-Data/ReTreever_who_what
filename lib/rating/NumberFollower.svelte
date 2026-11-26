@@ -6,6 +6,7 @@
 // for the ledger's number as the page scrolls. Never a control.
 import { untrack } from "svelte";
 import RatingNumber from "./RatingNumber.svelte";
+import { heroScore } from "./heroScore";
 
 let {
 	rating,
@@ -113,7 +114,7 @@ $effect(() => {
 
 <div class="follower" class:travelling={land > 0} aria-hidden="true" bind:this={wrap}>
 	<div class="body" class:shown class:travel={land > 0} class:soil={overSoil} class:landed={land >= 1} bind:this={body}>
-		<span class="glyphs" bind:this={glyphs}><RatingNumber text={rating.toFixed(1)} /></span>
+		<span class="glyphs" bind:this={glyphs}><RatingNumber text={heroScore(rating)} /></span>
 		<span class="words" class:gone={land > 0}>
 			<span class="name">{name}</span>
 		</span>
